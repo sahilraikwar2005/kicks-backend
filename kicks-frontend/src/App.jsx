@@ -480,9 +480,6 @@ function CheckoutPage() {
   const { data: addressesData, isLoading: addressesLoading } = useQuery({ queryKey: ['addresses'], queryFn: () => addressesApi.list() });
 
   const [selectedAddressId, setSelectedAddressId] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponError, setCouponError] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
@@ -540,27 +537,6 @@ function CheckoutPage() {
     }
   };
 
-  const validateCoupon = async () => {
-    if (!couponCode.trim()) {
-      setCouponDiscount(0);
-      setCouponError('');
-      return;
-    }
-
-    try {
-      const response = await apiClient.get('/coupons/validate', { params: { code: couponCode.trim(), cartTotal: subtotal } });
-      const payload = unwrapPayload(response.data);
-      const nextDiscount = Number(payload?.discount ?? payload?.data?.discount ?? 0);
-      setCouponDiscount(nextDiscount);
-      setCouponError('');
-      showToast('Coupon applied.', 'success');
-    } catch (error) {
-      setCouponDiscount(0);
-      setCouponError(error?.message || 'Coupon is invalid');
-      showToast(error?.message || 'Coupon is invalid', 'error');
-    }
-  };
-
   const addressCreateMutation = useMutation({
     mutationFn: (payload) => addressesApi.create(payload),
     onSuccess: async (result) => {
@@ -598,7 +574,6 @@ function CheckoutPage() {
     try {
       const orderResponse = await ordersApi.checkout({
         addressId: activeAddressId,
-        couponCode: couponCode.trim() || undefined,
       });
 
       const order = unwrapPayload(orderResponse)?.order ?? orderResponse?.order ?? {};
@@ -654,8 +629,7 @@ function CheckoutPage() {
   };
 
   const shipping = 0;
-  const discount = Number(couponDiscount || 0);
-  const total = Math.max(subtotal - discount + shipping, 0);
+  const total = Math.max(subtotal + shipping, 0);
 
   const submitAddress = (event) => {
     event.preventDefault();
@@ -764,15 +738,6 @@ function CheckoutPage() {
             )}
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
-            <h2 className="text-2xl font-bold text-white">Coupon</h2>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <input value={couponCode} onChange={(event) => setCouponCode(event.target.value)} className="flex-1 rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Enter coupon code" />
-              <button type="button" onClick={validateCoupon} className="rounded-full bg-white px-5 py-3 text-sm font-medium text-black">Apply</button>
-            </div>
-            {couponError && <p className="mt-3 text-sm text-red-300">{couponError}</p>}
-            {couponDiscount > 0 && <p className="mt-3 text-sm text-[#9feec8]">Coupon applied: {formatMoney(couponDiscount)}</p>}
-          </div>
         </div>
 
         <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
@@ -801,7 +766,6 @@ function CheckoutPage() {
 
           <div className="mt-6 space-y-4 text-[#d2d2d2]">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
-            <div className="flex justify-between"><span>Discount</span><span>{formatMoney(discount)}</span></div>
             <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? 'Free' : formatMoney(shipping)}</span></div>
             <div className="flex justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(total)}</span></div>
           </div>
