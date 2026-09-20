@@ -1,9 +1,6 @@
 import Joi from 'joi';
-import { env } from '../../config/env.js';
 
-const devEmailRule = Joi.string().email({ tlds: false }).lowercase().required();
-const prodEmailRule = Joi.string().email().required();
-const emailRule = env.nodeEnv === 'production' ? prodEmailRule : devEmailRule;
+const emailRule = Joi.string().email({ tlds: false }).lowercase().required();
 
 export const registerSchema = Joi.object({
   firstName: Joi.string().trim().min(2).required(),
