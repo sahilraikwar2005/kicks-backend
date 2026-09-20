@@ -255,6 +255,96 @@ export const shipmentService = {
     }
   },
 
+  async listAdmin({ page = 1, limit = 20, status, provider, search } = {}) {
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const query = {};
+    if (status) {
+      query.status = status.toUpperCase();
+    }
+    if (provider) {
+      query.provider = provider.toLowerCase();
+    }
+
+    if (search && String(search).trim()) {
+      const searchTerm = String(search).trim();
+      const searchRegex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+      const matchedOrders = await Order.find({
+        $or: [
+          { orderNumber: searchRegex },
+          { 'customerSnapshot.email': searchRegex },
+          { 'customerSnapshot.firstName': searchRegex },
+          { 'customerSnapshot.lastName': searchRegex },
+          { 'shippingAddress.phone': searchRegex },
+          { 'shippingAddress.postalCode': searchRegex },
+        ],
+      }).select('_id').lean();
+
+      const matchedOrderIds = matchedOrders.map((o) => o._id);
+
+      query.$or = [
+        { awb: searchRegex },
+        { shipmentId: searchRegex },
+        { order: { $in: matchedOrderIds } },
+      ];
+    }
+
+    const [shipments, total] = await Promise.all([
+      Shipment.find(query)
+        .select('-raw')
+        .populate({
+          path: 'order',
+          select: 'orderNumber grandTotal status paymentStatus customerSnapshot shippingAddress items createdAt',
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Shipment.countDocuments(query),
+    ]);
+
+    return {
+      shipments,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum) || 1,
+    };
+  },
+
+  async getAdminDetails(id) {
+    let shipment = null;
+    if (id && String(id).match(/^[0-9a-fA-F]{24}$/)) {
+      shipment = await Shipment.findById(id)
+        .select('-raw')
+        .populate({
+          path: 'order',
+          select: 'orderNumber grandTotal subtotal tax shippingCharge discountAmount status paymentStatus customerSnapshot shippingAddress items createdAt updatedAt',
+        })
+        .lean();
+
+      if (!shipment) {
+        shipment = await Shipment.findOne({ order: id })
+          .select('-raw')
+          .populate({
+            path: 'order',
+            select: 'orderNumber grandTotal subtotal tax shippingCharge discountAmount status paymentStatus customerSnapshot shippingAddress items createdAt updatedAt',
+          })
+          .lean();
+      }
+    }
+
+    if (!shipment) {
+      const error = shipmentError('Shipment not found', 404);
+      throw error;
+    }
+
+    return shipment;
+  },
+
   async getForCustomer(orderId, userId) {
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) throw shipmentError('Order not found', 404);

@@ -17,4 +17,7 @@ export const adminApi = {
   regenerateAiProduct: (payload) => apiClient.post('/admin/ai/product-regenerate', payload).then((response) => response.data),
   regenerateAiField: (payload) => apiClient.post('/admin/ai/product-description', payload).then((response) => response.data),
   regenerateSeo: (payload) => apiClient.post('/admin/ai/product-seo', payload).then((response) => response.data),
+  shipments: (params = {}) => apiClient.get('/admin/shipments', { params }).then((response) => response.data),
+  shipmentById: (id) => apiClient.get(`/admin/shipments/${id}`).then((response) => response.data),
+  createShipment: (orderId) => apiClient.post(`/admin/orders/${orderId}/ship`).then((response) => response.data),
 };

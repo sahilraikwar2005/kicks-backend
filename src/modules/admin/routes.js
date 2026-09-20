@@ -24,6 +24,13 @@ const adminRefundSchema = Joi.object({
 const adminProductsQuerySchema = listProductsQuerySchema.keys({
   status: Joi.string().valid('PUBLISHED', 'DRAFT', 'ARCHIVED').optional(),
 });
+const adminShipmentsQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  status: Joi.string().trim().uppercase().optional().allow(''),
+  provider: Joi.string().trim().lowercase().optional().allow(''),
+  search: Joi.string().trim().max(100).optional().allow(''),
+});
 
 router.use(protect, isAdmin);
 
@@ -47,6 +54,9 @@ router.post('/ai/product-regenerate', validate(adminAiGenerateSchema), asyncHand
 router.post('/ai/product-description', validate(adminAiGenerateSchema), asyncHandler((req, res) => adminController.regenerateAiField({ ...req, params: { ...req.params, field: 'description' } }, res)));
 router.post('/ai/product-seo', validate(adminAiGenerateSchema), asyncHandler((req, res) => adminController.regenerateAiField({ ...req, params: { ...req.params, field: 'seoDescription' } }, res)));
 router.post('/orders/:id/ship', asyncHandler(shipmentController.create));
+router.post('/shipments/orders/:id', asyncHandler(shipmentController.create));
+router.get('/shipments', validateQuery(adminShipmentsQuerySchema), asyncHandler(shipmentController.listAdmin));
+router.get('/shipments/:id', asyncHandler(shipmentController.getAdminDetails));
 router.get('/orders/:id/invoice', asyncHandler(invoiceController.getAdminInvoice));
 router.post('/orders/:id/invoice/resend', asyncHandler(invoiceController.resend));
 router.post('/orders/:id/refund', validate(adminRefundSchema), asyncHandler(refundController.refund));

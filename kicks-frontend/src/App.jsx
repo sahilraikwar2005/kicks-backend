@@ -10,6 +10,7 @@ import {
   Edit3,
   Eye,
   EyeOff,
+  ExternalLink,
   KeyRound,
   Loader2,
   LogOut,
@@ -19,6 +20,10 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
+  Truck,
+  RefreshCw,
+  X,
+  Search,
   User2,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -314,58 +319,375 @@ function PolicyPage({ title }) {
   );
 }
 
+// function WishlistPage() {
+//   const queryClient = useQueryClient();
+//   const { data, isLoading, isError } = useQuery({ queryKey: ['wishlist'], queryFn: () => wishlistApi.getWishlist() });
+//   const removeMutation = useMutation({
+//     mutationFn: (productId) => wishlistApi.removeFromWishlist(productId),
+//     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['wishlist'] }),
+//   });
+
+//   const wishlist = unwrapPayload(data)?.wishlist ?? unwrapPayload(data)?.items ?? unwrapPayload(data)?.products ?? [];
+//   const items = Array.isArray(wishlist) ? wishlist : wishlist.items ?? [];
+
+//   return (
+//     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+//       <PageMeta title="Wishlist | KICKS" description="Your saved items" />
+//       <div className="mb-8 flex items-center justify-between gap-4">
+//         <div>
+//           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Saved</p>
+//           <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Wishlist</h1>
+//         </div>
+//         {items.length > 0 && <Link to="/shop" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Browse styles</Link>}
+//       </div>
+
+//       {isLoading ? (
+//         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+//           {[...Array(4)].map((_, index) => <div key={index} className="h-[280px] animate-pulse rounded-[24px] bg-[#111111]" />)}
+//         </div>
+//       ) : isError ? (
+//         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-[#d7d7d7]">Unable to load wishlist from the backend.</div>
+//       ) : items.length === 0 ? (
+//         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
+//           <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your wishlist is empty</h2>
+//           <p className="mt-4 text-[#c3c3c3]">Save the pairs you love to revisit them later.</p>
+//           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Shop now</Link>
+//         </div>
+//       ) : (
+//         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+//           {items.map((item) => {
+//             const product = item.product ?? item;
+//             const productId = product._id || product.id || item.productId;
+//             const price = Number(product?.price || 0);
+//             return (
+//               <div key={productId} className="rounded-[26px] border border-white/10 bg-[#111111] p-4">
+//                 <img src={product?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'} alt={product?.name || 'Saved product'} className="h-64 w-full rounded-[20px] object-cover" />
+//                 <div className="mt-4 flex items-start justify-between gap-3">
+//                   <div>
+//                     <p className="text-[10px] uppercase tracking-[0.26em] text-[#a3a3a3]">{product?.brand?.name || 'KICKS'}</p>
+//                     <Link to={`/products/${product?.slug || productId}`} className="mt-2 block text-xl font-medium text-white">{product?.name}</Link>
+//                   </div>
+//                   <button type="button" onClick={() => removeMutation.mutate(productId)} className="rounded-full border border-white/10 p-2 text-white">✕</button>
+//                 </div>
+//                 <div className="mt-4 text-lg font-semibold text-white">{formatMoney(price)}</div>
+//               </div>
+//             );
+//           })}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 function WishlistPage() {
   const queryClient = useQueryClient();
-  const { data, isLoading, isError } = useQuery({ queryKey: ['wishlist'], queryFn: () => wishlistApi.getWishlist() });
-  const removeMutation = useMutation({
-    mutationFn: (productId) => wishlistApi.removeFromWishlist(productId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['wishlist'] }),
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
+
+  const wishlistQuery = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: () => wishlistApi.getWishlist(),
+    enabled: isAuthenticated,
   });
 
-  const wishlist = unwrapPayload(data)?.wishlist ?? unwrapPayload(data)?.items ?? unwrapPayload(data)?.products ?? [];
-  const items = Array.isArray(wishlist) ? wishlist : wishlist.items ?? [];
+  const removeMutation = useMutation({
+    mutationFn: (productId) => wishlistApi.removeFromWishlist(productId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      showToast('Removed from wishlist', 'success');
+    },
+    onError: (error) => {
+      if (error?.status === 401) {
+        showToast('Please log in to continue', 'info');
+        navigate('/login');
+        return;
+      }
+      showToast(error?.message || 'Unable to remove from wishlist.', 'error');
+    },
+  });
+
+  const cartMutation = useMutation({
+    mutationFn: ({ productId, variantId }) =>
+      cartApi.addItem({
+        productId,
+        variantId,
+        quantity: 1,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cart'] });
+      showToast('Added to cart', 'success');
+    },
+    onError: (error) => {
+      if (error?.status === 401) {
+        showToast('Please log in to continue', 'info');
+        navigate('/login');
+        return;
+      }
+      showToast(error?.message || 'Unable to add item to cart.', 'error');
+    },
+  });
+
+  const wishlistPayload = unwrapPayload(wishlistQuery.data);
+  const wishlist = wishlistPayload?.wishlist ?? [];
+  const items = Array.isArray(wishlist) ? wishlist : wishlist?.productIds ?? wishlist?.items ?? [];
+
+  if (!isAuthenticated) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-16 lg:px-8">
+        <PageMeta title="Wishlist | KICKS" description="Your saved items" />
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-10 text-center">
+          <h1 className="text-3xl font-black uppercase tracking-[-0.05em] text-white">
+            Your wishlist
+          </h1>
+          <p className="mt-3 text-[#a8a8a8]">
+            Log in to view your saved sneakers.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="mt-7 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+          >
+            Log in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
       <PageMeta title="Wishlist | KICKS" description="Your saved items" />
-      <div className="mb-8 flex items-center justify-between gap-4">
+
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Saved</p>
-          <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Wishlist</h1>
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">
+            Saved
+          </p>
+
+          <div className="mt-3 flex items-center gap-3">
+            <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">
+              Wishlist
+            </h1>
+
+            {!wishlistQuery.isLoading && (
+              <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-[#a8a8a8]">
+                {items.length}
+              </span>
+            )}
+          </div>
         </div>
-        {items.length > 0 && <Link to="/shop" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Browse styles</Link>}
+
+        {items.length > 0 && (
+          <Link
+            to="/shop"
+            className="inline-flex w-fit rounded-full border border-white/10 px-4 py-2 text-sm text-white transition hover:border-white/30"
+          >
+            Browse styles
+          </Link>
+        )}
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {[...Array(4)].map((_, index) => <div key={index} className="h-[280px] animate-pulse rounded-[24px] bg-[#111111]" />)}
+      {wishlistQuery.isLoading ? (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...Array(4)].map((_, index) => (
+            <div
+              key={index}
+              className="h-[390px] animate-pulse rounded-[26px] border border-white/5 bg-[#111111]"
+            />
+          ))}
         </div>
-      ) : isError ? (
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-[#d7d7d7]">Unable to load wishlist from the backend.</div>
+      ) : wishlistQuery.isError ? (
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
+          <h2 className="text-xl font-semibold text-white">
+            Unable to load wishlist
+          </h2>
+
+          <p className="mt-2 text-sm text-[#9f9f9f]">
+            Please try again.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => wishlistQuery.refetch()}
+            className="mt-5 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black"
+          >
+            Retry
+          </button>
+        </div>
       ) : items.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your wishlist is empty</h2>
-          <p className="mt-4 text-[#c3c3c3]">Save the pairs you love to revisit them later.</p>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Shop now</Link>
+        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-10 text-center md:p-14">
+          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">
+            Your wishlist is empty
+          </h2>
+
+          <p className="mx-auto mt-4 max-w-md text-[#a8a8a8]">
+            Save the pairs you love and come back to them anytime.
+          </p>
+
+          <Link
+            to="/shop"
+            className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+          >
+            Shop now
+          </Link>
         </div>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
-            const product = item.product ?? item;
-            const productId = product._id || product.id || item.productId;
-            const price = Number(product?.price || 0);
+            const product = item?.product ?? item;
+            const productId = product?._id || product?.id || item?.productId;
+
+            const variants = Array.isArray(product?.variants)
+              ? product.variants
+              : [];
+
+            const availableVariant = variants.find(
+              (variant) =>
+                variant?.status !== 'INACTIVE' &&
+                Number(variant?.stock || 0) > 0,
+            );
+
+            const basePrice = Number(
+              availableVariant?.price ?? product?.price ?? 0,
+            );
+
+            const salePrice =
+              Number(
+                availableVariant?.salePrice ?? product?.salePrice ?? 0,
+              ) || null;
+
+            const displayPrice = salePrice ?? basePrice;
+
+            const discount =
+              salePrice && basePrice > salePrice
+                ? Math.round(((basePrice - salePrice) / basePrice) * 100)
+                : 0;
+
+            const isOutOfStock =
+              variants.length > 0 && !availableVariant;
+
             return (
-              <div key={productId} className="rounded-[26px] border border-white/10 bg-[#111111] p-4">
-                <img src={product?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'} alt={product?.name || 'Saved product'} className="h-64 w-full rounded-[20px] object-cover" />
-                <div className="mt-4 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.26em] text-[#a3a3a3]">{product?.brand?.name || 'KICKS'}</p>
-                    <Link to={`/products/${product?.slug || productId}`} className="mt-2 block text-xl font-medium text-white">{product?.name}</Link>
-                  </div>
-                  <button type="button" onClick={() => removeMutation.mutate(productId)} className="rounded-full border border-white/10 p-2 text-white">✕</button>
+              <article
+                key={productId}
+                className="overflow-hidden rounded-[26px] border border-white/10 bg-[#111111] transition hover:-translate-y-1 hover:border-white/20"
+              >
+                <div className="relative overflow-hidden bg-[#181818]">
+                  <Link
+                    to={`/products/${product?.slug || productId}`}
+                    className="block"
+                  >
+                    <img
+                      src={product?.images?.[0]}
+                      alt={product?.name || 'Saved product'}
+                      className="h-64 w-full object-cover transition duration-500 hover:scale-105"
+                      loading="lazy"
+                    />
+                  </Link>
+
+                  {discount > 0 && (
+                    <span className="absolute left-3 top-3 rounded-full bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-black">
+                      -{discount}%
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => removeMutation.mutate(productId)}
+                    disabled={
+                      removeMutation.isPending &&
+                      removeMutation.variables === productId
+                    }
+                    aria-label={`Remove ${product?.name || 'product'} from wishlist`}
+                    className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition hover:border-white/40 disabled:cursor-wait disabled:opacity-50"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <div className="mt-4 text-lg font-semibold text-white">{formatMoney(price)}</div>
-              </div>
+
+                <div className="p-4">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">
+                    {product?.brand?.name || 'KICKS'}
+                  </p>
+
+                  <Link
+                    to={`/products/${product?.slug || productId}`}
+                    className="mt-2 block text-lg font-semibold text-white hover:text-white/80"
+                  >
+                    {product?.name || 'Sneaker'}
+                  </Link>
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-lg font-semibold text-white">
+                      {formatMoney(displayPrice)}
+                    </span>
+
+                    {salePrice && (
+                      <span className="text-sm text-[#777] line-through">
+                        {formatMoney(basePrice)}
+                      </span>
+                    )}
+                  </div>
+
+                  <p
+                    className={`mt-2 text-[10px] uppercase tracking-[0.18em] ${
+                      isOutOfStock
+                        ? 'text-red-200'
+                        : 'text-[#9feec8]'
+                    }`}
+                  >
+                    {isOutOfStock ? 'Out of stock' : 'In stock'}
+                  </p>
+
+                  <div className="mt-5 flex gap-3">
+                    {isOutOfStock ? (
+                      <Link
+                        to={`/products/${product?.slug || productId}`}
+                        className="flex-1 rounded-full border border-white/15 px-4 py-3 text-center text-sm font-medium text-white transition hover:border-white/35"
+                      >
+                        View details
+                      </Link>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!availableVariant?._id) {
+                              navigate(
+                                `/products/${product?.slug || productId}`,
+                              );
+                              return;
+                            }
+
+                            cartMutation.mutate({
+                              productId,
+                              variantId: availableVariant._id,
+                            });
+                          }}
+                          disabled={
+                            cartMutation.isPending &&
+                            cartMutation.variables?.productId === productId
+                          }
+                          className="flex-1 rounded-full bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+                        >
+                          {cartMutation.isPending &&
+                          cartMutation.variables?.productId === productId
+                            ? 'Adding...'
+                            : 'Add to cart'}
+                        </button>
+
+                        <Link
+                          to={`/products/${product?.slug || productId}`}
+                          aria-label={`View ${product?.name || 'product'}`}
+                          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35"
+                        >
+                          <ShoppingBag size={16} />
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </article>
             );
           })}
         </div>
@@ -950,13 +1272,46 @@ function OrdersPage() {
 
 function OrderDetailPage() {
   const { id } = useParams();
+  const { showToast } = useToast();
+  const [invoiceUnavailable, setInvoiceUnavailable] = useState(false);
   const { data, isLoading, isError } = useQuery({
     queryKey: ['order-detail', id],
     queryFn: () => ordersApi.getById(id),
     enabled: Boolean(id),
   });
+  const trackingQuery = useQuery({
+    queryKey: ['order-tracking', id],
+    queryFn: () => ordersApi.track(id),
+    enabled: Boolean(id),
+  });
 
   const order = unwrapPayload(data)?.order ?? {};
+  const shipment = unwrapPayload(trackingQuery.data)?.shipment ?? null;
+  const trackingUrl = typeof shipment?.trackingUrl === 'string' && /^https?:\/\//i.test(shipment.trackingUrl)
+    ? shipment.trackingUrl
+    : '';
+  const invoiceMutation = useMutation({
+    mutationFn: (orderId) => ordersApi.invoice(orderId),
+    onSuccess: (pdf) => {
+      const pdfBlob = pdf instanceof Blob ? pdf : new Blob([pdf], { type: 'application/pdf' });
+      const downloadUrl = URL.createObjectURL(pdfBlob);
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = `invoice-${order.orderNumber || id}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+      showToast('Invoice downloaded', 'success');
+    },
+    onError: (error) => {
+      if ([400, 404].includes(error?.status)) setInvoiceUnavailable(true);
+      showToast(
+        error?.status === 400 ? 'Invoice is not available yet.' : 'Unable to download invoice. Please try again.',
+        'error',
+      );
+    },
+  });
   const items = Array.isArray(order.items) ? order.items : [];
   const shippingAddress = order.shippingAddress ?? {};
   const subtotal = Number(order.subtotal || items.reduce((sum, item) => sum + Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1), 0));
@@ -1015,6 +1370,29 @@ function OrderDetailPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link to="/account/orders" className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-white">Back to orders</Link>
+          {trackingQuery.isLoading ? (
+            <button type="button" disabled className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-wait">
+              <Loader2 size={15} className="animate-spin" /> Checking tracking...
+            </button>
+          ) : trackingUrl ? (
+            <button type="button" onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-black">
+              Track Order <ExternalLink size={15} />
+            </button>
+          ) : (
+            <button type="button" disabled title={trackingQuery.isError ? 'Tracking is temporarily unavailable' : 'Tracking not available yet'} className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-not-allowed">
+              {trackingQuery.isError ? 'Tracking unavailable' : 'Tracking not available yet'}
+            </button>
+          )}
+          {invoiceUnavailable ? (
+            <button type="button" disabled title="Invoice is not available yet" className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-not-allowed">
+              Invoice unavailable
+            </button>
+          ) : (
+            <button type="button" onClick={() => invoiceMutation.mutate(order._id || id)} disabled={invoiceMutation.isPending} className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-white disabled:cursor-wait disabled:opacity-60">
+              {invoiceMutation.isPending && <Loader2 size={15} className="animate-spin" />}
+              {invoiceMutation.isPending ? 'Downloading...' : 'Download Invoice'}
+            </button>
+          )}
           <Link to="/shop" className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-black">Continue shopping</Link>
         </div>
       </div>
@@ -2168,30 +2546,95 @@ function AddressBookPage() {
 
 function NotificationsPage() {
   const queryClient = useQueryClient();
-  const { data, isLoading, isError } = useQuery({ queryKey: ['notifications'], queryFn: () => notificationsApi.list() });
+  const { showToast } = useToast();
+  const notificationsQuery = useQuery({ queryKey: ['notifications'], queryFn: () => notificationsApi.list() });
+  const { data, isLoading, isError } = notificationsQuery;
   const notifications = unwrapPayload(data)?.notifications ?? unwrapPayload(data)?.items ?? [];
 
   const markReadMutation = useMutation({
     mutationFn: (id) => notificationsApi.markRead(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['notifications-count'] }),
+      ]);
+      showToast('Notification marked as read', 'success');
+    },
+    onError: (error) => showToast(error?.message || 'Unable to mark notification as read.', 'error'),
   });
+
+  const markNotificationRead = (notification) => {
+    const id = notification?._id || notification?.id;
+    if (id && !notification?.readAt && !markReadMutation.isPending) markReadMutation.mutate(id);
+  };
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
       <PageMeta title="Notifications | KICKS" description="Your updates" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
         <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Notifications</h1>
-        {isLoading ? <div className="mt-6 h-[200px] animate-pulse rounded-[20px] bg-[#181818]" /> : isError ? <div className="mt-6 text-[#d2d2d2]">Unable to load notifications.</div> : notifications.length === 0 ? <div className="mt-6 rounded-[18px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">You are all caught up.</div> : <div className="mt-6 space-y-4">{notifications.map((notification) => (
-          <div key={notification._id || notification.id} className="rounded-[20px] border border-white/10 bg-[#181818] p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="text-lg font-semibold text-white">{notification.title || 'Update'}</div>
-                <p className="mt-2 text-[#d0d0d0]">{notification.message || notification.body || 'No message available.'}</p>
-              </div>
-              {!notification.readAt && <button type="button" onClick={() => markReadMutation.mutate(notification._id || notification.id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Mark read</button>}
-            </div>
+        {isLoading ? (
+          <div className="mt-6 space-y-4">
+            {[1, 2, 3].map((item) => <div key={item} className="h-32 animate-pulse rounded-[20px] bg-[#181818]" />)}
           </div>
-        ))}</div>}
+        ) : isError ? (
+          <div className="mt-6 rounded-[20px] border border-white/10 bg-[#181818] p-6 text-center">
+            <p className="text-[#d2d2d2]">Unable to load notifications.</p>
+            <button type="button" onClick={() => notificationsQuery.refetch()} className="mt-4 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black">Retry</button>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="mt-6 rounded-[18px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">You are all caught up.</div>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {notifications.map((notification) => {
+              const isUnread = !notification.readAt;
+              const notificationId = notification._id || notification.id;
+              const timestamp = notification.createdAt
+                ? new Date(notification.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                : 'Date unavailable';
+
+              return (
+                <article
+                  key={notificationId}
+                  role={isUnread ? 'button' : undefined}
+                  tabIndex={isUnread ? 0 : undefined}
+                  onClick={() => markNotificationRead(notification)}
+                  onKeyDown={(event) => {
+                    if (isUnread && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault();
+                      markNotificationRead(notification);
+                    }
+                  }}
+                  className={`rounded-[20px] border p-5 transition ${isUnread ? 'cursor-pointer border-white/25 bg-[#1c1c1c] shadow-[inset_3px_0_0_#ffffff] hover:border-white/40' : 'border-white/10 bg-[#181818]'}`}
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg font-semibold text-white">{notification.title || 'Update'}</h2>
+                        {isUnread && <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-black">Unread</span>}
+                      </div>
+                      <p className="mt-2 break-words text-[#d0d0d0]">{notification.message || 'No message available.'}</p>
+                      <time dateTime={notification.createdAt || undefined} className="mt-3 block text-xs text-[#8d8d8d]">{timestamp}</time>
+                    </div>
+                    {isUnread && (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          markNotificationRead(notification);
+                        }}
+                        disabled={markReadMutation.isPending && markReadMutation.variables === notificationId}
+                        className="w-fit shrink-0 rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {markReadMutation.isPending && markReadMutation.variables === notificationId ? 'Marking...' : 'Mark as read'}
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2409,6 +2852,7 @@ function AdminPage() {
     'orders',
     'users',
     'reviews',
+    'shipping',
     'notifications',
     'ai',
     'blog',
@@ -3128,6 +3572,332 @@ function AdminPage() {
     );
   };
 
+  const ShippingSection = () => {
+    const queryClientRef = useQueryClient();
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [providerFilter, setProviderFilter] = useState('');
+    const [page, setPage] = useState(1);
+    const [selectedShipment, setSelectedShipment] = useState(null);
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [createOrderId, setCreateOrderId] = useState('');
+    const [createBusy, setCreateBusy] = useState(false);
+
+    const { data, isLoading, isError, refetch } = useQuery({
+      queryKey: ['admin-shipments', page, statusFilter, providerFilter, search],
+      queryFn: () => adminApi.shipments({ page, limit: 20, status: statusFilter || undefined, provider: providerFilter || undefined, search: search.trim() || undefined }),
+      keepPreviousData: true,
+    });
+
+    const shipments = unwrapPayload(data)?.shipments ?? [];
+    const total = unwrapPayload(data)?.total ?? 0;
+    const totalPages = unwrapPayload(data)?.totalPages || 1;
+
+    const detailQuery = useQuery({
+      queryKey: ['admin-shipment-detail', selectedShipment],
+      queryFn: () => adminApi.shipmentById(selectedShipment),
+      enabled: !!selectedShipment,
+    });
+    const detail = unwrapPayload(detailQuery.data)?.shipment ?? null;
+
+    const openDetail = (id) => {
+      setSelectedShipment(id);
+      setDetailOpen(true);
+    };
+    const closeDetail = () => {
+      setDetailOpen(false);
+      setSelectedShipment(null);
+    };
+
+    const handleCreateShipment = async () => {
+      if (!createOrderId.trim()) return;
+      setCreateBusy(true);
+      try {
+        await adminApi.createShipment(createOrderId.trim());
+        setCreateOrderId('');
+        refetch();
+        queryClientRef.invalidateQueries({ queryKey: ['admin-orders'] });
+      } catch (err) {
+        window.alert(err?.response?.data?.message || err?.message || 'Failed to create shipment');
+      } finally {
+        setCreateBusy(false);
+      }
+    };
+
+    const shipmentStatuses = ['PENDING', 'PROCESSING', 'CREATED', 'AWB_ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'FAILED', 'SHIPPED'];
+
+    const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    const getTrackingUrl = (s) => {
+      if (!s) return '';
+      if (typeof s.trackingUrl === 'string' && /^https?:\/\//i.test(s.trackingUrl)) return s.trackingUrl;
+      return '';
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Logistics</div>
+              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Shipping</h3>
+              <p className="mt-1 text-sm text-[#a0a0a0]">{total} shipment{total !== 1 ? 's' : ''} total</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search orders, AWB, customer…" />
+              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+                <option value="">All statuses</option>
+                {shipmentStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select value={providerFilter} onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+                <option value="">All providers</option>
+                <option value="shiprocket">Shiprocket</option>
+                <option value="manual">Manual</option>
+              </select>
+              <button type="button" onClick={() => refetch()} className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-3 text-sm text-white transition-colors hover:bg-white/5">
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Shipment */}
+        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Create shipment</div>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              value={createOrderId}
+              onChange={(e) => setCreateOrderId(e.target.value)}
+              placeholder="Enter Order ID to ship…"
+              className="flex-1 rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white placeholder:text-[#666]"
+            />
+            <button
+              type="button"
+              onClick={handleCreateShipment}
+              disabled={createBusy || !createOrderId.trim()}
+              className="flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-opacity disabled:opacity-40"
+            >
+              {createBusy ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
+              Create shipment
+            </button>
+          </div>
+        </div>
+
+        {/* Shipment Table (Desktop) */}
+        {isLoading ? <Skeleton lines={8} /> : isError ? (
+          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+            <ErrorState message="Unable to load shipments." />
+            <button type="button" onClick={() => refetch()} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-white">Retry</button>
+          </div>
+        ) : shipments.length === 0 ? (
+          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+            <EmptyState title="No shipments found" description="Adjust your filters or create a new shipment above." />
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden rounded-[24px] border border-white/10 bg-[#111111] p-4 lg:block">
+              <DataTable
+                columns={[
+                  { key: 'order', label: 'Order', render: (row) => (
+                    <div>
+                      <div className="font-semibold text-white">{row.order?.orderNumber || '—'}</div>
+                      <div className="text-[11px] text-[#8d8d8d]">{row.order?.customerSnapshot?.email || '—'}</div>
+                    </div>
+                  ) },
+                  { key: 'awb', label: 'AWB', render: (row) => <span className="font-mono text-sm text-white">{row.awb || '—'}</span> },
+                  { key: 'provider', label: 'Provider', render: (row) => <span className="text-sm capitalize text-[#d2d2d2]">{row.provider || '—'}</span> },
+                  { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
+                  { key: 'total', label: 'Total', render: (row) => <span className="text-sm text-white">{formatMoney(row.order?.grandTotal || 0)}</span> },
+                  { key: 'created', label: 'Created', render: (row) => <span className="text-xs text-[#a5a5a5]">{fmtDate(row.createdAt)}</span> },
+                  { key: 'actions', label: 'Actions', render: (row) => (
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => openDetail(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Details</button>
+                      {getTrackingUrl(row) && (
+                        <a href={getTrackingUrl(row)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">
+                          Track <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  ) },
+                ]}
+                rows={shipments}
+                emptyMessage="No shipments match the current filter."
+              />
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="space-y-3 lg:hidden">
+              {shipments.map((s) => (
+                <div key={s._id} className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-semibold text-white">{s.order?.orderNumber || '—'}</div>
+                      <div className="mt-1 text-xs text-[#a0a0a0]">{s.order?.customerSnapshot?.email || '—'}</div>
+                    </div>
+                    <StatusBadge status={s.status} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-[#8c8c8c]">AWB:</span> <span className="font-mono text-white">{s.awb || '—'}</span></div>
+                    <div><span className="text-[#8c8c8c]">Provider:</span> <span className="capitalize text-white">{s.provider || '—'}</span></div>
+                    <div><span className="text-[#8c8c8c]">Total:</span> <span className="text-white">{formatMoney(s.order?.grandTotal || 0)}</span></div>
+                    <div><span className="text-[#8c8c8c]">Created:</span> <span className="text-white">{fmtDate(s.createdAt)}</span></div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => openDetail(s._id)} className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white">Details</button>
+                    {getTrackingUrl(s) && (
+                      <a href={getTrackingUrl(s)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white">
+                        Track <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          </>
+        )}
+
+        {/* Detail Drawer/Modal */}
+        {detailOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-start justify-end bg-black/60 backdrop-blur-sm" onClick={closeDetail}>
+            <div className="h-full w-full max-w-[560px] overflow-y-auto bg-[#0a0a0a] p-6 shadow-2xl md:p-8" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="text-xl font-black uppercase tracking-[-0.04em] text-white">Shipment details</h3>
+                <button type="button" onClick={closeDetail} className="rounded-full border border-white/10 p-2 text-white transition-colors hover:bg-white/10">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {detailQuery.isLoading ? <Skeleton lines={10} /> : detailQuery.isError ? (
+                <ErrorState message="Unable to load shipment details." />
+              ) : detail ? (
+                <div className="space-y-6">
+                  {/* Shipment Info */}
+                  <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                    <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Shipment</div>
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div className="flex justify-between"><span className="text-[#8c8c8c]">Status</span><StatusBadge status={detail.status} /></div>
+                      <div className="flex justify-between"><span className="text-[#8c8c8c]">Provider</span><span className="capitalize text-white">{detail.provider}</span></div>
+                      <div className="flex justify-between"><span className="text-[#8c8c8c]">Shipment ID</span><span className="font-mono text-white">{detail.shipmentId || '—'}</span></div>
+                      <div className="flex justify-between"><span className="text-[#8c8c8c]">AWB</span><span className="font-mono text-white">{detail.awb || '—'}</span></div>
+                      {getTrackingUrl(detail) && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#8c8c8c]">Tracking</span>
+                          <a href={getTrackingUrl(detail)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#7ee7c2] underline underline-offset-2">
+                            Track shipment <ExternalLink size={12} />
+                          </a>
+                        </div>
+                      )}
+                      <div className="flex justify-between"><span className="text-[#8c8c8c]">Created</span><span className="text-white">{fmtDate(detail.createdAt)}</span></div>
+                      <div className="flex justify-between"><span className="text-[#8c8c8c]">Updated</span><span className="text-white">{fmtDate(detail.updatedAt)}</span></div>
+                      {detail.failureReason && (
+                        <div className="mt-2 rounded-[14px] border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">{detail.failureReason}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Order Info */}
+                  {detail.order && (
+                    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                      <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Order</div>
+                      <div className="mt-3 space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Order #</span><span className="font-semibold text-white">{detail.order.orderNumber}</span></div>
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Status</span><StatusBadge status={detail.order.status} /></div>
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Payment</span><StatusBadge status={detail.order.paymentStatus} /></div>
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Grand total</span><span className="font-semibold text-white">{formatMoney(detail.order.grandTotal || 0)}</span></div>
+                        {detail.order.subtotal != null && <div className="flex justify-between"><span className="text-[#8c8c8c]">Subtotal</span><span className="text-white">{formatMoney(detail.order.subtotal)}</span></div>}
+                        {detail.order.tax != null && <div className="flex justify-between"><span className="text-[#8c8c8c]">Tax</span><span className="text-white">{formatMoney(detail.order.tax)}</span></div>}
+                        {detail.order.shippingCharge != null && <div className="flex justify-between"><span className="text-[#8c8c8c]">Shipping</span><span className="text-white">{formatMoney(detail.order.shippingCharge)}</span></div>}
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Placed</span><span className="text-white">{fmtDate(detail.order.createdAt)}</span></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Customer Info */}
+                  {detail.order?.customerSnapshot && (
+                    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                      <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Customer</div>
+                      <div className="mt-3 space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Name</span><span className="text-white">{detail.order.customerSnapshot.firstName || ''} {detail.order.customerSnapshot.lastName || ''}</span></div>
+                        <div className="flex justify-between"><span className="text-[#8c8c8c]">Email</span><span className="text-white">{detail.order.customerSnapshot.email || '—'}</span></div>
+                        {detail.order.customerSnapshot.phone && <div className="flex justify-between"><span className="text-[#8c8c8c]">Phone</span><span className="text-white">{detail.order.customerSnapshot.phone}</span></div>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shipping Address */}
+                  {detail.order?.shippingAddress && (
+                    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                      <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Shipping address</div>
+                      <div className="mt-3 text-sm leading-relaxed text-[#d2d2d2]">
+                        {[detail.order.shippingAddress.firstName, detail.order.shippingAddress.lastName].filter(Boolean).join(' ')}<br />
+                        {detail.order.shippingAddress.line1}{detail.order.shippingAddress.line2 ? `, ${detail.order.shippingAddress.line2}` : ''}<br />
+                        {[detail.order.shippingAddress.city, detail.order.shippingAddress.state, detail.order.shippingAddress.postalCode].filter(Boolean).join(', ')}<br />
+                        {detail.order.shippingAddress.country || 'India'}
+                        {detail.order.shippingAddress.phone && <><br />{detail.order.shippingAddress.phone}</>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Order Items */}
+                  {detail.order?.items?.length > 0 && (
+                    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                      <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Items ({detail.order.items.length})</div>
+                      <div className="mt-3 space-y-3">
+                        {detail.order.items.map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-[#181818] p-3">
+                            {item.image && <img src={item.image} alt={item.name || 'Product'} className="h-12 w-12 rounded-lg object-cover" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate font-semibold text-white">{item.name || item.productName || 'Product'}</div>
+                              <div className="mt-0.5 text-xs text-[#a0a0a0]">
+                                {item.size && `Size: ${item.size}`}{item.size && item.color ? ' • ' : ''}{item.color && `Color: ${item.color}`}
+                                {' × '}{item.quantity || 1}
+                              </div>
+                            </div>
+                            <div className="text-sm font-semibold text-white">{formatMoney((item.unitPrice || item.finalPrice || 0) * (item.quantity || 1))}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shipment Events Timeline */}
+                  {detail.events?.length > 0 && (
+                    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                      <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Timeline</div>
+                      <div className="mt-4 space-y-0">
+                        {detail.events.map((event, idx) => (
+                          <div key={idx} className="relative flex gap-4 pb-4">
+                            <div className="flex flex-col items-center">
+                              <div className="h-3 w-3 rounded-full border-2 border-[#7ee7c2] bg-[#111111]" />
+                              {idx < detail.events.length - 1 && <div className="w-px flex-1 bg-white/10" />}
+                            </div>
+                            <div className="-mt-0.5">
+                              <div className="text-sm font-semibold text-white">{event.status}</div>
+                              <div className="text-xs text-[#a0a0a0]">{fmtDate(event.occurredAt)}</div>
+                              {event.providerReference && <div className="mt-0.5 text-xs text-[#666]">Ref: {event.providerReference}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <EmptyState title="Shipment not found" description="The requested shipment could not be loaded." />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const NotificationsSection = () => {
     const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-notifications'], queryFn: () => adminApi.notifications() });
     const notifications = unwrapPayload(data)?.items ?? unwrapPayload(data)?.notifications ?? [];
@@ -3421,6 +4191,7 @@ function AdminPage() {
       case 'orders': return <OrdersSection />;
       case 'users': return <UsersSection />;
       case 'reviews': return <ReviewsSection />;
+      case 'shipping': return <ShippingSection />;
       case 'notifications': return <NotificationsSection />;
       case 'ai': return <AiSection />;
       case 'blog': return <BlogSection />;
