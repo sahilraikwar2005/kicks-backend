@@ -2,6 +2,7 @@ import { apiSuccess } from '../../utils/apiResponse.js';
 import { generateProductDraft } from '../../services/ai.service.js';
 import { regenerateProductField } from '../../services/ai.service.js';
 import { adminService } from './service.js';
+import { productService } from '../products/service.js';
 import { auditService } from '../audit/service.js';
 import User from '../users/model.js';
 import Inventory from '../inventory/model.js';
@@ -10,6 +11,11 @@ import AuditLog from '../audit/model.js';
 import { adminSettingsService } from './settings.service.js';
 
 export const adminController = {
+  listProducts: async (req, res) => {
+    const result = await productService.listProducts(req.query);
+    return res.status(200).json(apiSuccess('Admin products fetched successfully', result));
+  },
+
   dashboard: async (req, res) => {
     const metrics = await adminService.getDashboardMetrics();
     res.status(200).json(apiSuccess('Admin dashboard fetched successfully', { metrics }));

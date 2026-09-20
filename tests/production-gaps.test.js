@@ -10,6 +10,7 @@ test.after(() => server.close());
 
 for (const path of [
   '/api/v1/admin/dashboard',
+  '/api/v1/admin/products',
   '/api/v1/admin/ai/product-generate',
   '/api/v1/admin/ai/product-regenerate',
   '/api/v1/admin/orders/000000000000000000000000/ship',

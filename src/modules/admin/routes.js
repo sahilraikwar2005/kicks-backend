@@ -9,6 +9,7 @@ import { shipmentController } from '../shipments/controller.js';
 import { invoiceController } from '../invoices/controller.js';
 import { reviewController } from '../reviews/controller.js';
 import { refundController } from '../payments/refund.controller.js';
+import { listProductsQuerySchema } from '../products/validation.js';
 import Joi from 'joi';
 
 const router = express.Router();
@@ -20,10 +21,14 @@ const adminRefundSchema = Joi.object({
   reason: Joi.string().trim().max(300).optional().allow(''),
   idempotencyKey: Joi.string().trim().max(120).optional().allow(''),
 });
+const adminProductsQuerySchema = listProductsQuerySchema.keys({
+  status: Joi.string().valid('PUBLISHED', 'DRAFT', 'ARCHIVED').optional(),
+});
 
 router.use(protect, isAdmin);
 
 router.get('/dashboard', asyncHandler(adminController.dashboard));
+router.get('/products', validateQuery(adminProductsQuerySchema), asyncHandler(adminController.listProducts));
 router.get('/users', asyncHandler(adminController.listUsers));
 router.get('/users/:id', asyncHandler(adminController.getUserById));
 router.patch('/users/:id/status', validate(adminUserStatusSchema), asyncHandler(adminController.updateUserStatus));
