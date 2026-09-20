@@ -1,6 +1,6 @@
 export default [
   {
-    ignores: ['node_modules/**', 'coverage/**'],
+    ignores: ['node_modules/**', 'coverage/**', 'kicks-frontend/**'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

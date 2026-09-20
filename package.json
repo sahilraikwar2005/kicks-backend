@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "seed": "node scripts/seed.js",
     "test": "node --test --test-concurrency=1",
     "test:watch": "node --watch --test",
     "lint": "eslint ."
