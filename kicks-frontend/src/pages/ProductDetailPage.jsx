@@ -36,7 +36,7 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
 
   const [selectedSize, setSelectedSize] = useState('');
@@ -66,16 +66,15 @@ export default function ProductDetailPage() {
     [sizeOptions, variantOptions],
   );
 
-  useEffect(() => {
-    if (!product || variantOptions.length === 0) return;
-    const firstAvailable = variantOptions.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0);
-    const defaultSize = firstAvailable?.size || variantOptions[0]?.size || '';
-    if (!sizeOptions.includes(selectedSize)) {
-      setSelectedSize(defaultSize);
-    }
-  }, [product, variantOptions, selectedSize, sizeOptions]);
+  // Derive default selected size without useEffect
+  const firstAvailable = variantOptions.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0);
+  const defaultSizeValue = firstAvailable?.size || variantOptions[0]?.size || '';
+  const resolvedSize = sizeOptions.includes(selectedSize) ? selectedSize : defaultSizeValue;
 
-  const sizeVariants = useMemo(() => (selectedSize ? variantOptions.filter((variant) => variant?.size === selectedSize) : []), [selectedSize, variantOptions]);
+  const sizeVariants = useMemo(
+    () => (resolvedSize ? variantOptions.filter((variant) => variant?.size === resolvedSize) : []),
+    [resolvedSize, variantOptions],
+  );
   const colorOptions = useMemo(() => Array.from(new Set(sizeVariants.map((variant) => variant?.color).filter(Boolean))), [sizeVariants]);
   const colorAvailability = useMemo(
     () =>
@@ -88,27 +87,26 @@ export default function ProductDetailPage() {
     [colorOptions, sizeVariants],
   );
 
-  useEffect(() => {
-    if (!selectedSize || sizeVariants.length === 0) {
-      setSelectedColor('');
-      return;
-    }
-    if (!selectedColor || !sizeVariants.some((variant) => variant?.color === selectedColor)) {
-      const preferred = sizeVariants.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0) || sizeVariants[0];
-      setSelectedColor(preferred?.color || '');
-    }
-  }, [selectedColor, selectedSize, sizeVariants]);
+  // Derive default selected color without useEffect
+  const preferredColor =
+    sizeVariants.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0)?.color ||
+    sizeVariants[0]?.color ||
+    '';
+  const resolvedColor =
+    resolvedSize && sizeVariants.length > 0 && sizeVariants.some((variant) => variant?.color === selectedColor)
+      ? selectedColor
+      : preferredColor;
 
   const selectedVariant = useMemo(
     () =>
       variantOptions.find(
-        (variant) => String(variant?.size) === String(selectedSize) && String(variant?.color) === String(selectedColor),
+        (variant) => String(variant?.size) === String(resolvedSize) && String(variant?.color) === String(resolvedColor),
       ) ||
       sizeVariants.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0) ||
       sizeVariants[0] ||
       variantOptions[0] ||
       null,
-    [selectedColor, selectedSize, sizeVariants, variantOptions],
+    [resolvedColor, resolvedSize, sizeVariants, variantOptions],
   );
 
   const currentPrice = Number(selectedVariant?.price ?? product?.price ?? 0);
@@ -116,24 +114,22 @@ export default function ProductDetailPage() {
   const currentStock = Number(selectedVariant?.stock ?? 0);
   const isOutOfStock = Boolean(selectedVariant) && (selectedVariant?.status === 'INACTIVE' || Number(selectedVariant?.stock || 0) <= 0);
   const isLowStock = currentStock > 0 && currentStock <= 3;
+
+  // Derive active image index: reset to 0 when selection changes via key tracking
   const galleryImages = useMemo(() => {
     const variantImages = normalizeImageList(selectedVariant?.images);
     const productImages = normalizeImageList(product?.images);
     return variantImages.length ? variantImages : productImages.length ? productImages : [getImageFallback];
   }, [product?.images, selectedVariant]);
 
-  useEffect(() => {
-    setActiveImageIndex(0);
-  }, [selectedSize, selectedColor, product?._id]);
-
-  useEffect(() => {
-    if (selectedVariant && quantity > (currentStock || 1)) {
-      setQuantity(Math.min(quantity, currentStock || 1));
-    }
-    if (selectedVariant && currentStock > 0 && quantity < 1) {
-      setQuantity(1);
-    }
-  }, [currentStock, quantity, selectedVariant]);
+  // Clamp quantity to stock without useEffect
+  const resolvedQuantity = !selectedVariant
+    ? quantity
+    : currentStock > 0 && quantity < 1
+      ? 1
+      : quantity > currentStock
+        ? Math.min(quantity, currentStock || 1)
+        : quantity;
 
   const reviewsQuery = useQuery({
     queryKey: ['product-reviews', product?._id],

@@ -1,8 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
-import { ArrowRight, Bell, Eye, EyeOff, Lock, MapPin, PencilLine, ShieldCheck, ShoppingBag, Trash2, User2 } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Edit3,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  LogOut,
+  MapPin,
+  Package,
+  Plus,
+  ShoppingBag,
+  Sparkles,
+  Trash2,
+  User2,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -484,13 +502,8 @@ function CheckoutPage() {
   const items = Array.isArray(cart?.items) ? cart.items : [];
   const addressList = unwrapPayload(addressesData)?.addresses ?? [];
   const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || item.price || 0) * Number(item.quantity || 0), 0);
-
-  useEffect(() => {
-    const defaultAddress = addressList.find((address) => address.isDefault) || addressList[0];
-    if (defaultAddress && !selectedAddressId) {
-      setSelectedAddressId(defaultAddress._id || defaultAddress.id || '');
-    }
-  }, [addressList, selectedAddressId]);
+  const defaultAddress = addressList.find((address) => address.isDefault) || addressList[0];
+  const activeAddressId = selectedAddressId || defaultAddress?._id || defaultAddress?.id || '';
 
   const loadRazorpayScript = () => new Promise((resolve, reject) => {
     if (window.Razorpay) {
@@ -574,7 +587,7 @@ function CheckoutPage() {
   });
 
   const payNow = async () => {
-    if (!selectedAddressId) {
+    if (!activeAddressId) {
       showToast('Please select or add a delivery address.', 'error');
       return;
     }
@@ -584,7 +597,7 @@ function CheckoutPage() {
 
     try {
       const orderResponse = await ordersApi.checkout({
-        addressId: selectedAddressId,
+        addressId: activeAddressId,
         couponCode: couponCode.trim() || undefined,
       });
 
@@ -707,7 +720,7 @@ function CheckoutPage() {
               <div className="mt-5 space-y-3">
                 {addressList.map((address) => {
                   const addressId = address._id || address.id;
-                  const isSelected = selectedAddressId === addressId;
+                  const isSelected = activeAddressId === addressId;
                   return (
                     <button
                       key={addressId}
@@ -811,15 +824,125 @@ function CheckoutPage() {
 
 function OrderSuccessPage() {
   const { id } = useParams();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['order-success', id],
+    queryFn: () => ordersApi.getById(id),
+    enabled: Boolean(id),
+  });
+
+  const order = unwrapPayload(data)?.order ?? {};
+  const orderNumber = order.orderNumber || order._id || id || 'Order';
+  const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Today';
+  const totalAmount = Number(order.grandTotal || order.total || 0);
+  const itemCount = Array.isArray(order.items) ? order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0) : 0;
+
+  if (!id) {
+    return (
+      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+        <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12 text-center">
+          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order unavailable</h1>
+          <p className="mt-4 text-[#d3d3d3]">We could not load your order details.</p>
+          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+        <div className="h-[320px] animate-pulse rounded-[28px] bg-[#111111]" />
+      </div>
+    );
+  }
+
+  if (isError || !order?._id) {
+    return (
+      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+        <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12 text-center">
+          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order unavailable</h1>
+          <p className="mt-4 text-[#d3d3d3]">We could not load this order right now. Please try again.</p>
+          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isPaid = order.paymentStatus === 'PAID';
+
+  if (!isPaid) {
+    return (
+      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+        <PageMeta title="Payment pending | KICKS" description="Payment confirmation is still pending" />
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12 text-center">
+          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Payment pending</h1>
+          <p className="mt-4 text-[#d3d3d3]">Your payment is still being confirmed. Please check again shortly.</p>
+          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
       <PageMeta title="Order placed | KICKS" description="Your order was successful" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-12 text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black">✓</div>
-        <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order placed</h1>
-        <p className="mt-4 text-[#c3c3c3]">Your order {id || 'was'} is confirmed and is being prepared for dispatch.</p>
-        <Link to="/account/orders" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">View order</Link>
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-12">
+        <div className="flex flex-col items-center text-center">
+          <div aria-hidden="true" className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black">✓</div>
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order status</p>
+          <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Order placed successfully</h1>
+        </div>
+
+        <div className="mt-8 grid gap-4 rounded-[24px] border border-white/10 bg-[#181818] p-5 text-left md:grid-cols-2">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Order number</p>
+            <p className="mt-2 text-lg font-semibold text-white">{orderNumber}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Order date</p>
+            <p className="mt-2 text-lg font-semibold text-white">{orderDate}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Payment status</p>
+            <p className="mt-2 text-lg font-semibold text-white">{order.paymentStatus || 'PAID'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Total</p>
+            <p className="mt-2 text-lg font-semibold text-white">{formatMoney(totalAmount)}</p>
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-[24px] border border-white/10 bg-[#181818] p-5">
+          <p className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Order summary</p>
+          <div className="mt-4 flex items-center justify-between gap-4 text-sm text-[#d5d5d5]">
+            <span>Items</span>
+            <span>{itemCount}</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-4 text-sm text-[#d5d5d5]">
+            <span>Order status</span>
+            <span>{order.status || 'CONFIRMED'}</span>
+          </div>
+          {Array.isArray(order.items) && order.items.length > 0 && (
+            <div className="mt-5 space-y-3">
+              {order.items.slice(0, 3).map((item) => (
+                <div key={item._id || item.variantId || item.productId} className="flex items-center justify-between gap-4 rounded-[14px] border border-white/10 bg-[#111111] p-3">
+                  <div>
+                    <div className="text-sm font-medium text-white">{item.productName || item.name || 'KICKS product'}</div>
+                    <div className="mt-1 text-xs text-[#b4b4b4]">Qty {item.quantity || 1}</div>
+                  </div>
+                  <div className="text-sm font-medium text-white">{formatMoney(Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1))}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link to={`/account/orders/${id}`} className="inline-flex flex-1 items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-medium text-black">View order</Link>
+          <Link to="/shop" className="inline-flex flex-1 items-center justify-center rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white">Continue shopping</Link>
+        </div>
       </div>
     </div>
   );
@@ -863,7 +986,6 @@ function OrdersPage() {
 
 function OrderDetailPage() {
   const { id } = useParams();
-  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['order-detail', id],
     queryFn: () => ordersApi.getById(id),
@@ -871,82 +993,140 @@ function OrderDetailPage() {
   });
 
   const order = unwrapPayload(data)?.order ?? {};
-  const items = order.items ?? [];
-  const details = order.shipping ?? {};
+  const items = Array.isArray(order.items) ? order.items : [];
+  const shippingAddress = order.shippingAddress ?? {};
+  const subtotal = Number(order.subtotal || items.reduce((sum, item) => sum + Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1), 0));
+  const discount = Number(order.discountAmount || 0);
+  const shippingCharge = Number(order.shippingCharge || 0);
+  const tax = Number(order.tax || 0);
+  const total = Number(order.grandTotal || order.total || subtotal - discount + shippingCharge + tax || 0);
 
-  const cancelMutation = useMutation({
-    mutationFn: () => ordersApi.cancel(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-    },
-  });
+  if (!id) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+        <PageMeta title="Order details | KICKS" description="Order details" />
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
+          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order not found</h1>
+          <p className="mt-4 text-[#d3d3d3]">We could not find this order.</p>
+          <Link to="/account/orders" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back to orders</Link>
+        </div>
+      </div>
+    );
+  }
 
-  const trackQuery = useQuery({
-    queryKey: ['track-order', id],
-    queryFn: () => ordersApi.track(id),
-    enabled: Boolean(id),
-  });
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+        <div className="h-[320px] animate-pulse rounded-[28px] bg-[#111111]" />
+      </div>
+    );
+  }
 
-  const downloadInvoice = async () => {
-    const blob = await ordersApi.invoice(id);
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `invoice-${id}.pdf`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
+  if (isError || !order._id) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+        <PageMeta title="Order details | KICKS" description="Order details" />
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
+          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order unavailable</h1>
+          <p className="mt-4 text-[#d3d3d3]">We could not load this order right now.</p>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/account/orders" className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back to orders</Link>
+            <Link to="/shop" className="inline-flex rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white">Continue shopping</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  if (isLoading) return <div className="mx-auto max-w-[1200px] px-4 py-12 text-white lg:px-8">Loading order...</div>;
-  if (isError || !order._id) return <div className="mx-auto max-w-[1200px] px-4 py-12 text-white lg:px-8">Order not found.</div>;
+  const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Today';
+  const paymentMethod = order.paymentId ? 'Razorpay' : 'Payment pending';
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
       <PageMeta title="Order details | KICKS" description="Order details" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order details</p>
+          <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">{order.orderNumber || order._id || id}</h1>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/account/orders" className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-white">Back to orders</Link>
+          <Link to="/shop" className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-black">Continue shopping</Link>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order</p>
-            <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">{order.orderNumber || order._id || id}</h1>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Order date</p>
+            <p className="mt-2 text-lg font-semibold text-white">{orderDate}</p>
           </div>
-          <div className={`inline-flex rounded-full px-3 py-2 text-xs uppercase tracking-[0.2em] ${statusClasses[order.status] || statusClasses.DEFAULT}`}>{order.status || 'PENDING'}</div>
+          <div className={`inline-flex rounded-full px-3 py-2 text-xs uppercase tracking-[0.2em] ${statusClasses[order.status] || statusClasses.DEFAULT}`}>
+            {order.status || 'PENDING'}
+          </div>
         </div>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5"><p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Amount</p><p className="mt-4 text-2xl font-bold text-white">{formatMoney(order.total || order.amount || 0)}</p></div>
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5"><p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Payment</p><p className="mt-4 text-2xl font-bold text-white">{order.paymentStatus || 'PENDING'}</p></div>
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5"><p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Shipping</p><p className="mt-4 text-2xl font-bold text-white">{details?.status || 'Queued'}</p></div>
+          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Order status</p>
+            <p className="mt-4 text-lg font-semibold text-white">{order.status || 'PENDING'}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Payment status</p>
+            <p className="mt-4 text-lg font-semibold text-white">{order.paymentStatus || 'PENDING'}</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Payment method</p>
+            <p className="mt-4 text-lg font-semibold text-white">{paymentMethod}</p>
+          </div>
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mt-8 grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item._id || item.variantId} className="rounded-[20px] border border-white/10 bg-[#181818] p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-lg font-medium text-white">{item.product?.name || item.name}</div>
-                    <div className="mt-1 text-sm text-[#a6a6a6]">Qty {item.quantity}</div>
+            <h2 className="text-2xl font-bold text-white">Products</h2>
+            {items.map((item) => {
+              const image = item.product?.images?.[0] || item.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
+              const unitPrice = Number(item.unitPrice || item.finalPrice || 0);
+              const lineTotal = Number(unitPrice * Number(item.quantity || 1));
+              return (
+                <div key={item._id || item.variantId || item.productId} className="flex flex-col gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:flex-row md:items-center">
+                  <img src={image} alt={item.productName || 'Ordered product'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'; }} />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-white">{item.productName || item.name || 'KICKS product'}</h3>
+                    <p className="mt-1 text-sm text-[#a8a8a8]">{item.size || 'Size N/A'} • {item.color || 'Color N/A'}</p>
+                    <p className="mt-2 text-sm text-[#d3d3d3]">Qty {item.quantity || 1}</p>
                   </div>
-                  <div className="font-semibold text-white">{formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}</div>
+                  <div className="text-left md:text-right">
+                    <p className="text-sm text-[#a8a8a8]">{formatMoney(unitPrice)} each</p>
+                    <p className="mt-2 text-lg font-semibold text-white">{formatMoney(lineTotal)}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
-            <h3 className="text-xl font-bold text-white">Order actions</h3>
-            <div className="mt-5 space-y-3">
-              <button type="button" onClick={downloadInvoice} className="w-full rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-sm text-white">Download invoice</button>
-              {order.status !== 'CANCELLED' && (
-                <button type="button" onClick={() => cancelMutation.mutate()} className="w-full rounded-full border border-red-500/30 px-4 py-3 text-sm text-red-200">Cancel order</button>
-              )}
-              {trackQuery.data && (
-                <div className="rounded-[18px] border border-white/10 bg-[#111111] p-4 text-sm text-[#d4d4d4]">
-                  <div className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Tracking</div>
-                  <div className="mt-3 text-white">{trackQuery.data?.data?.shipment?.trackingNumber || 'Checking tracking status...'}</div>
-                </div>
-              )}
+          <div className="space-y-5">
+            <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
+              <h2 className="text-2xl font-bold text-white">Summary</h2>
+              <div className="mt-5 space-y-3 text-[#d9d9d9]">
+                <div className="flex items-center justify-between gap-4"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
+                <div className="flex items-center justify-between gap-4"><span>Discount</span><span>{formatMoney(discount)}</span></div>
+                <div className="flex items-center justify-between gap-4"><span>Shipping</span><span>{shippingCharge === 0 ? 'Free' : formatMoney(shippingCharge)}</span></div>
+                <div className="flex items-center justify-between gap-4"><span>Tax</span><span>{formatMoney(tax)}</span></div>
+                <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(total)}</span></div>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
+              <h2 className="text-2xl font-bold text-white">Shipping address</h2>
+              <div className="mt-5 space-y-1 text-[#d9d9d9]">
+                <p className="text-white">{shippingAddress.firstName || ''} {shippingAddress.lastName || ''}</p>
+                <p>{shippingAddress.phone || 'Phone unavailable'}</p>
+                <p>{shippingAddress.addressLine1 || shippingAddress.address || 'Address unavailable'}</p>
+                {shippingAddress.addressLine2 && <p>{shippingAddress.addressLine2}</p>}
+                <p>{[shippingAddress.city, shippingAddress.state, shippingAddress.postalCode].filter(Boolean).join(', ') || 'Location unavailable'}</p>
+                <p>{shippingAddress.country || 'India'}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -955,39 +1135,653 @@ function OrderDetailPage() {
   );
 }
 
-function AccountPage() {
-  const { user, logout } = useAuth();
+function AccountProfileSection({ user }) {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6 md:p-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#181818] text-3xl font-black text-white">
+            {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'K'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#181818] px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">
+              <Sparkles size={12} className="text-white" /> Verified Member
+            </div>
+            <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em] text-white">
+              {user?.firstName || 'Customer'} {user?.lastName || ''}
+            </h2>
+            <p className="mt-1 text-sm text-[#a1a1a1]">{user?.email}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">First name</p>
+          <p className="mt-2 text-base font-semibold text-white">{user?.firstName || '—'}</p>
+        </div>
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Last name</p>
+          <p className="mt-2 text-base font-semibold text-white">{user?.lastName || '—'}</p>
+        </div>
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Account email</p>
+          <p className="mt-2 truncate text-base font-semibold text-white">{user?.email || '—'}</p>
+        </div>
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Phone number</p>
+          <p className="mt-2 text-base font-semibold text-white">{user?.phone || 'Not provided'}</p>
+        </div>
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Account role</p>
+          <p className="mt-2 text-base font-semibold text-white">{user?.role || 'CUSTOMER'}</p>
+        </div>
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Member since</p>
+          <p className="mt-2 text-base font-semibold text-white">
+            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Active'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccountAddressesSection() {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: () => addressesApi.list(),
+  });
+
+  const addressSchema = z.object({
+    firstName: z.string().min(2, 'First name required'),
+    lastName: z.string().min(2, 'Last name required'),
+    phone: z.string().min(8, 'Valid phone required'),
+    addressLine1: z.string().min(3, 'Address line 1 required'),
+    addressLine2: z.string().optional().or(z.literal('')),
+    landmark: z.string().optional().or(z.literal('')),
+    city: z.string().min(2, 'City required'),
+    state: z.string().min(2, 'State required'),
+    postalCode: z.string().min(3, 'Postal code required'),
+    country: z.string().default('India'),
+    isDefault: z.boolean().default(false),
+  });
+
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      addressLine1: '',
+      addressLine2: '',
+      landmark: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+      isDefault: false,
+    },
+  });
+
+  const addresses = unwrapPayload(data)?.addresses ?? [];
+
+  const createMutation = useMutation({
+    mutationFn: (payload) => addressesApi.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['addresses'] });
+      showToast('Address saved successfully.', 'success');
+      resetForm();
+    },
+    onError: (err) => showToast(err?.message || 'Unable to save address.', 'error'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }) => addressesApi.update(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['addresses'] });
+      showToast('Address updated successfully.', 'success');
+      resetForm();
+    },
+    onError: (err) => showToast(err?.message || 'Unable to update address.', 'error'),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (id) => addressesApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['addresses'] });
+      showToast('Address deleted.', 'success');
+    },
+    onError: (err) => showToast(err?.message || 'Unable to delete address.', 'error'),
+  });
+
+  const setDefaultMutation = useMutation({
+    mutationFn: (id) => addressesApi.setDefault(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['addresses'] });
+      showToast('Default address updated.', 'success');
+    },
+    onError: (err) => showToast(err?.message || 'Unable to set default address.', 'error'),
+  });
+
+  const resetForm = () => {
+    reset({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      addressLine1: '',
+      addressLine2: '',
+      landmark: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+      isDefault: false,
+    });
+    setIsAdding(false);
+    setEditingAddressId(null);
+  };
+
+  const handleEdit = (address) => {
+    setIsAdding(true);
+    setEditingAddressId(address._id || address.id);
+    setValue('firstName', address.firstName || '');
+    setValue('lastName', address.lastName || '');
+    setValue('phone', address.phone || '');
+    setValue('addressLine1', address.addressLine1 || '');
+    setValue('addressLine2', address.addressLine2 || '');
+    setValue('landmark', address.landmark || '');
+    setValue('city', address.city || '');
+    setValue('state', address.state || '');
+    setValue('postalCode', address.postalCode || '');
+    setValue('country', address.country || 'India');
+    setValue('isDefault', Boolean(address.isDefault));
+  };
+
+  const onSubmit = (values) => {
+    if (editingAddressId) {
+      updateMutation.mutate({ id: editingAddressId, payload: values });
+    } else {
+      createMutation.mutate(values);
+    }
+  };
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
-      <PageMeta title="Account | KICKS" description="Customer account" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Account</p>
-            <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">{user?.firstName || 'Welcome'} {user?.lastName || ''}</h1>
-          </div>
-          <button onClick={() => logout()} type="button" className="rounded-full border border-white/15 px-4 py-2 text-sm text-white">Logout</button>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Delivery locations</p>
+          <h2 className="mt-1 text-2xl font-black uppercase tracking-[-0.04em] text-white">Address Book</h2>
         </div>
+        {!isAdding && (
+          <button
+            type="button"
+            onClick={() => { resetForm(); setIsAdding(true); }}
+            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-[#e4e4e4]"
+          >
+            <Plus size={15} /> Add New Address
+          </button>
+        )}
+      </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[20px] border border-white/10 bg-[#181818] p-5">
-            <div className="flex items-center gap-3"><User2 size={18} className="text-white" /><span className="text-[#d7d7d7]">{user?.email || 'customer@example.com'}</span></div>
+      {isAdding && (
+        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6 md:p-8">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <h3 className="text-lg font-bold text-white">
+              {editingAddressId ? 'Edit Address' : 'Add New Address'}
+            </h3>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-[#d0d0d0] hover:text-white"
+            >
+              Cancel
+            </button>
           </div>
-          <Link to="/account/orders" className="rounded-[20px] border border-white/10 bg-[#181818] p-5">
-            <div className="flex items-center gap-3"><ShoppingBag size={18} className="text-white" /><span className="text-[#d7d7d7]">Orders</span></div>
-          </Link>
-          <Link to="/change-password" className="rounded-[20px] border border-white/10 bg-[#181818] p-5">
-            <div className="flex items-center gap-3"><Lock size={18} className="text-white" /><span className="text-[#d7d7d7]">Security</span></div>
-          </Link>
-        </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Link to="/account/addresses" className="rounded-[20px] border border-white/10 bg-[#181818] p-5"><div className="flex items-center gap-3"><MapPin size={18} className="text-white" /><span className="text-white">Addresses</span></div></Link>
-          <Link to="/account/notifications" className="rounded-[20px] border border-white/10 bg-[#181818] p-5"><div className="flex items-center gap-3"><Bell size={18} className="text-white" /><span className="text-white">Notifications</span></div></Link>
-          <Link to="/wishlist" className="rounded-[20px] border border-white/10 bg-[#181818] p-5"><div className="flex items-center gap-3"><PencilLine size={18} className="text-white" /><span className="text-white">Wishlist</span></div></Link>
-          <Link to="/account/orders" className="rounded-[20px] border border-white/10 bg-[#181818] p-5"><div className="flex items-center gap-3"><ShieldCheck size={18} className="text-white" /><span className="text-white">Support</span></div></Link>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">First Name *</label>
+                <input {...register('firstName')} placeholder="First name" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                {errors.firstName && <p className="mt-1 text-xs text-red-300">{errors.firstName.message}</p>}
+              </div>
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">Last Name *</label>
+                <input {...register('lastName')} placeholder="Last name" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                {errors.lastName && <p className="mt-1 text-xs text-red-300">{errors.lastName.message}</p>}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs text-[#c0c0c0]">Phone Number *</label>
+              <input {...register('phone')} placeholder="+91 98765 43210" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone.message}</p>}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs text-[#c0c0c0]">Address Line 1 *</label>
+              <input {...register('addressLine1')} placeholder="Flat / House No. / Building / Street" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              {errors.addressLine1 && <p className="mt-1 text-xs text-red-300">{errors.addressLine1.message}</p>}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">Address Line 2 (Optional)</label>
+                <input {...register('addressLine2')} placeholder="Apartment, suite, etc." className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">Landmark (Optional)</label>
+                <input {...register('landmark')} placeholder="Near Metro / Park" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">City *</label>
+                <input {...register('city')} placeholder="City" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                {errors.city && <p className="mt-1 text-xs text-red-300">{errors.city.message}</p>}
+              </div>
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">State *</label>
+                <input {...register('state')} placeholder="State" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                {errors.state && <p className="mt-1 text-xs text-red-300">{errors.state.message}</p>}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">Postal / PIN Code *</label>
+                <input {...register('postalCode')} placeholder="PIN Code" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                {errors.postalCode && <p className="mt-1 text-xs text-red-300">{errors.postalCode.message}</p>}
+              </div>
+              <div>
+                <label className="mb-2 block text-xs text-[#c0c0c0]">Country *</label>
+                <input {...register('country')} placeholder="Country" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-3 pt-2 text-sm text-[#d4d4d4]">
+              <input type="checkbox" {...register('isDefault')} className="h-4 w-4 rounded accent-white" />
+              <span>Make this my default shipping address</span>
+            </label>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#e4e4e4] disabled:opacity-60"
+              >
+                {(isSubmitting || createMutation.isPending || updateMutation.isPending) && <Loader2 size={16} className="animate-spin" />}
+                {editingAddressId ? 'Update Address' : 'Save Address'}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white hover:bg-white/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
+      )}
+
+      {isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="h-40 animate-pulse rounded-[20px] bg-[#111111]" />
+          <div className="h-40 animate-pulse rounded-[20px] bg-[#111111]" />
+        </div>
+      ) : isError ? (
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-8 text-center text-[#d2d2d2]">
+          <AlertCircle size={24} className="mx-auto mb-2 text-red-400" />
+          <p>Unable to load addresses right now.</p>
+        </div>
+      ) : addresses.length === 0 ? (
+        <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-10 text-center">
+          <MapPin size={32} className="mx-auto text-[#666666]" />
+          <h3 className="mt-3 text-lg font-bold text-white">No addresses saved</h3>
+          <p className="mt-1 text-sm text-[#a0a0a0]">Add a delivery address to speed up checkout.</p>
+          <button
+            type="button"
+            onClick={() => { resetForm(); setIsAdding(true); }}
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black"
+          >
+            <Plus size={14} /> Add Address
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {addresses.map((address) => {
+            const addressId = address._id || address.id;
+            return (
+              <div key={addressId} className="relative flex flex-col justify-between rounded-[20px] border border-white/10 bg-[#111111] p-5 transition hover:border-white/20">
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-base font-bold text-white">
+                      {address.firstName} {address.lastName}
+                    </h3>
+                    {address.isDefault && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                        <Check size={10} /> Default
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-[#c4c4c4]">
+                    {address.addressLine1}
+                    {address.addressLine2 ? `, ${address.addressLine2}` : ''}
+                    {address.landmark ? ` (Near: ${address.landmark})` : ''}
+                  </p>
+                  <p className="text-sm text-[#c4c4c4]">
+                    {address.city}, {address.state} {address.postalCode}
+                  </p>
+                  <p className="text-sm text-[#8a8a8a]">{address.country || 'India'}</p>
+                  <p className="mt-2 text-xs font-medium text-[#d0d0d0]">Phone: {address.phone}</p>
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(address)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#181818] px-3 py-1.5 text-xs text-white transition hover:bg-white/10"
+                  >
+                    <Edit3 size={12} /> Edit
+                  </button>
+                  {!address.isDefault && (
+                    <button
+                      type="button"
+                      onClick={() => setDefaultMutation.mutate(addressId)}
+                      disabled={setDefaultMutation.isPending}
+                      className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-[#b8b8b8] transition hover:bg-white/10 hover:text-white disabled:opacity-50"
+                    >
+                      Set Default
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to delete this address?')) {
+                        removeMutation.mutate(addressId);
+                      }
+                    }}
+                    disabled={removeMutation.isPending}
+                    className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-red-500/20 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountOrdersSection() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => ordersApi.listForUser(),
+  });
+
+  const orders = unwrapPayload(data)?.orders ?? [];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Purchases & History</p>
+          <h2 className="mt-1 text-2xl font-black uppercase tracking-[-0.04em] text-white">My Orders</h2>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-4">
+          <div className="h-32 animate-pulse rounded-[20px] bg-[#111111]" />
+          <div className="h-32 animate-pulse rounded-[20px] bg-[#111111]" />
+        </div>
+      ) : isError ? (
+        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-8 text-center text-[#d2d2d2]">
+          <AlertCircle size={24} className="mx-auto mb-2 text-red-400" />
+          <p>Unable to load your orders right now.</p>
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-10 text-center">
+          <Package size={32} className="mx-auto text-[#666666]" />
+          <h3 className="mt-3 text-lg font-bold text-white">No orders yet</h3>
+          <p className="mt-1 text-sm text-[#a0a0a0]">Explore our catalog and find your next favorite pair.</p>
+          <Link
+            to="/shop"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black"
+          >
+            Start Shopping
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {orders.map((order) => {
+            const orderId = order._id || order.id;
+            const orderDate = order.createdAt
+              ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              : 'Recent';
+            const items = Array.isArray(order.items) ? order.items : [];
+            const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+            const totalAmount = Number(order.grandTotal || order.total || 0);
+
+            return (
+              <div key={orderId} className="rounded-[20px] border border-white/10 bg-[#111111] p-5 transition hover:border-white/20">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs uppercase tracking-[0.2em] text-[#8d8d8d]">Order</span>
+                      <span className="font-bold text-white">{order.orderNumber || orderId}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[#a0a0a0]">
+                      <span>{orderDate}</span>
+                      <span>•</span>
+                      <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+                      <span>•</span>
+                      <span>{formatMoney(totalAmount)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${statusClasses[order.status] || statusClasses.DEFAULT}`}>
+                      {order.status || 'PENDING'}
+                    </span>
+                    <Link
+                      to={`/account/orders/${orderId}`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#181818] px-4 py-2 text-xs font-medium text-white transition hover:bg-white/10"
+                    >
+                      View Order <ChevronRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+
+                {items.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-white/5 pt-3">
+                    {items.slice(0, 3).map((item, idx) => (
+                      <span key={item._id || item.variantId || idx} className="rounded-lg border border-white/5 bg-[#161616] px-2.5 py-1 text-xs text-[#d0d0d0]">
+                        {item.productName || item.name} <span className="text-[#888888]">×{item.quantity || 1}</span>
+                      </span>
+                    ))}
+                    {items.length > 3 && (
+                      <span className="rounded-lg border border-white/5 bg-[#161616] px-2 py-1 text-xs text-[#888888]">
+                        +{items.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountPasswordSection() {
+  const { showToast } = useToast();
+  const passwordChangeSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm your new password'),
+  }).refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(passwordChangeSchema),
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+  });
+
+  const onSubmit = async (values) => {
+    try {
+      await authApi.changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      });
+      showToast('Password changed successfully.', 'success');
+      reset();
+    } catch (error) {
+      showToast(error?.message || 'Unable to update password. Please check your current password.', 'error');
+    }
+  };
+
+  return (
+    <div className="max-w-[560px] space-y-6">
+      <div>
+        <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Security Settings</p>
+        <h2 className="mt-1 text-2xl font-black uppercase tracking-[-0.04em] text-white">Change Password</h2>
+      </div>
+
+      <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6 md:p-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <PasswordField
+            label="Current Password"
+            name="currentPassword"
+            register={register}
+            error={errors.currentPassword?.message}
+            placeholder="Enter current password"
+          />
+
+          <PasswordField
+            label="New Password"
+            name="newPassword"
+            register={register}
+            error={errors.newPassword?.message}
+            placeholder="Minimum 8 characters"
+          />
+
+          <PasswordField
+            label="Confirm New Password"
+            name="confirmPassword"
+            register={register}
+            error={errors.confirmPassword?.message}
+            placeholder="Confirm new password"
+          />
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            {isSubmitting ? 'Updating...' : 'Update Password'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AccountPage() {
+  const { user, logout, loading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'profile';
+
+  const setTab = (tab) => {
+    setSearchParams({ tab });
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[1400px] px-4 py-12 lg:px-8">
+        <div className="h-64 animate-pulse rounded-[28px] bg-[#111111]" />
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: User2 },
+    { id: 'addresses', label: 'Addresses', icon: MapPin },
+    { id: 'orders', label: 'My Orders', icon: ShoppingBag },
+    { id: 'security', label: 'Security', icon: KeyRound },
+  ];
+
+  return (
+    <div className="mx-auto max-w-[1400px] px-4 py-10 lg:px-8">
+      <PageMeta title="My Account | KICKS" description="Manage your KICKS customer account and preferences" />
+
+      {/* Header */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Customer Center</p>
+          <h1 className="mt-2 text-3xl font-black uppercase tracking-[-0.05em] text-white md:text-4xl">
+            My Account
+          </h1>
+        </div>
+        <button
+          onClick={() => logout()}
+          type="button"
+          className="inline-flex items-center gap-2 self-start rounded-full border border-white/15 bg-[#141414] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 sm:self-auto"
+        >
+          <LogOut size={14} /> Logout
+        </button>
+      </div>
+
+      {/* Account Layout */}
+      <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
+        {/* Navigation Sidebar */}
+        <aside className="h-fit rounded-[24px] border border-white/10 bg-[#111111] p-3">
+          <nav className="flex flex-row gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-x-visible lg:pb-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setTab(tab.id)}
+                  className={`flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                    isActive
+                      ? 'bg-white text-black'
+                      : 'text-[#a0a0a0] hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Section Content */}
+        <main className="min-w-0">
+          {activeTab === 'profile' && <AccountProfileSection user={user} />}
+          {activeTab === 'addresses' && <AccountAddressesSection />}
+          {activeTab === 'orders' && <AccountOrdersSection />}
+          {activeTab === 'security' && <AccountPasswordSection />}
+        </main>
       </div>
     </div>
   );

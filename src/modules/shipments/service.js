@@ -2,7 +2,13 @@ import crypto from 'node:crypto';
 import Shipment from './model.js';
 import ShipmentWebhookEvent from './webhook.model.js';
 import Order from '../orders/model.js';
+import User from '../users/model.js';
 import { shippingConfig } from '../../config/shipping.js';
+import {
+  sendShippedEmail,
+  sendOutForDeliveryEmail,
+  sendDeliveryEmail,
+} from '../../services/email.service.js';
 
 const shipmentError = (message, statusCode = 400) => {
   const error = new Error(message);
@@ -128,17 +134,45 @@ const safeTrackingPayload = (shipment) => {
   };
 };
 
-const applyOrderShippingStatus = async (orderId, shipmentStatus) => {
+const applyOrderShippingStatus = async (orderId, shipmentStatus, shipment = null) => {
+  let updatedOrder = null;
   if (shipmentStatus === 'DELIVERED') {
-    await Order.updateOne({ _id: orderId, status: { $in: ['SHIPPED', 'OUT_FOR_DELIVERY'] } }, { $set: { status: 'DELIVERED' } });
-    return;
+    updatedOrder = await Order.findOneAndUpdate(
+      { _id: orderId, status: { $in: ['SHIPPED', 'OUT_FOR_DELIVERY'] } },
+      { $set: { status: 'DELIVERED' } },
+      { new: true },
+    );
+  } else if (shipmentStatus === 'OUT_FOR_DELIVERY') {
+    updatedOrder = await Order.findOneAndUpdate(
+      { _id: orderId, status: 'SHIPPED' },
+      { $set: { status: 'OUT_FOR_DELIVERY' } },
+      { new: true },
+    );
+  } else if (['CREATED', 'AWB_ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'SHIPPED'].includes(shipmentStatus)) {
+    updatedOrder = await Order.findOneAndUpdate(
+      { _id: orderId, status: { $in: ['CONFIRMED', 'PROCESSING', 'PACKED'] } },
+      { $set: { status: 'SHIPPED' } },
+      { new: true },
+    );
   }
-  if (shipmentStatus === 'OUT_FOR_DELIVERY') {
-    await Order.updateOne({ _id: orderId, status: 'SHIPPED' }, { $set: { status: 'OUT_FOR_DELIVERY' } });
-    return;
-  }
-  if (['CREATED', 'AWB_ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'SHIPPED'].includes(shipmentStatus)) {
-    await Order.updateOne({ _id: orderId, status: { $in: ['CONFIRMED', 'PROCESSING', 'PACKED'] } }, { $set: { status: 'SHIPPED' } });
+
+  if (updatedOrder) {
+    try {
+      const customer = updatedOrder.customerSnapshot?.email ? updatedOrder.customerSnapshot : await User.findById(updatedOrder.user).select('firstName lastName email');
+      if (customer?.email) {
+        if (updatedOrder.status === 'DELIVERED') {
+          await sendDeliveryEmail(customer, updatedOrder);
+        } else if (updatedOrder.status === 'OUT_FOR_DELIVERY') {
+          await sendOutForDeliveryEmail(customer, updatedOrder, shipment || {});
+        } else if (updatedOrder.status === 'SHIPPED') {
+          await sendShippedEmail(customer, updatedOrder, shipment || {});
+        }
+      }
+    } catch (emailErr) {
+      if (emailErr.statusCode !== 503) {
+        console.error(`Failed to send shipping (${shipmentStatus}) email:`, emailErr.message);
+      }
+    }
   }
 };
 
@@ -196,7 +230,7 @@ export const shipmentService = {
       );
 
       try {
-        await applyOrderShippingStatus(order._id, status);
+        await applyOrderShippingStatus(order._id, status, updatedShipment);
       } catch (error) {
         await Shipment.updateOne(
           { _id: shipment._id },
@@ -290,8 +324,8 @@ export const shipmentService = {
         return { received: true, ignored: true, eventId };
       }
 
-      await Shipment.updateOne(
-        { _id: shipment._id },
+      const updatedShipment = await Shipment.findByIdAndUpdate(
+        shipment._id,
         {
           $set: {
             status: providerStatus,
@@ -308,8 +342,9 @@ export const shipmentService = {
             },
           },
         },
+        { new: true },
       );
-      await applyOrderShippingStatus(shipment.order, providerStatus);
+      await applyOrderShippingStatus(shipment.order, providerStatus, updatedShipment);
       await ShipmentWebhookEvent.updateOne({ _id: claimed._id }, { $set: { status: 'PROCESSED', processedAt: new Date(), lastError: '' } });
       return { received: true, eventId, status: providerStatus };
     } catch (error) {

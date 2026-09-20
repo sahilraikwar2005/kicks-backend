@@ -4,6 +4,13 @@ import Product from '../products/model.js';
 import { couponService } from '../coupons/service.js';
 import Address from '../addresses/model.js';
 import User from '../users/model.js';
+import {
+  sendOrderConfirmationEmail,
+  sendOrderCancelledEmail,
+  sendShippedEmail,
+  sendOutForDeliveryEmail,
+  sendDeliveryEmail,
+} from '../../services/email.service.js';
 
 const allowedTransitions = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
@@ -115,6 +122,17 @@ export const orderService = {
       couponCode: payload.couponCode || '',
     });
 
+    try {
+      const recipient = customer?.email ? customer : await User.findById(userId).select('firstName lastName email');
+      if (recipient?.email) {
+        await sendOrderConfirmationEmail(recipient, order);
+      }
+    } catch (error) {
+      if (error.statusCode !== 503) {
+        console.error('Failed to send order confirmation email:', error.message);
+      }
+    }
+
     return order;
   },
 
@@ -171,6 +189,25 @@ export const orderService = {
       throw error;
     }
 
+    try {
+      const customer = order.customerSnapshot?.email ? order.customerSnapshot : await User.findById(order.user).select('firstName lastName email');
+      if (customer?.email) {
+        if (status === 'CANCELLED') {
+          await sendOrderCancelledEmail(customer, order);
+        } else if (status === 'SHIPPED') {
+          await sendShippedEmail(customer, order);
+        } else if (status === 'OUT_FOR_DELIVERY') {
+          await sendOutForDeliveryEmail(customer, order);
+        } else if (status === 'DELIVERED') {
+          await sendDeliveryEmail(customer, order);
+        }
+      }
+    } catch (error) {
+      if (error.statusCode !== 503) {
+        console.error(`Failed to send order status (${status}) email:`, error.message);
+      }
+    }
+
     return order;
   },
 
@@ -180,6 +217,18 @@ export const orderService = {
     if (order.status !== 'PENDING' || order.paymentStatus !== 'PENDING') { const error = new Error('Only unpaid pending orders can be cancelled by the customer'); error.statusCode = 409; throw error; }
     order.status = 'CANCELLED';
     await order.save();
+
+    try {
+      const customer = order.customerSnapshot?.email ? order.customerSnapshot : await User.findById(userId).select('firstName lastName email');
+      if (customer?.email) {
+        await sendOrderCancelledEmail(customer, order);
+      }
+    } catch (error) {
+      if (error.statusCode !== 503) {
+        console.error('Failed to send order cancelled email:', error.message);
+      }
+    }
+
     return order;
   },
 };

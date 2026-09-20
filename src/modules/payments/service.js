@@ -9,6 +9,8 @@ import { refundService } from './refund.service.js';
 import { auditService } from '../audit/service.js';
 import { couponService } from '../coupons/service.js';
 import { inventoryService } from '../inventory/service.js';
+import User from '../users/model.js';
+import { sendPaymentConfirmationEmail } from '../../services/email.service.js';
 
 const configurationError = () => {
   const error = new Error('Razorpay is not configured');
@@ -142,6 +144,23 @@ export const paymentService = {
       const error = new Error(`Payment recorded as PAID, but post-payment processing failed: ${e.message}`);
       error.statusCode = e.statusCode || 409;
       throw error;
+    }
+
+    try {
+      if (order && !(payment.metadata && payment.metadata.paymentConfirmationEmailSent)) {
+        const customer = order.customerSnapshot?.email ? order.customerSnapshot : await User.findById(order.user).select('firstName lastName email');
+        if (customer?.email) {
+          await sendPaymentConfirmationEmail(customer, order);
+          await Payment.updateOne(
+            { _id: payment._id },
+            { $set: { 'metadata.paymentConfirmationEmailSent': true } },
+          );
+        }
+      }
+    } catch (emailErr) {
+      if (emailErr.statusCode !== 503) {
+        console.error('Failed to send payment confirmation email:', emailErr.message);
+      }
     }
 
     return payment;

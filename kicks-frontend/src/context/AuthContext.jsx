@@ -2,6 +2,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../api/client';
 import { AuthContext } from './authContextValue';
 
+/**
+ * Silently attempt a cookie-based token refresh.
+ * The backend reads the refreshToken from req.cookies automatically —
+ * no request body is required. Returns true if new tokens were issued.
+ */
+async function tryTokenRefresh() {
+  try {
+    await apiClient.post('/auth/refresh', {});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,7 +27,23 @@ export function AuthProvider({ children }) {
       const nextUser = payload?.data?.user || payload?.user || null;
       setUser(nextUser);
       return nextUser;
-    } catch {
+    } catch (err) {
+      // Access token missing or expired — try a silent cookie-based refresh
+      // before giving up, so users with a valid refresh token stay logged in.
+      if (err?.status === 401) {
+        const refreshed = await tryTokenRefresh();
+        if (refreshed) {
+          try {
+            const retryResponse = await apiClient.get('/auth/me');
+            const retryPayload = retryResponse?.data;
+            const nextUser = retryPayload?.data?.user || retryPayload?.user || null;
+            setUser(nextUser);
+            return nextUser;
+          } catch {
+            // Refresh token also invalid or expired — fall through to clear state.
+          }
+        }
+      }
       setUser(null);
       return null;
     }
@@ -55,7 +85,11 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await apiClient.post('/auth/logout');
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // Swallow network errors — always clear local state.
+    }
     setUser(null);
   };
 

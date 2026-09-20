@@ -3,6 +3,7 @@ import { env } from '../../config/env.js';
 import Payment from './model.js';
 import Refund from './refund.model.js';
 import Order from '../orders/model.js';
+import User from '../users/model.js';
 import { sendRefundEmail } from '../../services/email.service.js';
 import { auditService } from '../audit/service.js';
 
@@ -220,11 +221,6 @@ export const refundService = {
       }
 
       const completed = await this.completeRefund(refundOperation._id, gatewayRefund, { adminId, requestId: options.requestId || '' });
-      try {
-        await sendRefundEmail(order.user, order, amount);
-      } catch (error) {
-        if (!isIgnorableEmailFailure(error)) throw error;
-      }
       return { ...completed, gatewayRefund };
     } catch (error) {
       await markRefundFailed(refundOperation, claimedPayment, error, adminId, options.requestId || '');
@@ -321,6 +317,22 @@ export const refundService = {
       requestId: context.requestId || refundOperation.metadata?.requestId || '',
       action: 'ORDER_REFUNDED',
     });
+
+    try {
+      const targetOrder = updatedOrder || await Order.findById(refundOperation.order);
+      if (targetOrder) {
+        const customer = targetOrder.customerSnapshot?.email
+          ? targetOrder.customerSnapshot
+          : await User.findById(targetOrder.user).select('firstName lastName email');
+        if (customer?.email) {
+          await sendRefundEmail(customer, targetOrder, amount);
+        }
+      }
+    } catch (emailErr) {
+      if (!isIgnorableEmailFailure(emailErr)) {
+        console.error('Failed to send refund email:', emailErr.message);
+      }
+    }
 
     return { payment: updatedPayment, order: updatedOrder, refund: completedRefund };
   },

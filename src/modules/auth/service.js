@@ -5,7 +5,12 @@ import { auditService } from '../audit/service.js';
 import { env } from '../../config/env.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../utils/jwt.js';
 import UserSession from './session.model.js';
-import { sendPasswordResetEmail, sendVerificationEmail } from '../../services/email.service.js';
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+  sendWelcomeEmail,
+  sendPasswordChangedEmail,
+} from '../../services/email.service.js';
 
 const tokenCookieOptions = {
   httpOnly: true,
@@ -79,11 +84,21 @@ export const authService = {
     await user.save();
     await createSession(user._id, refreshToken);
 
+    try {
+      await sendWelcomeEmail(user);
+    } catch (error) {
+      if (error.statusCode !== 503) {
+        console.error('Failed to send welcome email:', error.message);
+      }
+    }
+
     if (user.verificationToken) {
       try {
         await sendVerificationEmail(user, `${env.clientUrl}/verify-email?token=${verificationToken}`);
       } catch (error) {
-        if (error.statusCode !== 503) throw error;
+        if (error.statusCode !== 503) {
+          console.error('Failed to send verification email:', error.message);
+        }
       }
     }
     return { user: sanitizeUser(user), accessToken, refreshToken };
@@ -186,7 +201,9 @@ export const authService = {
     try {
       await sendPasswordResetEmail(user, `${env.clientUrl}/reset-password?token=${resetToken}`);
     } catch (error) {
-      if (error.statusCode !== 503) throw error;
+      if (error.statusCode !== 503) {
+        console.error('Failed to send password reset email:', error.message);
+      }
     }
     return { message: 'If the account exists, a password reset link was sent.' };
   },
@@ -210,6 +227,14 @@ export const authService = {
     await user.save();
     await this.logoutAll(user._id);
 
+    try {
+      await sendPasswordChangedEmail(user);
+    } catch (error) {
+      if (error.statusCode !== 503) {
+        console.error('Failed to send password changed email:', error.message);
+      }
+    }
+
     return true;
   },
 
@@ -226,6 +251,15 @@ export const authService = {
     user.refreshTokenHash = '';
     await user.save();
     await UserSession.updateMany({ user: userId, revokedAt: null }, { $set: { revokedAt: new Date() } });
+
+    try {
+      await sendPasswordChangedEmail(user);
+    } catch (error) {
+      if (error.statusCode !== 503) {
+        console.error('Failed to send password changed email:', error.message);
+      }
+    }
+
     return true;
   },
 
@@ -249,7 +283,9 @@ export const authService = {
     try {
       await sendVerificationEmail(user, `${env.clientUrl}/verify-email?token=${token}`);
     } catch (error) {
-      if (error.statusCode !== 503) throw error;
+      if (error.statusCode !== 503) {
+        console.error('Failed to resend verification email:', error.message);
+      }
     }
     return true;
   },
