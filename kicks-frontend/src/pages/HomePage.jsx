@@ -33,7 +33,12 @@ export default function HomePage() {
               Premium sneakers designed for movement, comfort, and everyday expression.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/shop" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black">
+              <Link
+                to="/shop"
+                aria-label="Shop KICKS sneakers"
+                style={{ color: '#090909' }}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium transition hover:bg-[#e5e5e5] focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#101010]"
+              >
                 Shop now <ArrowRight size={16} />
               </Link>
               <Link to="/about" className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white">

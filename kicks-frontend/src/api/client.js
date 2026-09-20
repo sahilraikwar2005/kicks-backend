@@ -14,6 +14,10 @@ apiClient.interceptors.response.use(
   (error) => {
     const payload = error?.response?.data;
     const message = payload?.message || error?.message || 'Request failed';
-    return Promise.reject(new Error(message));
+    const normalizedError = new Error(message);
+    normalizedError.status = error?.response?.status;
+    normalizedError.errors = Array.isArray(payload?.errors) ? payload.errors : [];
+    normalizedError.requestId = payload?.requestId;
+    return Promise.reject(normalizedError);
   },
 );

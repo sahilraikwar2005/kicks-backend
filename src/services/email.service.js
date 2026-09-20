@@ -11,14 +11,21 @@ export async function sendEmail({ to, subject, html, text, attachments }) {
     throw error;
   }
 
-  return transporter.sendMail({
-    from: emailConfig.from,
-    to,
-    subject,
-    text,
-    html,
-    attachments,
-  });
+  try {
+    return await transporter.sendMail({
+      from: emailConfig.from,
+      to,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+  } catch (error) {
+    const serviceError = new Error('SMTP email service unavailable');
+    serviceError.statusCode = 503;
+    serviceError.cause = error;
+    throw serviceError;
+  }
 }
 
 export async function sendWelcomeEmail(user) {

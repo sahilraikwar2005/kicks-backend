@@ -22,7 +22,7 @@ export const cartService = {
       throw error;
     }
 
-    let cart = await Cart.findOne({ userId }).lean();
+    let cart = await Cart.findOne({ userId }).populate('items.productId').lean();
     if (!cart) {
       cart = { userId, items: [] };
     }

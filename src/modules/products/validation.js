@@ -6,6 +6,11 @@ export const listProductsQuerySchema = Joi.object({
   category: Joi.string().allow('').optional(),
   brand: Joi.string().allow('').optional(),
   gender: Joi.string().allow('').optional(),
+  search: Joi.string().allow('').optional(),
+  minPrice: Joi.number().min(0).allow('').optional(),
+  maxPrice: Joi.number().min(0).allow('').optional(),
+  size: Joi.string().allow('').optional(),
+  color: Joi.string().allow('').optional(),
   sort: Joi.string().valid('newest', 'price_asc', 'price_desc', 'featured').default('newest'),
 });
 

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
-import { ArrowRight, Bell, Lock, MapPin, PencilLine, ShieldCheck, ShoppingBag, Trash2, User2 } from 'lucide-react';
+import { ArrowRight, Bell, Eye, EyeOff, Lock, MapPin, PencilLine, ShieldCheck, ShoppingBag, Trash2, User2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,6 +17,8 @@ import { notificationsApi } from './api/notifications.api';
 import { ordersApi } from './api/orders.api';
 import { wishlistApi } from './api/wishlist.api';
 import { useAuth } from './context/useAuth';
+import { ToastProvider } from './context/ToastProvider';
+import { useToast } from './context/useToast';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
@@ -42,6 +44,20 @@ const registerSchema = z.object({
   email: z.string().email('Valid email required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
+
+const registrationFields = new Set(['firstName', 'lastName', 'email', 'password']);
+
+function getRegistrationFieldError(message) {
+  const field = message?.match(/^"([^"]+)"/)?.[1];
+  return registrationFields.has(field) ? field : null;
+}
+
+function getRegistrationErrorMessage(error) {
+  if (error?.status === 409) return 'An account with this email already exists.';
+  if (error?.status === 429) return 'Too many attempts. Please try again shortly.';
+  if (error?.status === 400 && error?.message === 'Validation failed') return 'Please check the highlighted fields.';
+  return 'Unable to create your account. Please try again.';
+}
 
 function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth();
@@ -97,9 +113,6 @@ function AppShell() {
         <Route path="/terms" element={<PolicyPage title="Terms of Use" />} />
         <Route path="/shipping-policy" element={<PolicyPage title="Shipping Policy" />} />
         <Route path="/refund-cancellation-policy" element={<PolicyPage title="Refund & Cancellation Policy" />} />
-        <Route path="/wishlist" element={<WishlistPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order-success/:id" element={<OrderSuccessPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -111,6 +124,9 @@ function AppShell() {
         <Route path="/blog/:slug" element={<BlogDetailPage />} />
         <Route path="/cms/:slug" element={<CmsPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/account/addresses" element={<AddressBookPage />} />
           <Route path="/account/notifications" element={<NotificationsPage />} />
@@ -130,11 +146,47 @@ export default function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppShell />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <AppShell />
+          </BrowserRouter>
+        </ToastProvider>
       </QueryClientProvider>
     </HelmetProvider>
+  );
+}
+
+function PasswordField({ label, name, register, error, placeholder = 'Enter password' }) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div>
+      {label && (
+        <label htmlFor={name} className="mb-2 block text-sm text-[#d5d5d5]">
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        <input
+          id={name}
+          type={showPassword ? 'text' : 'password'}
+          {...register(name)}
+          className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 pr-12 text-white outline-none transition focus:border-white/25"
+          placeholder={placeholder}
+          aria-label={label || placeholder}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((current) => !current)}
+          className="absolute right-1 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-[#d9d9d9] transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          title={showPassword ? 'Hide password' : 'Show password'}
+        >
+          {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+    </div>
   );
 }
 
@@ -306,21 +358,32 @@ function WishlistPage() {
 
 function CartPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { data, isLoading, isError } = useQuery({ queryKey: ['cart'], queryFn: () => cartApi.getCart() });
 
   const cart = unwrapPayload(data)?.cart ?? unwrapPayload(data) ?? {};
-  const items = cart?.items ?? [];
-  const subtotal = Number(cart?.subtotal || items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0));
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+  const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || item.price || 0) * Number(item.quantity || 0), 0);
 
   const updateMutation = useMutation({
     mutationFn: ({ variantId, quantity }) => cartApi.updateItem(variantId, quantity),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
+    onError: (error) => showToast(error?.message || 'Unable to update cart item.', 'error'),
   });
 
   const removeMutation = useMutation({
     mutationFn: (variantId) => cartApi.removeItem(variantId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
+    onError: (error) => showToast(error?.message || 'Unable to remove cart item.', 'error'),
   });
+
+  const clearMutation = useMutation({
+    mutationFn: () => cartApi.clearCart(),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
+    onError: (error) => showToast(error?.message || 'Unable to clear your cart.', 'error'),
+  });
+
+  const cartImageFallback = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
@@ -332,7 +395,9 @@ function CartPage() {
 
       {isLoading ? (
         <div className="h-[300px] animate-pulse rounded-[28px] bg-[#111111]" />
-      ) : isError || items.length === 0 ? (
+      ) : isError ? (
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-[#d7d7d7]">Unable to load cart from the backend.</div>
+      ) : items.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
           <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your cart is empty</h2>
           <p className="mt-4 text-[#c3c3c3]">Add a few premium pairs and continue to checkout.</p>
@@ -342,24 +407,29 @@ function CartPage() {
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-4">
             {items.map((item) => {
-              const product = item.product || {};
-              const variantId = item.variantId || item.variant?._id || item.id;
+              const product = item.product || (typeof item.productId === 'object' ? item.productId : {}) || {};
+              const variantId = item.variantId || item.variant?._id || item._id;
               const quantity = Number(item.quantity || 0);
-              const price = Number(item.price || product.price || 0);
+              const price = Number(item.unitPrice || item.price || 0);
+              const subtotal = price * quantity;
+              const image = product?.images?.[0] || item?.variant?.images?.[0] || cartImageFallback;
+              const size = item.size || item.variant?.size || 'N/A';
+              const color = item.color || item.variant?.color || 'N/A';
+
               return (
                 <div key={variantId} className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-[#111111] p-4 md:flex-row md:items-center">
-                  <img src={product.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'} alt={product.name || 'Cart item'} className="h-24 w-24 rounded-[18px] object-cover" />
+                  <img src={image} alt={product?.name || 'Cart item'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = cartImageFallback; }} />
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-white">{product.name || 'KICKS product'}</h3>
-                    <p className="mt-1 text-sm text-[#9d9d9d]">{product.brand?.name || 'KICKS'} • Size {item.size || item.variant?.size || 'N/A'}</p>
+                    <h3 className="text-xl font-semibold text-white">{product?.name || 'KICKS product'}</h3>
+                    <p className="mt-1 text-sm text-[#9d9d9d]">{product?.brand?.name || 'KICKS'} • Size {size} • Color {color}</p>
+                    <p className="mt-2 text-sm font-medium text-white">{formatMoney(price)} each</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <label className="text-xs uppercase tracking-[0.2em] text-[#8d8d8d]">Qty</label>
-                    <select value={quantity} onChange={(event) => updateMutation.mutate({ variantId, quantity: Number(event.target.value) })} className="rounded-full border border-white/10 bg-[#181818] px-3 py-2 text-sm text-white">
-                      {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
-                    </select>
+                    <button type="button" aria-label="Decrease quantity" onClick={() => updateMutation.mutate({ variantId, quantity: Math.max(1, quantity - 1) })} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white">−</button>
+                    <span className="min-w-8 text-center text-sm font-medium text-white">{quantity}</span>
+                    <button type="button" aria-label="Increase quantity" onClick={() => updateMutation.mutate({ variantId, quantity: quantity + 1 })} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white">+</button>
                   </div>
-                  <div className="text-lg font-semibold text-white">{formatMoney(price * quantity)}</div>
+                  <div className="text-lg font-semibold text-white">{formatMoney(subtotal)}</div>
                   <button type="button" onClick={() => removeMutation.mutate(variantId)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Remove</button>
                 </div>
               );
@@ -374,8 +444,8 @@ function CartPage() {
               <div className="flex justify-between"><span>Discount</span><span>{formatMoney(0)}</span></div>
               <div className="flex justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(subtotal)}</span></div>
             </div>
-            <Link to="/checkout" className="mt-6 block rounded-full bg-white px-6 py-3 text-center text-sm font-medium text-black">Proceed to checkout</Link>
-            <button type="button" onClick={() => cartApi.clearCart().then(() => queryClient.invalidateQueries({ queryKey: ['cart'] }))} className="mt-4 w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white">Clear cart</button>
+            <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: ['cart'] })} className="mt-6 block w-full rounded-full bg-white px-6 py-3 text-center text-sm font-medium text-black">Proceed to checkout</button>
+            <button type="button" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()} className="mt-4 w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white disabled:cursor-wait disabled:opacity-60">{clearMutation.isPending ? 'Clearing...' : 'Clear cart'}</button>
           </aside>
         </div>
       )}
@@ -386,51 +456,234 @@ function CartPage() {
 function CheckoutPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: cartData } = useQuery({ queryKey: ['cart'], queryFn: () => cartApi.getCart() });
-  const { data: addressesData } = useQuery({ queryKey: ['addresses'], queryFn: () => addressesApi.list() });
+  const { showToast } = useToast();
+
+  const { data: cartData, isLoading: cartLoading, isError: cartError } = useQuery({ queryKey: ['cart'], queryFn: () => cartApi.getCart() });
+  const { data: addressesData, isLoading: addressesLoading } = useQuery({ queryKey: ['addresses'], queryFn: () => addressesApi.list() });
+
+  const [selectedAddressId, setSelectedAddressId] = useState('');
   const [couponCode, setCouponCode] = useState('');
-  const [couponInfo, setCouponInfo] = useState(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponError, setCouponError] = useState('');
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const [addressForm, setAddressForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'India',
+  });
 
   const cart = unwrapPayload(cartData)?.cart ?? unwrapPayload(cartData) ?? {};
+  const items = Array.isArray(cart?.items) ? cart.items : [];
   const addressList = unwrapPayload(addressesData)?.addresses ?? [];
-  const items = cart?.items ?? [];
-  const subtotal = Number(cart?.subtotal || items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0));
+  const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || item.price || 0) * Number(item.quantity || 0), 0);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-    defaultValues: { addressId: '' },
+  useEffect(() => {
+    const defaultAddress = addressList.find((address) => address.isDefault) || addressList[0];
+    if (defaultAddress && !selectedAddressId) {
+      setSelectedAddressId(defaultAddress._id || defaultAddress.id || '');
+    }
+  }, [addressList, selectedAddressId]);
+
+  const loadRazorpayScript = () => new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Razorpay checkout script failed to load.'));
+    document.body.appendChild(script);
   });
+
+  const handlePaymentSuccess = async (orderId, paymentResponse) => {
+    try {
+      const response = await apiClient.post('/payments/verify', {
+        razorpay_order_id: paymentResponse.razorpay_order_id,
+        razorpay_payment_id: paymentResponse.razorpay_payment_id,
+        razorpay_signature: paymentResponse.razorpay_signature,
+      });
+
+      const payload = unwrapPayload(response.data);
+      if (payload?.payment?.status === 'PAID' || payload?.payment?.paymentId) {
+        await queryClient.invalidateQueries({ queryKey: ['cart'] });
+        navigate(`/order-success/${orderId}`);
+        showToast('Payment successful.', 'success');
+        return;
+      }
+
+      showToast('Payment verification failed. Please try again.', 'error');
+    } catch (error) {
+      showToast(error?.message || 'Payment verification failed.', 'error');
+    }
+  };
 
   const validateCoupon = async () => {
     if (!couponCode.trim()) {
-      setCouponInfo(null);
+      setCouponDiscount(0);
       setCouponError('');
       return;
     }
 
     try {
-      const response = await apiClient.get('/coupons/validate', { params: { code: couponCode, cartTotal: subtotal } });
+      const response = await apiClient.get('/coupons/validate', { params: { code: couponCode.trim(), cartTotal: subtotal } });
       const payload = unwrapPayload(response.data);
-      const discount = payload?.discount ?? payload?.data?.discount ?? 0;
-      setCouponInfo({ ...payload, discount });
+      const nextDiscount = Number(payload?.discount ?? payload?.data?.discount ?? 0);
+      setCouponDiscount(nextDiscount);
       setCouponError('');
+      showToast('Coupon applied.', 'success');
     } catch (error) {
-      setCouponInfo(null);
+      setCouponDiscount(0);
       setCouponError(error?.message || 'Coupon is invalid');
+      showToast(error?.message || 'Coupon is invalid', 'error');
     }
   };
 
-  const checkoutMutation = useMutation({
-    mutationFn: (values) => ordersApi.checkout({ addressId: values.addressId, couponCode: couponCode || undefined }),
+  const addressCreateMutation = useMutation({
+    mutationFn: (payload) => addressesApi.create(payload),
     onSuccess: async (result) => {
-      const order = unwrapPayload(result)?.order ?? result?.order ?? {};
-      await queryClient.invalidateQueries({ queryKey: ['cart'] });
-      navigate(`/order-success/${order._id || order.id || 'success'}`);
+      const nextAddress = unwrapPayload(result)?.address ?? result?.address ?? null;
+      if (nextAddress) {
+        setSelectedAddressId(nextAddress._id || nextAddress.id || '');
+      }
+      setShowAddressForm(false);
+      setAddressForm({
+        firstName: '',
+        lastName: '',
+        phone: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'India',
+      });
+      await queryClient.invalidateQueries({ queryKey: ['addresses'] });
+      showToast('Address added.', 'success');
     },
+    onError: (error) => showToast(error?.message || 'Unable to add address.', 'error'),
   });
 
-  const discount = Number(couponInfo?.discount ?? 0);
-  const total = Math.max(subtotal - discount, 0);
+  const payNow = async () => {
+    if (!selectedAddressId) {
+      showToast('Please select or add a delivery address.', 'error');
+      return;
+    }
+
+    if (isProcessingPayment) return;
+    setIsProcessingPayment(true);
+
+    try {
+      const orderResponse = await ordersApi.checkout({
+        addressId: selectedAddressId,
+        couponCode: couponCode.trim() || undefined,
+      });
+
+      const order = unwrapPayload(orderResponse)?.order ?? orderResponse?.order ?? {};
+      const orderId = order._id || order.id;
+      if (!orderId) {
+        throw new Error('Order could not be created.');
+      }
+
+      const paymentResponse = await apiClient.post(`/payments/orders/${orderId}`);
+      const paymentPayload = unwrapPayload(paymentResponse);
+      const gatewayOrder = paymentPayload?.gatewayOrder || paymentPayload?.data?.gatewayOrder || paymentPayload?.gatewayOrder || {};
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+
+      if (!gatewayOrder?.id || !razorpayKey) {
+        throw new Error('Razorpay is not configured for this checkout.');
+      }
+
+      await loadRazorpayScript();
+      const options = {
+        key: razorpayKey,
+        amount: Number(gatewayOrder.amount || 0),
+        currency: gatewayOrder.currency || 'INR',
+        name: 'KICKS',
+        description: `Order ${order.orderNumber || orderId}`,
+        order_id: gatewayOrder.id,
+        handler: async (razorpayResponse) => {
+          await handlePaymentSuccess(orderId, razorpayResponse);
+        },
+        prefill: {
+          name: `${order.customerSnapshot?.firstName || ''} ${order.customerSnapshot?.lastName || ''}`.trim() || 'KICKS customer',
+          email: order.customerSnapshot?.email || '',
+          contact: order.customerSnapshot?.phone || '',
+        },
+        theme: { color: '#111111' },
+        modal: {
+          ondismiss: () => {
+            setIsProcessingPayment(false);
+            showToast('Payment cancelled.', 'info');
+          },
+        },
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.on('payment.failed', (failure) => {
+        setIsProcessingPayment(false);
+        showToast(failure?.error?.description || 'Payment failed. Please try again.', 'error');
+      });
+      razorpayInstance.open();
+    } catch (error) {
+      setIsProcessingPayment(false);
+      showToast(error?.message || 'Unable to start payment.', 'error');
+    }
+  };
+
+  const shipping = 0;
+  const discount = Number(couponDiscount || 0);
+  const total = Math.max(subtotal - discount + shipping, 0);
+
+  const submitAddress = (event) => {
+    event.preventDefault();
+    if (!addressForm.firstName || !addressForm.lastName || !addressForm.phone || !addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) {
+      showToast('Please complete the required address fields.', 'error');
+      return;
+    }
+
+    addressCreateMutation.mutate({
+      firstName: addressForm.firstName.trim(),
+      lastName: addressForm.lastName.trim(),
+      phone: addressForm.phone.trim(),
+      addressLine1: addressForm.addressLine1.trim(),
+      addressLine2: addressForm.addressLine2.trim(),
+      city: addressForm.city.trim(),
+      state: addressForm.state.trim(),
+      postalCode: addressForm.postalCode.trim(),
+      country: addressForm.country.trim() || 'India',
+      isDefault: addressList.length === 0,
+    });
+  };
+
+  if (cartLoading || addressesLoading) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+        <div className="h-[300px] animate-pulse rounded-[28px] bg-[#111111]" />
+      </div>
+    );
+  }
+
+  if (cartError || items.length === 0) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
+          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your cart is empty</h2>
+          <p className="mt-4 text-[#c3c3c3]">Add a few premium pairs and continue to checkout.</p>
+          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
@@ -440,61 +693,118 @@ function CheckoutPage() {
         <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Secure checkout</h1>
       </div>
 
-      {items.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your cart is empty</h2>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
-        </div>
-      ) : (
-        <div className="grid gap-8 lg:grid-cols-[1fr_0.8fr]">
-          <form onSubmit={handleSubmit((values) => checkoutMutation.mutate(values))} className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-            <h2 className="text-2xl font-bold text-white">Shipping information</h2>
-            <div className="mt-6 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm text-[#d3d3d3]">Delivery address</label>
-                <select {...register('addressId', { required: 'Select an address' })} className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white">
-                  <option value="">Select an address</option>
-                  {addressList.map((address) => (
-                    <option key={address._id || address.id} value={address._id || address.id}>{address.addressLine1}, {address.city}</option>
-                  ))}
-                </select>
-                {errors.addressId && <p className="mt-2 text-sm text-red-300">{errors.addressId.message}</p>}
-              </div>
+      <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
+        <div className="space-y-6">
+          <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-bold text-white">Shipping</h2>
+              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">
+                {showAddressForm ? 'Close form' : 'Add new address'}
+              </button>
+            </div>
 
-              <div className="rounded-[20px] border border-white/10 bg-[#181818] p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.26em] text-[#8d8d8d]">Coupon</p>
-                    <input value={couponCode} onChange={(event) => setCouponCode(event.target.value)} className="mt-3 w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white placeholder:text-[#7a7a7a]" placeholder="Enter coupon code" />
+            {addressList.length > 0 ? (
+              <div className="mt-5 space-y-3">
+                {addressList.map((address) => {
+                  const addressId = address._id || address.id;
+                  const isSelected = selectedAddressId === addressId;
+                  return (
+                    <button
+                      key={addressId}
+                      type="button"
+                      onClick={() => setSelectedAddressId(addressId)}
+                      className={`w-full rounded-[20px] border p-4 text-left transition ${isSelected ? 'border-white bg-[#1a1a1a]' : 'border-white/10 bg-[#181818]'}`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-white">{address.firstName} {address.lastName}</p>
+                          <p className="mt-1 text-sm text-[#d7d7d7]">{address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ''}</p>
+                          <p className="text-sm text-[#d7d7d7]">{address.city}, {address.state} {address.postalCode}</p>
+                          <p className="text-sm text-[#d7d7d7]">{address.country}</p>
+                          <p className="mt-1 text-sm text-[#d7d7d7]">{address.phone}</p>
+                        </div>
+                        {address.isDefault && <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-[#d7d7d7]">Default</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {showAddressForm && (
+              <form onSubmit={submitAddress} className="mt-5 grid gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:grid-cols-2">
+                <input value={addressForm.firstName} onChange={(event) => setAddressForm((current) => ({ ...current, firstName: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="First name" />
+                <input value={addressForm.lastName} onChange={(event) => setAddressForm((current) => ({ ...current, lastName: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Last name" />
+                <input value={addressForm.phone} onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none md:col-span-2" placeholder="Phone" />
+                <input value={addressForm.addressLine1} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine1: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none md:col-span-2" placeholder="Address line 1" />
+                <input value={addressForm.addressLine2} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine2: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none md:col-span-2" placeholder="Address line 2 (optional)" />
+                <input value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="City" />
+                <input value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="State" />
+                <input value={addressForm.postalCode} onChange={(event) => setAddressForm((current) => ({ ...current, postalCode: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Postal code" />
+                <input value={addressForm.country} onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Country" />
+                <div className="md:col-span-2 flex justify-end">
+                  <button type="submit" disabled={addressCreateMutation.isPending} className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black disabled:cursor-wait disabled:opacity-60">
+                    {addressCreateMutation.isPending ? 'Saving...' : 'Save address'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
+            <h2 className="text-2xl font-bold text-white">Coupon</h2>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <input value={couponCode} onChange={(event) => setCouponCode(event.target.value)} className="flex-1 rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Enter coupon code" />
+              <button type="button" onClick={validateCoupon} className="rounded-full bg-white px-5 py-3 text-sm font-medium text-black">Apply</button>
+            </div>
+            {couponError && <p className="mt-3 text-sm text-red-300">{couponError}</p>}
+            {couponDiscount > 0 && <p className="mt-3 text-sm text-[#9feec8]">Coupon applied: {formatMoney(couponDiscount)}</p>}
+          </div>
+        </div>
+
+        <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
+          <h2 className="text-2xl font-bold text-white">Order summary</h2>
+
+          <div className="mt-6 space-y-4">
+            {items.map((item) => {
+              const product = item.product || (typeof item.productId === 'object' ? item.productId : {}) || {};
+              const productName = product?.name || 'Product';
+              const image = product?.images?.[0] || item?.variant?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
+              const unitPrice = Number(item.unitPrice || item.price || 0);
+              const lineTotal = unitPrice * Number(item.quantity || 0);
+              return (
+                <div key={item.variantId || item._id || item.id} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#181818] p-3">
+                  <img src={image} alt={productName} className="h-16 w-16 rounded-[14px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'; }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-white">{productName}</div>
+                    <div className="mt-1 text-xs text-[#d3d3d3]">{product?.brand?.name || 'KICKS'} • {item.size || item.variant?.size || 'N/A'} • {item.color || item.variant?.color || 'N/A'}</div>
+                    <div className="mt-1 text-xs text-[#d3d3d3]">Qty {item.quantity}</div>
                   </div>
-                  <button type="button" onClick={validateCoupon} className="rounded-full bg-white px-4 py-3 text-sm font-medium text-black">Apply</button>
+                  <div className="text-sm font-medium text-white">{formatMoney(lineTotal)}</div>
                 </div>
-                {couponError && <p className="mt-3 text-sm text-red-300">{couponError}</p>}
-                {couponInfo && <p className="mt-3 text-sm text-[#9feec8]">Coupon {couponInfo?.coupon?.code || couponCode} applied: discount {formatMoney(discount)}</p>}
-              </div>
-            </div>
+              );
+            })}
+          </div>
 
-            <button type="submit" disabled={checkoutMutation.isPending || isSubmitting} className="mt-8 w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">
-              {checkoutMutation.isPending ? 'Placing order...' : 'Place order'}
-            </button>
-          </form>
+          <div className="mt-6 space-y-4 text-[#d2d2d2]">
+            <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
+            <div className="flex justify-between"><span>Discount</span><span>{formatMoney(discount)}</span></div>
+            <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? 'Free' : formatMoney(shipping)}</span></div>
+            <div className="flex justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(total)}</span></div>
+          </div>
 
-          <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
-            <h2 className="text-2xl font-bold text-white">Order summary</h2>
-            <div className="mt-6 space-y-4 text-[#d2d2d2]">
-              {items.map((item) => (
-                <div key={item.variantId || item.id} className="flex justify-between gap-3">
-                  <span>{item.product?.name || item.name || 'Product'} x {item.quantity}</span>
-                  <span>{formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}</span>
-                </div>
-              ))}
-              <div className="flex justify-between border-t border-white/10 pt-4"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
-              <div className="flex justify-between"><span>Discount</span><span>{formatMoney(discount)}</span></div>
-              <div className="flex justify-between text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(total)}</span></div>
-            </div>
-          </aside>
-        </div>
-      )}
+          <button
+            type="button"
+            disabled={!selectedAddressId || isProcessingPayment}
+            onClick={payNow}
+            className="mt-6 block w-full rounded-full bg-white px-6 py-3 text-center text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isProcessingPayment ? 'Preparing payment...' : 'Pay now'}
+          </button>
+
+          {!selectedAddressId && <p className="mt-3 text-sm text-red-300">Please select or add a delivery address.</p>}
+        </aside>
+      </div>
     </div>
   );
 }
@@ -685,6 +995,7 @@ function AccountPage() {
 
 function LoginPage() {
   const { login, isAuthenticated } = useAuth();
+  const { showToast } = useToast();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -695,9 +1006,10 @@ function LoginPage() {
   const onSubmit = async (values) => {
     try {
       await login(values);
+      showToast('Welcome back. You are signed in.', 'success');
       navigate('/account', { replace: true });
     } catch (error) {
-      console.error(error);
+      showToast(error?.message || 'Login failed. Please check your credentials.', 'error');
     }
   };
 
@@ -713,17 +1025,19 @@ function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
           <div>
             <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-            <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none" placeholder="you@example.com" />
+            <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" placeholder="you@example.com" />
             {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm text-[#d5d5d5]">Password</label>
-            <input type="password" {...register('password')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none" placeholder="Your password" />
-            {errors.password && <p className="mt-2 text-sm text-red-300">{errors.password.message}</p>}
-          </div>
+          <PasswordField
+            label="Password"
+            name="password"
+            register={register}
+            error={errors.password?.message}
+            placeholder="Your password"
+          />
 
-          <button disabled={isSubmitting} type="submit" className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">
+          <button disabled={isSubmitting} type="submit" className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
             {isSubmitting ? 'Signing in...' : 'Login'}
           </button>
 
@@ -739,7 +1053,8 @@ function LoginPage() {
 
 function RegisterPage() {
   const { register: registerUser, isAuthenticated } = useAuth();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { showToast } = useToast();
+  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: '', lastName: '', email: '', password: '' },
   });
@@ -749,11 +1064,22 @@ function RegisterPage() {
   const onSubmit = async (values) => {
     try {
       await registerUser(values);
+      showToast('Account created. Welcome to KICKS.', 'success');
       navigate('/account', { replace: true });
     } catch (error) {
-      console.error(error);
+      const fieldErrors = (error?.errors || [])
+        .map((message) => ({ field: getRegistrationFieldError(message), message }))
+        .filter(({ field }) => field);
+
+      fieldErrors.forEach(({ field, message }) => {
+        setError(field, { type: 'server', message });
+      });
+
+      showToast(getRegistrationErrorMessage(error), 'error');
     }
   };
+
+  const onInvalid = () => showToast('Please check the highlighted fields.', 'error');
 
   if (isAuthenticated) return <Navigate to="/account" replace />;
 
@@ -764,33 +1090,35 @@ function RegisterPage() {
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Start here</p>
         <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Create account</h1>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-[#d5d5d5]">First name</label>
-              <input {...register('firstName')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
+              <input {...register('firstName')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
               {errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}
             </div>
             <div>
               <label className="mb-2 block text-sm text-[#d5d5d5]">Last name</label>
-              <input {...register('lastName')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
+              <input {...register('lastName')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
               {errors.lastName && <p className="mt-2 text-sm text-red-300">{errors.lastName.message}</p>}
             </div>
           </div>
 
           <div>
             <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-            <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
+            <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
             {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm text-[#d5d5d5]">Password</label>
-            <input type="password" {...register('password')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
-            {errors.password && <p className="mt-2 text-sm text-red-300">{errors.password.message}</p>}
-          </div>
+          <PasswordField
+            label="Password"
+            name="password"
+            register={register}
+            error={errors.password?.message}
+            placeholder="Create a password"
+          />
 
-          <button type="submit" className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black" disabled={isSubmitting}>
+          <button type="submit" className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={isSubmitting}>
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
 
@@ -804,6 +1132,7 @@ function RegisterPage() {
 }
 
 function ForgotPasswordPage() {
+  const { showToast } = useToast();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(z.object({ email: z.string().email('Valid email required') })),
     defaultValues: { email: '' },
@@ -811,8 +1140,13 @@ function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async (values) => {
-    await authApi.forgotPassword(values);
-    setSubmitted(true);
+    try {
+      await authApi.forgotPassword(values);
+      setSubmitted(true);
+      showToast('Reset instructions were sent if the email is registered.', 'success');
+    } catch (error) {
+      showToast(error?.message || 'Could not send reset instructions.', 'error');
+    }
   };
 
   return (
@@ -827,10 +1161,10 @@ function ForgotPasswordPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
             <div>
               <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-              <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
+              <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
               {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
           </form>
         )}
       </div>
@@ -839,6 +1173,7 @@ function ForgotPasswordPage() {
 }
 
 function ResetPasswordPage() {
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
@@ -848,8 +1183,13 @@ function ResetPasswordPage() {
   const [status, setStatus] = useState('');
 
   const onSubmit = async (values) => {
-    await authApi.resetPassword({ token, password: values.password });
-    setStatus('Password updated successfully.');
+    try {
+      await authApi.resetPassword({ token, password: values.password });
+      setStatus('Password updated successfully.');
+      showToast('Your password was updated.', 'success');
+    } catch (error) {
+      showToast(error?.message || 'Reset failed. Please request a new link.', 'error');
+    }
   };
 
   return (
@@ -862,12 +1202,14 @@ function ResetPasswordPage() {
           <p className="mt-6 text-[#d0d0d0]">{status}</p>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-            <div>
-              <label className="mb-2 block text-sm text-[#d5d5d5]">New password</label>
-              <input type="password" {...register('password')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
-              {errors.password && <p className="mt-2 text-sm text-red-300">{errors.password.message}</p>}
-            </div>
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">{isSubmitting ? 'Updating...' : 'Reset password'}</button>
+            <PasswordField
+              label="New password"
+              name="password"
+              register={register}
+              error={errors.password?.message}
+              placeholder="Choose a new password"
+            />
+            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Reset password'}</button>
           </form>
         )}
       </div>
@@ -908,6 +1250,7 @@ function VerifyEmailPage() {
 }
 
 function ChangePasswordPage() {
+  const { showToast } = useToast();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(z.object({ currentPassword: z.string().min(6), newPassword: z.string().min(8) })),
     defaultValues: { currentPassword: '', newPassword: '' },
@@ -915,8 +1258,13 @@ function ChangePasswordPage() {
   const [status, setStatus] = useState('');
 
   const onSubmit = async (values) => {
-    await authApi.changePassword({ currentPassword: values.currentPassword, newPassword: values.newPassword });
-    setStatus('Password changed successfully.');
+    try {
+      await authApi.changePassword({ currentPassword: values.currentPassword, newPassword: values.newPassword });
+      setStatus('Password changed successfully.');
+      showToast('Your password was changed.', 'success');
+    } catch (error) {
+      showToast(error?.message || 'Unable to change your password.', 'error');
+    }
   };
 
   return (
@@ -929,17 +1277,21 @@ function ChangePasswordPage() {
           <p className="mt-6 text-[#d0d0d0]">{status}</p>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-            <div>
-              <label className="mb-2 block text-sm text-[#d5d5d5]">Current password</label>
-              <input type="password" {...register('currentPassword')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
-              {errors.currentPassword && <p className="mt-2 text-sm text-red-300">{errors.currentPassword.message}</p>}
-            </div>
-            <div>
-              <label className="mb-2 block text-sm text-[#d5d5d5]">New password</label>
-              <input type="password" {...register('newPassword')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white" />
-              {errors.newPassword && <p className="mt-2 text-sm text-red-300">{errors.newPassword.message}</p>}
-            </div>
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">{isSubmitting ? 'Updating...' : 'Update password'}</button>
+            <PasswordField
+              label="Current password"
+              name="currentPassword"
+              register={register}
+              error={errors.currentPassword?.message}
+              placeholder="Current password"
+            />
+            <PasswordField
+              label="New password"
+              name="newPassword"
+              register={register}
+              error={errors.newPassword?.message}
+              placeholder="New password"
+            />
+            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Update password'}</button>
           </form>
         )}
       </div>
