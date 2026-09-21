@@ -5,7 +5,6 @@ import User from '../src/modules/users/model.js';
 import Brand from '../src/modules/brands/model.js';
 import Category from '../src/modules/categories/model.js';
 import Product from '../src/modules/products/model.js';
-import Coupon from '../src/modules/coupons/model.js';
 import Address from '../src/modules/addresses/model.js';
 import Cart from '../src/modules/cart/model.js';
 import Wishlist from '../src/modules/wishlist/model.js';
@@ -91,14 +90,6 @@ const demoUsers = [
   { email: 'demo.customer6@kicks.local', firstName: 'Nikhil', lastName: 'Reddy', role: 'CUSTOMER' },
   { email: 'demo.customer7@kicks.local', firstName: 'Anika', lastName: 'Joshi', role: 'CUSTOMER' },
   { email: 'demo.customer8@kicks.local', firstName: 'Yash', lastName: 'Singh', role: 'CUSTOMER' },
-];
-
-const demoCoupons = [
-  { code: 'KICKS10', type: 'PERCENTAGE', value: 10, minCartValue: 2000, maxDiscount: 1000, expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 180), usageLimit: 100, perUserLimit: 1, active: true, firstOrderOnly: false },
-  { code: 'WELCOME500', type: 'FIXED', value: 500, minCartValue: 4000, maxDiscount: 500, expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 120), usageLimit: 60, perUserLimit: 1, active: true, firstOrderOnly: true },
-  { code: 'FIRSTKICKS', type: 'PERCENTAGE', value: 15, minCartValue: 3500, maxDiscount: 1500, expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 150), usageLimit: 50, perUserLimit: 1, active: true, firstOrderOnly: true },
-  { code: 'BIGKICKS20', type: 'PERCENTAGE', value: 20, minCartValue: 5000, maxDiscount: 2000, expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 200), usageLimit: 40, perUserLimit: 2, active: true, firstOrderOnly: false },
-  { code: 'RUNNING15', type: 'PERCENTAGE', value: 15, minCartValue: 3000, maxDiscount: 1200, expiryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), usageLimit: 30, perUserLimit: 1, active: true, firstOrderOnly: false },
 ];
 
 const cmsBlocks = [
@@ -292,12 +283,6 @@ async function seedProducts() {
   }
 }
 
-async function seedCoupons() {
-  for (const coupon of demoCoupons) {
-    await ensureDoc(Coupon, { code: coupon.code }, { ...coupon, code: coupon.code.toUpperCase() }, 'Coupon');
-  }
-}
-
 async function seedAddresses() {
   const userAddressMap = new Map();
 
@@ -474,7 +459,6 @@ async function seedOrders() {
       grandTotal,
       status: spec.status,
       paymentStatus: spec.paymentStatus,
-      couponCode: '',
     });
 
     stats.created += 1;
@@ -549,7 +533,6 @@ async function verifyDatabase() {
     ['PRODUCTS', await Product.countDocuments({ status: 'PUBLISHED' })],
     ['BRANDS', await Brand.countDocuments() ],
     ['CATEGORIES', await Category.countDocuments() ],
-    ['COUPONS', await Coupon.countDocuments() ],
     ['INVENTORY', await Inventory.countDocuments() ],
     ['ORDERS', await Order.countDocuments() ],
   ];
@@ -587,7 +570,6 @@ async function main() {
     await seedUsers();
     await seedBrandsAndCategories();
     await seedProducts();
-    await seedCoupons();
     const userAddressMap = await seedAddresses();
     await seedWishlistAndCart(userAddressMap);
     await seedBlogCmsNotifications();
@@ -607,7 +589,6 @@ async function main() {
     console.log(`CATEGORIES: ${await Category.countDocuments()}`);
     console.log(`PRODUCTS: ${await Product.countDocuments({ status: 'PUBLISHED' })}`);
     console.log(`VARIANTS: ${await Product.aggregate([{ $unwind: '$variants' }, { $count: 'count' }]).then((rows) => rows[0]?.count || 0)}`);
-    console.log(`COUPONS: ${await Coupon.countDocuments()}`);
     console.log(`ADDRESSES: ${await Address.countDocuments()}`);
     console.log(`WISHLISTS: ${await Wishlist.countDocuments()}`);
     console.log(`CARTS: ${await Cart.countDocuments()}`);

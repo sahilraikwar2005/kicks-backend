@@ -122,15 +122,6 @@ export default function ProductDetailPage() {
     return variantImages.length ? variantImages : productImages.length ? productImages : [getImageFallback];
   }, [product?.images, selectedVariant]);
 
-  // Clamp quantity to stock without useEffect
-  const resolvedQuantity = !selectedVariant
-    ? quantity
-    : currentStock > 0 && quantity < 1
-      ? 1
-      : quantity > currentStock
-        ? Math.min(quantity, currentStock || 1)
-        : quantity;
-
   const reviewsQuery = useQuery({
     queryKey: ['product-reviews', product?._id],
     queryFn: () => reviewsApi.list(product._id).then((response) => response?.data?.reviews || response?.reviews || []),

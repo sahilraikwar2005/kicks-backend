@@ -4,7 +4,7 @@ A production-ready Node.js + Express.js + MongoDB backend for a sneaker e-commer
 
 ## Overview
 
-This project implements a modular backend architecture for the KICKS brand covering authentication, products, cart, checkout, payments, orders, shipping, AI-assisted product generation, audits, analytics, and admin APIs.
+This project implements a modular backend architecture for the KICKS brand covering authentication, products, cart, checkout, payments, orders, shipping, audits, analytics, and admin APIs.
 
 ## Tech Stack
 
@@ -49,7 +49,6 @@ kicks-backend/
 - Cloudinary account
 - Razorpay account
 - SMTP email provider
-- OpenAI-compatible AI provider (for admin drafts)
 - Shiprocket credentials (for live shipment creation)
 
 ## Installation
@@ -122,11 +121,11 @@ Public browsing: products, featured products, brands, categories, published blog
 
 Authenticated customer APIs: auth/session management, addresses, cart, wishlist, checkout, payment verification, orders, cancellation, tracking, invoices, reviews, recently viewed products, notifications, and recommendations.
 
-Admin APIs: dashboard metrics, product/catalog management, coupons, AI drafts, shipment creation, refunds, invoice access/resend, review moderation, CMS/blog management, uploads, and audit-backed sensitive actions.
+Admin APIs: dashboard metrics, product/catalog management, shipment creation, invoice access/resend, CMS/blog management, uploads, and audit-backed sensitive actions. The launch Admin Panel exposes only Dashboard, Products, Inventory, Orders, Customers, Shipping, and Settings.
 
 Payment flow: the backend creates a Razorpay order, verifies the returned signature and gateway payment details, independently verifies webhooks, then marks payment/order state and decrements stock idempotently. Frontend totals and payment status are not trusted.
 
-Invoices are commercial invoices, not fabricated GST tax invoices. Returns and exchanges are intentionally not implemented; refunds remain admin-controlled.
+Invoices are commercial invoices, not fabricated GST tax invoices. Returns and exchanges are intentionally not implemented; refunds are not exposed in the launch Admin Panel.
 
 ## Production Deployment Checklist
 
@@ -174,4 +173,4 @@ GET /api/v1/health
 
 ## Notes
 
-Redis is not required. External integrations for MongoDB, Cloudinary, Razorpay, Shiprocket, SMTP, and the AI provider require real credentials for live execution. The application does not report simulated provider success. Local startup requires a reachable MongoDB instance.
+Redis is not required. External integrations for MongoDB, Cloudinary, Razorpay, Shiprocket, and SMTP require real credentials for live execution. The application does not report simulated provider success. Local startup requires a reachable MongoDB instance.

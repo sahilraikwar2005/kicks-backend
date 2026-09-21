@@ -23,7 +23,6 @@ import {
   Truck,
   RefreshCw,
   X,
-  Search,
   User2,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -158,6 +157,12 @@ function AppShell() {
         </Route>
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/products" element={<AdminPage initialSection="products" />} />
+          <Route path="/admin/inventory" element={<AdminPage initialSection="inventory" />} />
+          <Route path="/admin/orders" element={<AdminPage initialSection="orders" />} />
+          <Route path="/admin/customers" element={<AdminPage initialSection="customers" />} />
+          <Route path="/admin/shipping" element={<AdminPage initialSection="shipping" />} />
+          <Route path="/admin/settings" element={<AdminPage initialSection="settings" />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
@@ -2840,28 +2845,22 @@ function Toast({ message, type = 'info' }) {
   );
 }
 
-function AdminPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const section = searchParams.get('section') || 'dashboard';
+function AdminPage({ initialSection }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sectionFromQuery = searchParams.get('section');
+  const section = sectionFromQuery || initialSection || 'dashboard';
   const sections = [
     'dashboard',
     'products',
-    'categories',
-    'brands',
     'inventory',
     'orders',
-    'users',
-    'reviews',
+    'customers',
     'shipping',
-    'notifications',
-    'ai',
-    'blog',
-    'cms',
-    'audit',
     'settings',
   ];
 
-  const setSection = (nextSection) => setSearchParams({ section: nextSection });
+  const setSection = (nextSection) => navigate(nextSection === 'dashboard' ? '/admin' : `/admin/${nextSection}`);
 
   const DashboardSection = () => {
     const { data, isLoading, isError } = useQuery({ queryKey: ['admin-dashboard'], queryFn: () => adminApi.dashboard() });
@@ -3099,7 +3098,6 @@ function AdminPage() {
       }
       setIsFormOpen(false);
       setPage(1);
-      setSearchParams({ section: 'products' });
     };
 
     const deleteProduct = async (productId) => {
@@ -3214,120 +3212,6 @@ function AdminPage() {
     );
   };
 
-  const CategoriesSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-categories'], queryFn: () => apiClient.get('/categories').then((response) => response.data) });
-    const [form, setForm] = useState({ name: '', slug: '', description: '', image: '', sortOrder: 0, isActive: true });
-    const [editingId, setEditingId] = useState(null);
-
-    const categories = Array.isArray(unwrapPayload(data)) ? unwrapPayload(data) : unwrapPayload(data)?.categories ?? unwrapPayload(data)?.items ?? [];
-
-    const saveCategory = async () => {
-      const payload = { ...form, sortOrder: Number(form.sortOrder || 0) };
-      if (editingId) {
-        await apiClient.patch(`/categories/${editingId}`, payload);
-      } else {
-        await apiClient.post('/categories', payload);
-      }
-      setForm({ name: '', slug: '', description: '', image: '', sortOrder: 0, isActive: true });
-      setEditingId(null);
-      refetch();
-    };
-
-    const deleteCategory = async (id) => {
-      await apiClient.delete(`/categories/${id}`);
-      refetch();
-    };
-
-    return (
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">{editingId ? 'Edit category' : 'Create category'}</h3>
-          <div className="mt-5 space-y-4">
-            <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Category name" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} placeholder="Slug" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <textarea rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} placeholder="Image URL" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input type="number" value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} placeholder="Sort order" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <label className="flex items-center gap-3 text-sm text-[#d2d2d2]"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} className="h-4 w-4" /> Active</label>
-            <button type="button" onClick={saveCategory} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">{editingId ? 'Update category' : 'Create category'}</button>
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Categories</h3>
-          {isLoading ? <Skeleton lines={4} /> : isError ? <ErrorState message="Unable to load categories." /> : (
-            <div className="mt-5 space-y-3">
-              {categories.length === 0 ? <EmptyState title="No categories" description="Create your first category to organize products." /> : categories.map((category) => (
-                <div key={category._id || category.id} className="flex items-center justify-between rounded-[18px] border border-white/10 bg-[#181818] p-4">
-                  <div>
-                    <div className="font-semibold text-white">{category.name}</div>
-                    <div className="mt-1 text-xs text-[#a3a3a3]">/{category.slug}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => { setEditingId(category._id || category.id); setForm({ name: category.name || '', slug: category.slug || '', description: category.description || '', image: category.image || '', sortOrder: category.sortOrder || 0, isActive: category.isActive !== false }); }} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Edit</button>
-                    <button type="button" onClick={() => deleteCategory(category._id || category.id)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const BrandsSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-brands'], queryFn: () => apiClient.get('/brands').then((response) => response.data) });
-    const [form, setForm] = useState({ name: '', slug: '', description: '', logo: '', isActive: true });
-    const [editingId, setEditingId] = useState(null);
-    const brands = Array.isArray(unwrapPayload(data)) ? unwrapPayload(data) : unwrapPayload(data)?.brands ?? unwrapPayload(data)?.items ?? [];
-
-    const saveBrand = async () => {
-      if (editingId) await apiClient.patch(`/brands/${editingId}`, form); else await apiClient.post('/brands', form);
-      setForm({ name: '', slug: '', description: '', logo: '', isActive: true });
-      setEditingId(null);
-      refetch();
-    };
-
-    const deleteBrand = async (id) => { await apiClient.delete(`/brands/${id}`); refetch(); };
-
-    return (
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">{editingId ? 'Edit brand' : 'Create brand'}</h3>
-          <div className="mt-5 space-y-4">
-            <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Brand name" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} placeholder="Slug" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <textarea rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input value={form.logo} onChange={(event) => setForm({ ...form, logo: event.target.value })} placeholder="Logo URL" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <label className="flex items-center gap-3 text-sm text-[#d2d2d2]"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} className="h-4 w-4" /> Active</label>
-            <button type="button" onClick={saveBrand} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">{editingId ? 'Update brand' : 'Create brand'}</button>
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Brands</h3>
-          {isLoading ? <Skeleton lines={4} /> : isError ? <ErrorState message="Unable to load brands." /> : (
-            <div className="mt-5 space-y-3">
-              {brands.length === 0 ? <EmptyState title="No brands" description="Create the first brand in your catalog." /> : brands.map((brand) => (
-                <div key={brand._id || brand.id} className="flex items-center justify-between rounded-[18px] border border-white/10 bg-[#181818] p-4">
-                  <div>
-                    <div className="font-semibold text-white">{brand.name}</div>
-                    <div className="mt-1 text-xs text-[#a3a3a3]">/{brand.slug}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => { setEditingId(brand._id || brand.id); setForm({ name: brand.name || '', slug: brand.slug || '', description: brand.description || '', logo: brand.logo || '', isActive: brand.isActive !== false }); }} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Edit</button>
-                    <button type="button" onClick={() => deleteBrand(brand._id || brand.id)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const InventorySection = () => {
     const [page, setPage] = useState(1);
     const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -3430,12 +3314,6 @@ function AdminPage() {
       anchor.click();
       URL.revokeObjectURL(url);
     };
-    const refundOrder = async (id) => {
-      const amount = window.prompt('Refund amount (optional)', '0');
-      const reason = window.prompt('Refund reason', 'Customer requested refund');
-      if (amount === null || reason === null) return;
-      await apiClient.post(`/admin/orders/${id}/refund`, { amount: Number(amount || 0), reason });
-    };
 
     return (
       <div className="space-y-6">
@@ -3476,7 +3354,6 @@ function AdminPage() {
                     </select>
                     <button type="button" onClick={() => createShipment(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Ship</button>
                     <button type="button" onClick={() => downloadInvoice(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Invoice</button>
-                    <button type="button" onClick={() => refundOrder(row._id)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Refund</button>
                   </div>
                 ) },
               ]}
@@ -3490,10 +3367,10 @@ function AdminPage() {
     );
   };
 
-  const UsersSection = () => {
+  const CustomersSection = () => {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
-    const { data, isLoading, isError } = useQuery({ queryKey: ['admin-users', page], queryFn: () => apiClient.get('/admin/users', { params: { page, limit: 10 } }).then((response) => response.data) });
+    const { data, isLoading, isError } = useQuery({ queryKey: ['admin-customers', page], queryFn: () => apiClient.get('/admin/users', { params: { page, limit: 10 } }).then((response) => response.data) });
     const users = unwrapPayload(data)?.items ?? [];
     const totalPages = unwrapPayload(data)?.totalPages || 1;
     const filteredUsers = users.filter((user) => `${user.firstName || ''} ${user.lastName || ''} ${user.email || ''}`.toLowerCase().includes(search.toLowerCase()));
@@ -3506,9 +3383,9 @@ function AdminPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">People</div>
-              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Users</h3>
+              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Customers</h3>
             </div>
-            <div className="w-full max-w-md"><SearchInput value={search} onChange={setSearch} placeholder="Search users" /></div>
+            <div className="w-full max-w-md"><SearchInput value={search} onChange={setSearch} placeholder="Search customers" /></div>
           </div>
         </div>
 
@@ -3526,46 +3403,6 @@ function AdminPage() {
               emptyMessage="No users found."
             />
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const ReviewsSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-reviews'], queryFn: () => apiClient.get('/admin/reviews').then((response) => response.data) });
-    const reviews = unwrapPayload(data)?.reviews ?? [];
-
-    const updateReview = async (id, status) => {
-      if (status === 'APPROVED') await apiClient.patch(`/admin/reviews/${id}/approve`); else await apiClient.patch(`/admin/reviews/${id}/reject`);
-      refetch();
-    };
-
-    return (
-      <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Moderation</div>
-          <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Reviews</h3>
-        </div>
-
-        {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load reviews." /> : (
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
-            <DataTable
-              columns={[
-                { key: 'product', label: 'Product', render: (row) => <div className="font-semibold text-white">{row.product?.name || 'Product'}</div> },
-                { key: 'user', label: 'Customer', render: (row) => <span>{row.user?.firstName || ''} {row.user?.lastName || ''}</span> },
-                { key: 'rating', label: 'Rating', render: (row) => <span>{row.rating || 0}/5</span> },
-                { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status || 'PENDING'} /> },
-                { key: 'actions', label: 'Action', render: (row) => (
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => updateReview(row._id, 'APPROVED')} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Approve</button>
-                    <button type="button" onClick={() => updateReview(row._id, 'REJECTED')} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Reject</button>
-                  </div>
-                ) },
-              ]}
-              rows={reviews}
-              emptyMessage="No reviews await moderation."
-            />
           </div>
         )}
       </div>
@@ -3898,250 +3735,6 @@ function AdminPage() {
     );
   };
 
-  const NotificationsSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-notifications'], queryFn: () => adminApi.notifications() });
-    const notifications = unwrapPayload(data)?.items ?? unwrapPayload(data)?.notifications ?? [];
-    const markRead = async (id) => { await adminApi.markNotificationRead(id); refetch(); };
-
-    return (
-      <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Alerts</div>
-          <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Notifications</h3>
-        </div>
-
-        {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load notifications." /> : (
-          <div className="space-y-3">
-            {notifications.length === 0 ? <EmptyState title="All clear" description="No admin notifications at the moment." /> : notifications.map((notification) => (
-              <div key={notification._id || notification.id} className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-lg font-semibold text-white">{notification.title || 'Notification'}</div>
-                    <p className="mt-2 text-[#d1d1d1]">{notification.message || notification.body || 'No message available.'}</p>
-                  </div>
-                  {!notification.readAt && <button type="button" onClick={() => markRead(notification._id || notification.id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Mark read</button>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const BlogSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-blog'], queryFn: () => apiClient.get('/blog/admin/all').then((response) => response.data) });
-    const posts = unwrapPayload(data)?.posts ?? [];
-    const [form, setForm] = useState({ title: '', slug: '', status: 'DRAFT', excerpt: '', coverImage: '', content: '', seo: { title: '', description: '' }, tags: '' });
-
-    const savePost = async () => {
-      const payload = {
-        title: form.title,
-        slug: form.slug || form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        status: form.status,
-        excerpt: form.excerpt,
-        coverImage: form.coverImage,
-        content: form.content,
-        seo: { title: form.seo.title, description: form.seo.description },
-        tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-      };
-      await apiClient.post('/blog', payload);
-      refetch();
-      setForm({ title: '', slug: '', status: 'DRAFT', excerpt: '', coverImage: '', content: '', seo: { title: '', description: '' }, tags: '' });
-    };
-
-    return (
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Create article</h3>
-          <div className="mt-5 space-y-4">
-            <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Title" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} placeholder="Slug" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option></select>
-            <input value={form.coverImage} onChange={(event) => setForm({ ...form, coverImage: event.target.value })} placeholder="Cover image URL" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <textarea rows={3} value={form.excerpt} onChange={(event) => setForm({ ...form, excerpt: event.target.value })} placeholder="Excerpt" className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <textarea rows={6} value={form.content} onChange={(event) => setForm({ ...form, content: event.target.value })} placeholder="Content" className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} placeholder="Tags, comma separated" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <button type="button" onClick={savePost} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Save article</button>
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Posts</h3>
-          {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load blog posts." /> : (
-            <div className="mt-5 space-y-3">
-              {posts.length === 0 ? <EmptyState title="No posts" description="Publish the first story to the KICKS journal." /> : posts.map((post) => (
-                <div key={post._id || post.id} className="rounded-[18px] border border-white/10 bg-[#181818] p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="font-semibold text-white">{post.title}</div>
-                      <div className="mt-1 text-xs text-[#a0a0a0]">{post.slug}</div>
-                    </div>
-                    <StatusBadge status={post.status || 'DRAFT'} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const CmsSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-cms'], queryFn: () => apiClient.get('/cms/admin/all').then((response) => response.data) });
-    const items = unwrapPayload(data)?.items ?? [];
-    const [form, setForm] = useState({ key: '', type: 'HERO', content: '{}', sortOrder: 0, active: true });
-
-    const saveCms = async () => {
-      const payload = {
-        key: form.key,
-        type: form.type,
-        content: JSON.parse(form.content || '{}'),
-        sortOrder: Number(form.sortOrder || 0),
-        active: Boolean(form.active),
-      };
-      await apiClient.post('/cms', payload);
-      refetch();
-      setForm({ key: '', type: 'HERO', content: '{}', sortOrder: 0, active: true });
-    };
-
-    return (
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">CMS content</h3>
-          <div className="mt-5 space-y-4">
-            <input value={form.key} onChange={(event) => setForm({ ...form, key: event.target.value })} placeholder="CMS key" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="HERO">HERO</option><option value="BANNER">BANNER</option><option value="PROMOTION">PROMOTION</option><option value="FEATURED">FEATURED</option></select>
-            <textarea rows={6} value={form.content} onChange={(event) => setForm({ ...form, content: event.target.value })} placeholder='JSON payload e.g. {"title":"Welcome"}' className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <input type="number" value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} placeholder="Sort order" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-            <label className="flex items-center gap-3 text-sm text-[#d2d2d2]"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} className="h-4 w-4" /> Active</label>
-            <button type="button" onClick={saveCms} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Save CMS block</button>
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load CMS items." /> : (
-            <div className="space-y-3">
-              {items.length === 0 ? <EmptyState title="No CMS blocks" description="Create content blocks for landing pages and promotions." /> : items.map((item) => (
-                <div key={item._id || item.id} className="rounded-[18px] border border-white/10 bg-[#181818] p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="font-semibold text-white">{item.key}</div>
-                      <div className="mt-1 text-xs text-[#9e9e9e]">Type: {item.type}</div>
-                    </div>
-                    <StatusBadge status={item.active ? 'ACTIVE' : 'INACTIVE'} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const AiSection = () => {
-    const [prompt, setPrompt] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
-    const [draft, setDraft] = useState(null);
-    const [saving, setSaving] = useState(false);
-    const [toast, setToast] = useState('');
-
-    const generateDraft = async () => {
-      const result = await adminApi.generateAiProduct({ prompt, imageUrl });
-      setDraft(result?.data?.draft || result?.draft || null);
-      setToast('AI draft generated successfully.');
-    };
-
-    const saveAsProduct = async () => {
-      if (!draft) return;
-      setSaving(true);
-      try {
-        await apiClient.post('/products', {
-          name: draft.name || 'AI product',
-          slug: draft.slug || (draft.name || 'ai-product').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          status: 'DRAFT',
-          shortDescription: draft.shortDescription || '',
-          description: draft.description || '',
-          tags: Array.isArray(draft.tags) ? draft.tags : [],
-          price: 0,
-          seo: { title: draft.seoTitle || draft.name, description: draft.seoDescription || draft.shortDescription },
-          images: [],
-          variants: [{ sku: 'AI-DRAFT', size: 'US 9', color: draft.color || 'Black', price: 0, stock: 0 }],
-        });
-        setToast('AI draft saved as a draft product.');
-      } finally {
-        setSaving(false);
-      }
-    };
-
-    return (
-      <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">AI</div>
-          <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Product generator</h3>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-            <div className="space-y-4">
-              <textarea rows={6} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Describe the product concept to generate a draft" className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-              <input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Optional reference image URL" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-              <button type="button" onClick={generateDraft} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Generate draft</button>
-            </div>
-          </div>
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-            {draft ? (
-              <div className="space-y-3 text-[#d7d7d7]">
-                <div className="font-semibold text-white">{draft.name}</div>
-                <div>{draft.shortDescription}</div>
-                <div>{draft.description}</div>
-                <div className="text-xs uppercase tracking-[0.2em] text-[#a4a4a4]">Category: {draft.category || '—'} • Style: {draft.style || '—'} • Color: {draft.color || '—'}</div>
-                <div className="flex gap-3">
-                  <button type="button" onClick={saveAsProduct} className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black" disabled={saving}>{saving ? 'Saving...' : 'Save as draft'}</button>
-                  <button type="button" onClick={() => setDraft(null)} className="rounded-full border border-white/10 px-5 py-2 text-sm text-white">Clear</button>
-                </div>
-              </div>
-            ) : <div className="text-[#d8d8d8]">No draft generated yet. The backend AI flow never invents price, stock, SKU, or technical specs.</div>}
-          </div>
-        </div>
-        {toast && <Toast message={toast} />}
-      </div>
-    );
-  };
-
-  const AuditSection = () => {
-    const [page, setPage] = useState(1);
-    const { data, isLoading, isError } = useQuery({ queryKey: ['admin-audit', page], queryFn: () => adminApi.auditLogs({ page, limit: 10 }) });
-    const audits = unwrapPayload(data)?.items ?? [];
-    const totalPages = unwrapPayload(data)?.totalPages || 1;
-
-    return (
-      <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Compliance</div>
-          <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Audit log</h3>
-        </div>
-
-        {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load audit log." /> : (
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
-            <DataTable
-              columns={[
-                { key: 'action', label: 'Action', render: (row) => <div className="font-semibold text-white">{row.action}</div> },
-                { key: 'resource', label: 'Resource', render: (row) => <span>{row.resource}</span> },
-                { key: 'actor', label: 'Actor', render: (row) => <span>{row.actor || 'System'}</span> },
-                { key: 'createdAt', label: 'Time', render: (row) => <span>{new Date(row.createdAt).toLocaleString()}</span> },
-              ]}
-              rows={audits}
-              emptyMessage="No audit activity logged."
-            />
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const SettingsSection = () => {
     const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-settings'], queryFn: () => adminApi.settings() });
     const settings = unwrapPayload(data)?.settings ?? [];
@@ -4185,18 +3778,11 @@ function AdminPage() {
     switch (section) {
       case 'dashboard': return <DashboardSection />;
       case 'products': return <ProductsSection />;
-      case 'categories': return <CategoriesSection />;
-      case 'brands': return <BrandsSection />;
       case 'inventory': return <InventorySection />;
       case 'orders': return <OrdersSection />;
-      case 'users': return <UsersSection />;
-      case 'reviews': return <ReviewsSection />;
+      case 'customers': return <CustomersSection />;
+      case 'users': return <CustomersSection />;
       case 'shipping': return <ShippingSection />;
-      case 'notifications': return <NotificationsSection />;
-      case 'ai': return <AiSection />;
-      case 'blog': return <BlogSection />;
-      case 'cms': return <CmsSection />;
-      case 'audit': return <AuditSection />;
       case 'settings': return <SettingsSection />;
       default: return <DashboardSection />;
     }

@@ -1,12 +1,9 @@
 import { apiSuccess } from '../../utils/apiResponse.js';
-import { generateProductDraft } from '../../services/ai.service.js';
-import { regenerateProductField } from '../../services/ai.service.js';
 import { adminService } from './service.js';
 import { productService } from '../products/service.js';
 import { auditService } from '../audit/service.js';
 import User from '../users/model.js';
 import Inventory from '../inventory/model.js';
-import Notification from '../notifications/model.js';
 import AuditLog from '../audit/model.js';
 import { adminSettingsService } from './settings.service.js';
 
@@ -19,23 +16,6 @@ export const adminController = {
   dashboard: async (req, res) => {
     const metrics = await adminService.getDashboardMetrics();
     res.status(200).json(apiSuccess('Admin dashboard fetched successfully', { metrics }));
-  },
-  generateAiProduct: async (req, res) => {
-    const draft = await generateProductDraft({
-      imageUrl: req.body.imageUrl,
-      prompt: req.body.prompt,
-    });
-    await auditService.record({ actor: req.user._id, action: 'AI_PRODUCT_GENERATED', resource: 'product-draft', metadata: { hasImage: Boolean(req.body.imageUrl) }, ip: req.ip });
-    res.status(200).json(apiSuccess('AI product draft generated successfully', { draft }));
-  },
-  regenerateAiProduct: async (req, res) => {
-    const result = await regenerateProductField(req.body);
-    await auditService.record({ actor: req.user._id, action: 'AI_PRODUCT_REGENERATED', resource: 'product-draft', metadata: { field: req.body.field }, ip: req.ip });
-    res.status(200).json(apiSuccess('AI product field regenerated successfully', { draft: result }));
-  },
-  regenerateAiField: async (req, res) => {
-    const result = await regenerateProductField({ ...req.body, field: req.params.field });
-    res.status(200).json(apiSuccess('AI product field regenerated successfully', { draft: result }));
   },
 
   listUsers: async (req, res) => {
@@ -155,26 +135,5 @@ export const adminController = {
       AuditLog.countDocuments(),
     ]);
     res.status(200).json(apiSuccess('Audit logs fetched', { items, page, limit, total, totalPages: Math.ceil(total / limit) || 1 }));
-  },
-
-  listNotifications: async (req, res) => {
-    const page = Number(req.query.page || 1);
-    const limit = Number(req.query.limit || 20);
-    const skip = (page - 1) * limit;
-    const [items, total] = await Promise.all([
-      Notification.find().skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
-      Notification.countDocuments(),
-    ]);
-    res.status(200).json(apiSuccess('Notifications fetched', { items, page, limit, total, totalPages: Math.ceil(total / limit) || 1 }));
-  },
-
-  updateNotification: async (req, res) => {
-    const notification = await Notification.findByIdAndUpdate(req.params.id, { readAt: new Date() }, { new: true });
-    if (!notification) {
-      const error = new Error('Notification not found');
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json(apiSuccess('Notification updated', { notification }));
   },
 };

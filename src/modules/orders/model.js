@@ -35,7 +35,6 @@ const orderSchema = new mongoose.Schema(
     },
     paymentStatus: { type: String, enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'], default: 'PENDING' },
     paymentId: { type: String, default: '' },
-    couponCode: { type: String, default: '' },
   },
   { timestamps: true },
 );

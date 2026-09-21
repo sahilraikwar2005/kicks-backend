@@ -11,10 +11,7 @@ test.after(() => server.close());
 for (const path of [
   '/api/v1/admin/dashboard',
   '/api/v1/admin/products',
-  '/api/v1/admin/ai/product-generate',
-  '/api/v1/admin/ai/product-regenerate',
   '/api/v1/admin/orders/000000000000000000000000/ship',
-  '/api/v1/admin/orders/000000000000000000000000/refund',
   '/api/v1/admin/orders/000000000000000000000000/invoice/resend',
   '/api/v1/orders/000000000000000000000000/invoice',
   '/api/v1/orders/000000000000000000000000/tracking',
@@ -23,7 +20,7 @@ for (const path of [
   '/api/v1/payments/verify',
 ]) {
   test(`${path} requires authentication`, async () => {
-    const method = path.includes('/ai/') || path.includes('/ship') || path.includes('/refund') || path.includes('/resend') || path.includes('/payments/') || path.endsWith('/reviews') ? 'POST' : 'GET';
+    const method = path.includes('/ship') || path.includes('/resend') || path.includes('/payments/') || path.endsWith('/reviews') ? 'POST' : 'GET';
     const response = await fetch(`${baseUrl}${path}`, { method });
     assert.equal(response.status, 401);
   });

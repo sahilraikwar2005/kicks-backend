@@ -1,7 +1,6 @@
 import Order from './model.js';
 import Cart from '../cart/model.js';
 import Product from '../products/model.js';
-import { couponService } from '../coupons/service.js';
 import Address from '../addresses/model.js';
 import User from '../users/model.js';
 import {
@@ -95,14 +94,7 @@ export const orderService = {
       });
     }
 
-    let discountAmount = 0;
-    if (payload.couponCode) {
-      const { coupon, discount } = await couponService.validateCoupon(payload.couponCode, userId, subtotal);
-      if (coupon.firstOrderOnly && await Order.exists({ user: userId, paymentStatus: 'PAID' })) { const error = new Error('Coupon is valid only for a first order'); error.statusCode = 400; throw error; }
-      if (coupon.productRestrictions?.length && !orderItems.some((item) => coupon.productRestrictions.some((id) => String(id) === String(item.productId)))) { const error = new Error('Coupon does not apply to these products'); error.statusCode = 400; throw error; }
-      discountAmount = discount;
-    }
-
+    const discountAmount = 0;
     const shippingCharge = 0;
     const tax = 0;
     const grandTotal = Math.max(subtotal - discountAmount + shippingCharge + tax, 0);
@@ -119,7 +111,6 @@ export const orderService = {
       tax,
       grandTotal,
       paymentStatus: 'PENDING',
-      couponCode: payload.couponCode || '',
     });
 
     try {

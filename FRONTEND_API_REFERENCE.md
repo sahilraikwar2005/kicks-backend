@@ -1374,76 +1374,6 @@ Sets an address as default.
 
 ---
 
-# Coupons
-
-## GET /api/v1/coupons/validate
-
-**Purpose**
-Validates a coupon against the current authenticated user and cart total.
-
-**Authentication**
-- Authenticated customer
-
-**Query Parameters**
-
-| Parameter | Type | Required | Description |
-|---|---|---:|---|
-| code | string | Yes | coupon code |
-| cartTotal | number | Yes | cart subtotal to validate against |
-
-**Success Response**
-```json
-{
-  "success": true,
-  "message": "Coupon validated",
-  "data": {
-    "coupon": {
-      "_id": "ObjectId",
-      "code": "SAVE10",
-      "active": true,
-      "type": "PERCENTAGE",
-      "value": 10,
-      "maxDiscount": 500,
-      "minCartValue": 1000,
-      "expiryDate": "ISO date",
-      "usageLimit": 100,
-      "perUserLimit": 1,
-      "firstOrderOnly": false,
-      "productRestrictions": ["ObjectId"],
-      "categoryRestrictions": ["ObjectId"]
-    },
-    "discount": 250
-  },
-  "statusCode": 200
-}
-```
-
-**Rules implemented by code**
-- active/inactive
-- expiry date check
-- min cart value
-- usage limit
-- per-user limit
-- first-order only
-- fixed discount or percentage discount
-- max discount
-- product restrictions
-- category restrictions
-
-**Important**
-- Final order discount is server-authoritative.
-- Frontend must not calculate the payable amount as the source of truth.
-
-## POST /api/v1/coupons
-
-**Purpose**
-Creates a coupon as admin.
-
-**Authentication**
-- Admin / Super Admin
-
----
-
 # Checkout and Orders
 
 ## POST /api/v1/orders/checkout
@@ -1459,7 +1389,6 @@ Creates an order from the authenticated user’s cart.
 | Field | Type | Required | Description |
 |---|---|---:|---|
 | addressId | string | Yes | address ObjectId |
-| couponCode | string | No | coupon code |
 
 **Success Response**
 ```json
@@ -1494,8 +1423,7 @@ Creates an order from the authenticated user’s cart.
       "grandTotal": 4999,
       "status": "PENDING",
       "paymentStatus": "PENDING",
-      "paymentId": "",
-      "couponCode": ""
+      "paymentId": ""
     }
   },
   "statusCode": 201
@@ -2234,73 +2162,7 @@ Updates an admin setting.
 **Purpose**
 Lists audit logs.
 
-### GET /api/v1/admin/notifications
-
-**Purpose**
-Lists notification records.
-
-### PATCH /api/v1/admin/notifications/:id
-
-**Purpose**
-Marks an admin notification as read.
-
-### POST /api/v1/admin/ai/product-generate
-
-**Purpose**
-Generates a product draft from prompt and optional image URL.
-
-**Authentication**
-- Admin / Super Admin
-
-**Request Body**
-
-| Field | Type | Required | Description |
-|---|---|---:|---|
-| prompt | string | No | user prompt |
-| imageUrl | string | No | optional product image URL |
-
-**Success Response**
-```json
-{
-  "success": true,
-  "message": "AI product draft generated successfully",
-  "data": {
-    "draft": {
-      "name": "",
-      "shortDescription": "",
-      "description": "",
-      "category": "",
-      "gender": "",
-      "color": "",
-      "style": "",
-      "tags": [],
-      "seoTitle": "",
-      "seoDescription": "",
-      "slug": "",
-      "altText": ""
-    }
-  },
-  "statusCode": 200
-}
-```
-
-**Note**
-- AI must not be treated as source of truth for price, stock, SKU, or technical specifications.
-
-### POST /api/v1/admin/ai/product-regenerate
-
-**Purpose**
-Regenerates a field from AI using the same draft schema pattern.
-
-### POST /api/v1/admin/ai/product-description
-
-**Purpose**
-AI regeneration for the product description field.
-
-### POST /api/v1/admin/ai/product-seo
-
-**Purpose**
-AI regeneration for the SEO description field.
+Removed from the launch Admin Panel (no longer present in source): `GET /api/v1/admin/notifications`, `PATCH /api/v1/admin/notifications/:id`, `POST /api/v1/admin/ai/*`, `POST /api/v1/admin/orders/:id/refund`, `GET /api/v1/admin/reviews`, `PATCH /api/v1/admin/reviews/:id/approve`, `PATCH /api/v1/admin/reviews/:id/reject`.
 
 ### POST /api/v1/admin/orders/:id/ship
 
@@ -2316,34 +2178,6 @@ Gets invoice as admin.
 
 **Purpose**
 Resends invoice as admin.
-
-### POST /api/v1/admin/orders/:id/refund
-
-**Purpose**
-Triggers refund flow as admin.
-
-**Request Body**
-
-| Field | Type | Required | Description |
-|---|---|---:|---|
-| amount | number | No | optional refund amount |
-| reason | string | No | refund reason |
-| idempotencyKey | string | No | idempotency key |
-
-### GET /api/v1/admin/reviews
-
-**Purpose**
-Lists all reviews for moderation.
-
-### PATCH /api/v1/admin/reviews/:id/approve
-
-**Purpose**
-Approves a review.
-
-### PATCH /api/v1/admin/reviews/:id/reject
-
-**Purpose**
-Rejects a review.
 
 ---
 
@@ -2581,11 +2415,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 | CMS/Homepage | `/api/v1/cms` | GET | Public | homepage content |
 | Notifications | `/api/v1/notifications` | GET / PATCH | Customer | notifications |
 | Admin Dashboard | `/api/v1/admin/dashboard` | GET | Admin | dashboard |
-| Admin AI | `/api/v1/admin/ai/product-generate` | POST | Admin | product generation |
 | Admin Products | `/api/v1/products` | POST / PATCH / DELETE | Admin | product admin operations |
 | Admin Orders | `/api/v1/orders` | GET / PATCH | Admin | order management |
 | Admin Inventory | `/api/v1/inventory` | GET | Admin | inventory management |
-| Admin Reviews | `/api/v1/admin/reviews` | GET / PATCH | Admin | moderation |
 
 ---
 
@@ -2604,7 +2436,6 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 - [ ] Wishlist connected
 - [ ] Cart connected
 - [ ] Address CRUD connected
-- [ ] Coupon validation connected
 - [ ] Checkout connected
 - [ ] Razorpay connected
 - [ ] Order listing connected

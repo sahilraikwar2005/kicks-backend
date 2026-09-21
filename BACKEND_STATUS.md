@@ -4,7 +4,7 @@ This document reflects the current repository state as inspected in the source t
 
 ## 1. Project Overview
 
-KICKS is a sneaker e-commerce backend built in Node.js with Express.js and MongoDB/Mongoose. It is organized as a modular monolith with modules for authentication, users, addresses, products, cart, wishlist, recently viewed, recommendations, coupons, checkout, orders, inventory, payments, refunds, shipping, invoices, reviews, blog/CMS, notifications, uploads, and admin functionality.
+KICKS is a sneaker e-commerce backend built in Node.js with Express.js and MongoDB/Mongoose. It is organized as a modular monolith with modules for authentication, users, addresses, products, cart, wishlist, recently viewed, recommendations, checkout, orders, inventory, payments, refunds, shipping, invoices, reviews, blog/CMS, notifications, uploads, and admin functionality.
 
 Technology stack in the repository includes:
 
@@ -20,7 +20,6 @@ Technology stack in the repository includes:
 - Nodemailer / SMTP
 - Shiprocket provider abstraction
 - PDFKit
-- AI product draft generation
 - REST API under /api/v1
 
 Architectural decisions visible in the code:
@@ -60,7 +59,6 @@ Intended consumers:
 | Wishlist | ✅ Complete | Wishlist add/remove/list logic handled in module structure. |
 | Recently Viewed | ✅ Complete | User-scoped recently viewed tracking and limit logic exist. |
 | Recommendations | 🟡 Partial | Recommendation module exists, but it is not evidence-backed as a true ML/personalized system. |
-| Coupons | ✅ Complete (Task #6 automated verification) | Global usage caps, per-user limits, and duplicate-order idempotency are verified in the database-backed test suite. |
 | Checkout | ✅ Verified | Server-side validation, order creation, payment verification, inventory guards, and retry-safe processing all pass the repo test suite. |
 | Orders | ✅ Verified | Order state transitions, cancellation eligibility, and concurrency serialization are verified in the repo test suite. |
 | Inventory | ✅ Verified | Inventory model/service/routes and concurrency/idempotency checks pass the database-backed tests. |
@@ -77,7 +75,7 @@ Intended consumers:
 | Admin Dashboard | ✅ Complete | Dashboard metrics exist via admin service. |
 | Admin Security / RBAC | ✅ Verified | Admin routes require auth + RBAC, role claims are validated against the stored user record, and privileged-role payloads are rejected. |
 | Authentication Security | ✅ Verified | JWT role mismatches are rejected, password-change invalidation revokes active sessions, and auth flows remain protected by validation and rate limiting. |
-| Testing & Concurrency Coverage | ✅ Verified | Final suite includes concurrent inventory/payment/refund/shipping/coupon/auth coverage with 82 passing tests. |
+| Testing & Concurrency Coverage | ✅ Verified | Final suite includes concurrent inventory/payment/refund/shipping/auth coverage. |
 | Nodemailer Security / Dependency | ✅ Verified | `nodemailer` upgraded to `10.0.10`; audit now reports 0 vulnerabilities. |
 | Audit Logs | ✅ Complete | Audit logging features exist in the audit module. |
 | Security | ✅ Complete (code-level) | Helmet, CORS, rate limiting, HPP, sanitization, request validation, and secure cookies are present. |
@@ -309,45 +307,11 @@ What is visible in code:
 
 Status: 🟡 Partial / Deterministic logic only, not a high-end personalization engine.
 
-## 13. Coupons
+## 13. Discount Codes (Removed)
 
-Coupon model: `src/modules/coupons/model.js`
+This module was fully removed from the project. No endpoints, services, models, seed data, or tests remain for it. Checkout is address-only and order totals derive solely from server-side variant pricing.
 
-Coupon fields include:
-
-- code
-- type (PERCENTAGE or FIXED)
-- value
-- minCartValue
-- maxDiscount
-- expiryDate
-- usageLimit
-- perUserLimit
-- active
-- firstOrderOnly
-- productRestrictions
-- categoryRestrictions
-- usedCount
-- userUsage
-- timestamps
-
-Implemented validation in `src/modules/coupons/service.js`:
-
-- inactive coupon rejected
-- expired coupon rejected
-- minimum cart value enforced
-- usage limit enforced
-- per-user limit enforced
-- first-order-only check uses past paid order lookup
-- percentage and fixed discount calculations supported
-- max discount enforced
-- fixed discount capped by cart subtotal in the current service logic
-
-Important caveat:
-
-- The repository currently validates coupon usage in the service layer, but the code does not yet present a full, proven concurrency-safe end-to-end coupon consumption system under simultaneous checkout attempts.
-
-Status: 🟡 Partial / Business logic implemented; concurrency proof still pending.
+Status: ❌ Removed.
 
 ## 14. Checkout
 
@@ -362,12 +326,11 @@ Actual flow visible in code:
 5. Product and variant existence are checked
 6. Product status and variant existence are validated
 7. Stock availability is checked
-8. Coupon validation is performed if a coupon is provided
-9. Server calculates subtotal, discount, shipping, and grand total
-10. Order is created with a generated order number, item snapshot, customer snapshot, address snapshot, pricing, and coupon code
-11. Payment order is created via Razorpay when payment flow proceeds
-12. Payment signature + capture status are checked on verification
-13. Inventory and order state changes are attempted as part of the payment path
+8. Server calculates subtotal, discount, shipping, and grand total
+9. Order is created with a generated order number, item snapshot, customer snapshot, address snapshot, and pricing
+10. Payment order is created via Razorpay when payment flow proceeds
+11. Payment signature + capture status are checked on verification
+12. Inventory and order state changes are attempted as part of the payment path
 
 Important caveat:
 
@@ -394,7 +357,6 @@ Order fields include:
 - status
 - paymentStatus
 - paymentId
-- couponCode
 - timestamps
 
 Status values in code:
@@ -536,7 +498,7 @@ Status: ✅ Complete (code + automated verification) / 🟡 Live Provider Verifi
 
 ## 19. Refunds
 
-Refund logic exists in `src/modules/payments/refund.service.js` and the controller route under `/api/v1/admin/orders/:id/refund`.
+Refund logic exists in `src/modules/payments/refund.service.js` (service/model retained for data integrity and existing tests). The admin refund endpoint (`POST /api/v1/admin/orders/:id/refund`) was removed from the launch Admin Panel scope.
 
 Implemented behavior:
 
@@ -617,12 +579,13 @@ Status: 🟡 Partial / Provider verification required.
 
 ## 23. Reviews
 
-Review module exists and supports:
+Review module exists and supports (customer-facing only in launch scope):
 
 - submit review for moderation
 - list approved reviews
-- admin approve/reject moderation
 - product review association
+
+Admin review moderation endpoints were removed from the launch Admin Panel.
 
 Review logic is structured to support customer purchase gating through order context if the service is invoked correctly.
 
@@ -650,28 +613,15 @@ Implemented behavior:
 - notification model with user reference, title, message, data, readAt
 - CRUD-ish service pattern for create/list/mark read
 - customer notification routes under `/api/v1/notifications`
-- admin notification listing/update in admin routes
+- admin notification endpoints removed from the launch Admin Panel
 
 Status: ✅ Implemented.
 
 ## 26. AI Product Generation
 
-AI generation service exists in `src/services/ai.service.js` and is connected to the admin controller.
+Removed from the launch scope. The former `src/services/ai.service.js` admin draft flow (and its `src/config/ai.js` config plus `src/modules/admin/validation.js` schema) were deleted, and no `POST /api/v1/admin/ai/*` endpoint exists anymore.
 
-The code includes:
-
-- product draft generation
-- field regeneration
-- admin-gated access
-- JSON schema validation on the AI response pattern
-- explicit instruction to avoid inventing price, stock, SKU, and technical specs
-
-Important warning:
-
-- This is a draft-generation path, not a direct publish path.
-- The code does not prove a live OpenAI-compatible provider is working in this environment.
-
-Status: 🟡 Partial / Live provider verification required.
+Status: ❌ Removed from launch Admin Panel.
 
 ## 27. Admin Dashboard
 
@@ -688,23 +638,16 @@ The service calculates:
 - recent orders
 - top selling products
 
-Admin routes present in source:
+Admin routes present in source (launch scope — Dashboard, Products, Inventory, Orders, Customers, Shipping, Settings):
 
 - `GET /api/v1/admin/dashboard`
-- `POST /api/v1/admin/ai/product-generate`
-- `POST /api/v1/admin/ai/product-regenerate`
-- `POST /api/v1/admin/ai/product-description`
-- `POST /api/v1/admin/ai/product-seo`
+- `GET /api/v1/admin/products`
 - `POST /api/v1/admin/orders/:id/ship`
 - `GET /api/v1/admin/orders/:id/invoice`
 - `POST /api/v1/admin/orders/:id/invoice/resend`
-- `POST /api/v1/admin/orders/:id/refund`
-- `GET /api/v1/admin/reviews`
-- `PATCH /api/v1/admin/reviews/:id/approve`
-- `PATCH /api/v1/admin/reviews/:id/reject`
 - `GET /api/v1/admin/users`
 - `GET /api/v1/admin/users/:id`
-- `PATCH /api/v1/admin/users/:id/status`
+- `PATCH /api/v1/admin/users/:id/status` (Customers management in the launch Admin Panel)
 - `GET /api/v1/admin/inventory`
 - `GET /api/v1/admin/inventory/low-stock`
 - `GET /api/v1/admin/inventory/:variantId`
@@ -713,8 +656,8 @@ Admin routes present in source:
 - `GET /api/v1/admin/settings`
 - `PATCH /api/v1/admin/settings/:key`
 - `GET /api/v1/admin/audit-logs`
-- `GET /api/v1/admin/notifications`
-- `PATCH /api/v1/admin/notifications/:id`
+
+Removed from the launch Admin Panel: `POST /api/v1/admin/ai/*`, `GET/PATCH /api/v1/admin/notifications*`, `GET/PATCH /api/v1/admin/reviews*`, and `POST /api/v1/admin/orders/:id/refund`. Customer reviews (`/api/v1/products/:productId/reviews`), customer notifications (`/api/v1/notifications`), and transactional emails are preserved.
 
 Status: ✅ Implemented in code.
 
@@ -783,7 +726,6 @@ Test evidence:
 Coverage emphasis:
 
 - inventory concurrency and stock safety
-- coupon concurrency and usage caps
 - payment webhook/retry/idempotency paths
 - refund state and duplicate processing safety
 - shipping and shipment duplicate protections
@@ -822,12 +764,9 @@ Audit log model exists in `src/modules/audit/model.js` with schema fields:
 Audit service records events such as:
 
 - admin login
-- AI generation
-- AI regeneration
 - refund actions
 - user status changes
 - inventory adjustments
-- coupon creation
 - sensitive admin operations
 
 The exact event coverage depends on where the service is called from in the code.
@@ -887,7 +826,6 @@ Actual route groups in the app at `/api/v1` include:
 - `/api/v1/brands`
 - `/api/v1/categories`
 - `/api/v1/cart`
-- `/api/v1/coupons`
 - `/api/v1/orders`
 - `/api/v1/wishlist`
 - `/api/v1/payments`
@@ -914,7 +852,6 @@ Current tests in the repository include:
 - auth protection test
 - invalid registration validation test
 - admin auth checks for protected routes
-- coupon validation regression
 - cart quantity validation regression
 - SKU duplicate detection regression
 
@@ -939,7 +876,6 @@ Remaining production-oriented test gaps:
 - concurrent stock purchase under real race conditions
 - duplicate refund processing
 - duplicate shipment creation
-- coupon concurrency under simultaneous checkout
 - payment/inventory failure reconciliation
 - privilege escalation regression tests
 
@@ -999,8 +935,6 @@ The actual environment contract is defined in `.env.example` and `src/config/env
 | SMTP_USER | SMTP user | No for boot | `.env` / config |
 | SMTP_PASSWORD | SMTP password | No for boot | `.env` / config |
 | EMAIL_FROM | sender email address | No | `.env` / config |
-| AI_API_KEY | AI provider key | No for boot, required for live AI generation | `.env` / config |
-| AI_MODEL | AI model name | No | `.env` / config |
 | SHIPPING_PROVIDER | provider name | No for boot | `.env` / config |
 | SHIPPING_API_KEY | shipping provider key | No for boot | `.env` / config |
 | SHIPPING_API_SECRET | shipping provider secret | No for boot | `.env` / config |
@@ -1082,7 +1016,7 @@ CODE VERIFIED
 - route loading and API structure
 - registration/login/logout/refresh/password resets
 - admin authorization checks
-- inventory/coupon/payment webhook hardening
+- inventory/payment webhook hardening
 - SKU uniqueness and order state validation
 - full automated test suite and linting
 
@@ -1127,7 +1061,6 @@ Required production environment variables and settings remain:
 | Products | ✅ Complete |
 | Cart | ✅ Complete |
 | Wishlist | ✅ Complete |
-| Coupons | 🟡 Partial / Needs External Verification |
 | Checkout | 🟡 Partial / Needs External Verification |
 | Orders | 🟡 Partial / Needs External Verification |
 | Inventory | ✅ Complete (code) / 🟡 Live Verification Required |

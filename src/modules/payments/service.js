@@ -7,7 +7,6 @@ import Payment from './model.js';
 import PaymentWebhookEvent from './webhook.model.js';
 import { refundService } from './refund.service.js';
 import { auditService } from '../audit/service.js';
-import { couponService } from '../coupons/service.js';
 import { inventoryService } from '../inventory/service.js';
 import User from '../users/model.js';
 import { sendPaymentConfirmationEmail } from '../../services/email.service.js';
@@ -129,14 +128,13 @@ export const paymentService = {
     try {
       if (order) {
         await Cart.updateOne({ userId: order.user, items: { $exists: true } }, { $set: { items: [] } });
-        if (order.couponCode) await couponService.consumeForPaidOrder(order);
         await auditService.record({ actor: order.user, action: 'INVENTORY_DECREMENTED', resource: 'order', resourceId: order._id, metadata: { paymentId } });
       }
     } catch (e) {
       const metadataUpdate = {
         ...(payment.metadata || {}),
-        couponStatus: 'FAILED',
-        couponError: e.message || 'Coupon consumption failed',
+        postPaymentStatus: 'FAILED',
+        postPaymentError: e.message || 'Post-payment processing failed',
         reconciliationRequired: true,
       };
       await Payment.updateOne({ _id: payment._id }, { $set: { metadata: metadataUpdate } });

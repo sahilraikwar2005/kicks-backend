@@ -18,11 +18,4 @@ export const reviewService = {
       throw error;
     }
   },
-
-  async listAdmin() { return Review.find().populate('product', 'name slug').populate('user', 'firstName lastName email').sort({ createdAt: -1 }); },
-  async setStatus(id, status) {
-    const review = await Review.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
-    if (!review) { const error = new Error('Review not found'); error.statusCode = 404; throw error; }
-    return review;
-  },
 };
