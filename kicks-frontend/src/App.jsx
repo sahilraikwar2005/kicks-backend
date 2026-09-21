@@ -99,6 +99,17 @@ function AdminRoute() {
   return <Outlet />;
 }
 
+const isAdminRole = (role) => role === 'ADMIN' || role === 'SUPER_ADMIN';
+
+function CustomerRoute() {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+
+  if (loading) return <div className="p-8 text-center text-white">Checking session...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (isAdmin) return <Navigate to="/admin" replace />;
+  return <Outlet />;
+}
+
 function PageMeta({ title, description = 'Premium sneaker storefront.' }) {
   return (
     <Helmet>
@@ -161,16 +172,18 @@ function AppShell() {
         <Route path="/blog/:slug" element={<BlogDetailPage />} />
         <Route path="/cms/:slug" element={<CmsPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/account/profile" element={<AccountPage initialTab="profile" />} />
-          <Route path="/account/security" element={<AccountPage initialTab="security" />} />
-          <Route path="/account/addresses" element={<AddressBookPage />} />
-          <Route path="/account/notifications" element={<NotificationsPage />} />
-          <Route path="/account/orders" element={<OrdersPage />} />
-          <Route path="/account/orders/:id" element={<OrderDetailPage />} />
+          <Route element={<CustomerRoute />}>
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/account/profile" element={<AccountPage initialTab="profile" />} />
+            <Route path="/account/security" element={<AccountPage initialTab="security" />} />
+            <Route path="/account/addresses" element={<AddressBookPage />} />
+            <Route path="/account/notifications" element={<NotificationsPage />} />
+            <Route path="/account/orders" element={<OrdersPage />} />
+            <Route path="/account/orders/:id" element={<OrderDetailPage />} />
+          </Route>
         </Route>
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage />} />
@@ -2471,7 +2484,7 @@ function AccountPage({ initialTab }) {
 }
 
 function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isAdmin } = useAuth();
   const { showToast } = useToast();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema),
@@ -2482,15 +2495,16 @@ function LoginPage() {
 
   const onSubmit = async (values) => {
     try {
-      await login(values);
+      const payload = await login(values);
+      const signedInUser = payload?.data?.user || payload?.user || null;
       showToast('Welcome back. You are signed in.', 'success');
-      navigate('/account', { replace: true });
+      navigate(isAdminRole(signedInUser?.role) ? '/admin' : '/account', { replace: true });
     } catch (error) {
       showToast(error?.message || 'Login failed. Please check your credentials.', 'error');
     }
   };
 
-  if (isAuthenticated) return <Navigate to="/account" replace />;
+  if (isAuthenticated) return <Navigate to={isAdmin ? '/admin' : '/account'} replace />;
 
   return (
     <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
@@ -2529,7 +2543,7 @@ function LoginPage() {
 }
 
 function RegisterPage() {
-  const { register: registerUser, isAuthenticated } = useAuth();
+  const { register: registerUser, isAuthenticated, isAdmin } = useAuth();
   const { showToast } = useToast();
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
@@ -2558,7 +2572,7 @@ function RegisterPage() {
 
   const onInvalid = () => showToast('Please check the highlighted fields.', 'error');
 
-  if (isAuthenticated) return <Navigate to="/account" replace />;
+  if (isAuthenticated) return <Navigate to={isAdmin ? '/admin' : '/account'} replace />;
 
   return (
     <div className="mx-auto max-w-[700px] px-4 py-6 sm:py-12 lg:px-8">

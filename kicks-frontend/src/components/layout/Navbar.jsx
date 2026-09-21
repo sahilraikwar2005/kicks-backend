@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, Heart, Menu, Search, ShieldCheck, ShoppingBag, User } from 'lucide-react';
+import { Bell, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { notificationsApi } from '../../api/notifications.api';
 import { cartApi } from '../../api/cart.api';
@@ -29,13 +29,13 @@ export default function Navbar() {
           : [];
       return notifications.filter((item) => !item?.read && !item?.isRead).length;
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !isAdmin,
   });
 
   const { data: cartData } = useQuery({
     queryKey: ['cart'],
     queryFn: () => cartApi.getCart(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !isAdmin,
   });
   const cartItems = cartData?.data?.cart?.items || cartData?.cart?.items || [];
   const cartCount = cartItems.reduce((total, item) => total + Number(item?.quantity || 0), 0);
@@ -59,25 +59,48 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden items-center gap-9 lg:flex lg:justify-self-center">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `relative py-1 text-xs uppercase tracking-[0.24em] transition ${isActive ? 'text-white' : 'text-[#8f8f8f] hover:text-white'}`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <span>{item.label}</span>
-                    {isActive && <span aria-hidden="true" className="absolute inset-x-0 -bottom-1 h-[2px] rounded-full bg-white" />}
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </div>
+          {!isAdmin && (
+            <div className="hidden items-center gap-9 lg:flex lg:justify-self-center">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `relative py-1 text-xs uppercase tracking-[0.24em] transition ${isActive ? 'text-white' : 'text-[#8f8f8f] hover:text-white'}`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span>{item.label}</span>
+                      {isActive && <span aria-hidden="true" className="absolute inset-x-0 -bottom-1 h-[2px] rounded-full bg-white" />}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          )}
 
+          {isAdmin ? (
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:justify-self-end">
+              <Link
+                to="/admin"
+                aria-label="Open Admin Control Center"
+                title="Admin Control Center"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/50 sm:px-4"
+              >
+                <ShieldCheck size={14} /> <span className="hidden sm:inline">Control Center</span><span className="sm:hidden">Admin</span>
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                aria-label="Log out"
+                title="Log out"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-red-500/40 hover:text-red-200 sm:px-4"
+              >
+                <LogOut size={14} /> <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
+          ) : (
           <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:justify-self-end">
             <Link to="/shop" aria-label="Search products" title="Search products" className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35 sm:inline-flex">
               <Search size={16} />
@@ -108,11 +131,6 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
-                {isAdmin && (
-                  <Link to="/admin" className="hidden items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white md:inline-flex">
-                    <ShieldCheck size={14} /> Admin
-                  </Link>
-                )}
                 <Link
                   to="/account"
                   aria-label="Open account"
@@ -120,7 +138,7 @@ export default function Navbar() {
                 >
                   <User size={14} /> <span className="hidden sm:inline">{user?.firstName || 'Account'}</span>
                 </Link>
-                <button type="button" onClick={logout} className="hidden rounded-full border border-white/15 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white sm:inline-flex">
+                <button type="button" onClick={logout} aria-label="Log out" className="hidden rounded-full border border-white/15 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white sm:inline-flex">
                   Logout
                 </button>
               </div>
@@ -134,23 +152,53 @@ export default function Navbar() {
               </Link>
             )}
           </div>
+          )}
         </div>
 
         {mobileOpen && (
           <div className="mt-4 rounded-[22px] border border-white/10 bg-[#111111] p-3 lg:hidden">
             <div className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `rounded-full px-4 py-2 text-sm uppercase tracking-[0.18em] ${isActive ? 'bg-white text-black' : 'text-[#d4d4d4]'}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
+              {isAdmin ? (
+                <>
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-full bg-white px-4 py-2 text-sm uppercase tracking-[0.18em] text-black"
+                  >
+                    Admin Panel
+                  </Link>
+                  <Link
+                    to="/"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-full px-4 py-2 text-sm uppercase tracking-[0.18em] text-[#d4d4d4]"
+                  >
+                    Storefront
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      logout();
+                    }}
+                    className="rounded-full px-4 py-2 text-left text-sm uppercase tracking-[0.18em] text-red-200"
+                  >
+                    Log out
+                  </button>
+                </>
+              ) : (
+                navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      `rounded-full px-4 py-2 text-sm uppercase tracking-[0.18em] ${isActive ? 'bg-white text-black' : 'text-[#d4d4d4]'}`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))
+              )}
             </div>
           </div>
         )}

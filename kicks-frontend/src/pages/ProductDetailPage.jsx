@@ -36,7 +36,7 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const { showToast } = useToast();
 
   const [selectedSize, setSelectedSize] = useState('');
@@ -482,6 +482,15 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
+            {isAdmin ? (
+              <div className="mt-6 flex flex-col gap-3 rounded-[20px] border border-white/10 bg-[#141414] p-4 text-sm text-[#c4c4c4] sm:mt-8 sm:flex-row sm:items-center sm:justify-between">
+                <span>You are signed in with an admin account. Shopping actions are disabled.</span>
+                <Link to="/admin" className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/35">
+                  Admin Panel
+                </Link>
+              </div>
+            ) : (
+            <>
             <div className="mt-6 flex items-center gap-2 sm:mt-8 sm:gap-3">
               <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[#171717]">
                 <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-11 w-11 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40 sm:h-12 sm:w-12">
@@ -505,6 +514,8 @@ export default function ProductDetailPage() {
             <button type="button" onClick={handleBuyNow} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[#181818] px-6 py-4 text-sm font-medium text-white transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50" disabled={isOutOfStock || !selectedVariant}>
               <ShoppingBag size={16} /> Buy now
             </button>
+            </>
+            )}
 
             <div className="mt-4 flex gap-3 rounded-[18px] border border-white/10 bg-[#141414] p-4">
               <Info size={16} className="mt-0.5 shrink-0 text-[#b8b8b8]" aria-hidden="true" />

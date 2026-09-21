@@ -9,7 +9,7 @@ import { useAuth } from '../../context/useAuth';
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const { showToast } = useToast();
 
   const variants = Array.isArray(product?.variants) ? product.variants : [];
@@ -91,6 +91,7 @@ export default function ProductCard({ product }) {
             event.currentTarget.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
           }}
         />
+        {!isAdmin && (
         <button
           type="button"
           onClick={handleWishlist}
@@ -102,6 +103,7 @@ export default function ProductCard({ product }) {
         >
           <Heart size={16} className={isWishlisted ? 'fill-white' : ''} />
         </button>
+        )}
         {discount > 0 && (
           <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-black sm:left-3 sm:top-3 sm:text-[10px]">
             -{discount}%
@@ -137,7 +139,7 @@ export default function ProductCard({ product }) {
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2 sm:mt-5 sm:gap-3">
-        {isOutOfStock ? (
+        {isOutOfStock || isAdmin ? (
           <Link to={`/products/${product?.slug}`} className="flex-1 rounded-full border border-white/15 px-3 py-2.5 text-center text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 sm:px-4 sm:py-3 sm:text-sm">
             View details
           </Link>
