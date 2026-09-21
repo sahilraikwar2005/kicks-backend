@@ -9,9 +9,9 @@ import { useAuth } from '../../context/useAuth';
 const navItems = [
   { label: 'Home', to: '/' },
   { label: 'Shop', to: '/shop' },
+  { label: 'Collections', to: '/categories' },
+  { label: 'Stories', to: '/blog' },
   { label: 'About', to: '/about' },
-  { label: 'Policy', to: '/privacy-policy' },
-  { label: 'Categories', to: '/categories' },
 ];
 
 export default function Navbar() {
@@ -43,8 +43,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl">
       <nav className="mx-auto max-w-[1400px] px-3 py-3 sm:px-4 sm:py-4 lg:px-8">
-        <div className="flex items-center justify-between gap-2 sm:gap-3">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:justify-self-start">
             <button
               type="button"
               onClick={() => setMobileOpen((current) => !current)}
@@ -59,24 +59,29 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden items-center gap-8 lg:flex">
+          <div className="hidden items-center gap-9 lg:flex lg:justify-self-center">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `text-sm uppercase tracking-[0.2em] transition ${isActive ? 'text-white' : 'text-[#a5a5a5] hover:text-white'}`
+                  `relative py-1 text-xs uppercase tracking-[0.24em] transition ${isActive ? 'text-white' : 'text-[#8f8f8f] hover:text-white'}`
                 }
               >
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    <span>{item.label}</span>
+                    {isActive && <span aria-hidden="true" className="absolute inset-x-0 -bottom-1 h-[2px] rounded-full bg-white" />}
+                  </>
+                )}
               </NavLink>
             ))}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <button type="button" aria-label="Search" className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white sm:inline-flex">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:justify-self-end">
+            <Link to="/shop" aria-label="Search products" title="Search products" className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35 sm:inline-flex">
               <Search size={16} />
-            </button>
+            </Link>
 
             {isAuthenticated && (
               <Link

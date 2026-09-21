@@ -149,6 +149,7 @@ function AppShell() {
         <Route path="/terms" element={<PolicyPage title="Terms of Use" />} />
         <Route path="/shipping-policy" element={<PolicyPage title="Shipping Policy" />} />
         <Route path="/refund-cancellation-policy" element={<PolicyPage title="Refund & Cancellation Policy" />} />
+        <Route path="/authenticity" element={<AuthenticityPage />} />
         <Route path="/order-success/:id" element={<OrderSuccessPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -334,6 +335,23 @@ function PolicyPage({ title }) {
         <div className="mt-8 space-y-5 text-[#d1d1d1]">
           <p>These terms and policies are applied in line with the KICKS storefront experience and your purchase rights.</p>
           <p>For the live business rules, the backend is the source of truth for shipping timelines, returns, eligibility, and payment compliance.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthenticityPage() {
+  return (
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
+      <PageMeta title="Authenticity & Product Information | KICKS" description="Product authenticity and information disclosure" />
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-12">
+        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Product Information</p>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Authenticity &amp; Product Information</h1>
+        <div className="mt-8 max-w-3xl space-y-5 text-sm leading-relaxed text-[#d1d1d1] sm:text-base">
+          <p>Product descriptions, images, branding references, and availability are provided for informational purposes. Unless explicitly stated and verified, KICKS does not represent products as officially brand-authorized or independently authenticated.</p>
+          <p>Customers should review the product information carefully before placing an order. If you have questions about a specific product, please contact our support team before purchase.</p>
+          <p>By placing an order, you acknowledge the product information and authenticity disclosure shown on this website.</p>
         </div>
       </div>
     </div>
@@ -1146,6 +1164,11 @@ function CheckoutPage() {
           </button>
 
           {!activeAddressId && <p role="alert" className="mt-3 text-center text-sm text-red-300">Select a delivery address above to enable payment.</p>}
+
+          <p className="mt-4 text-center text-xs leading-relaxed text-[#8d8d8d]">
+            By placing this order, you acknowledge the product information and authenticity disclosure shown on this website.{' '}
+            <Link to="/authenticity" className="text-[#c4c4c4] underline decoration-white/25 underline-offset-2 hover:text-white">Learn more</Link>
+          </p>
         </aside>
       </div>
     </div>

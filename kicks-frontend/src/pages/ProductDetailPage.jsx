@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronLeft, ChevronRight, Heart, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Heart, Info, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { cartApi } from '../api/cart.api';
@@ -505,6 +505,18 @@ export default function ProductDetailPage() {
             <button type="button" onClick={handleBuyNow} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[#181818] px-6 py-4 text-sm font-medium text-white transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50" disabled={isOutOfStock || !selectedVariant}>
               <ShoppingBag size={16} /> Buy now
             </button>
+
+            <div className="mt-4 flex gap-3 rounded-[18px] border border-white/10 bg-[#141414] p-4">
+              <Info size={16} className="mt-0.5 shrink-0 text-[#b8b8b8]" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white">Authenticity Notice</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#b8b8b8]">
+                  KICKS does not represent this product as officially brand-authorized or independently authenticated.
+                  Please review the product details carefully before purchase.{' '}
+                  <Link to="/authenticity" className="text-white underline decoration-white/30 underline-offset-2 hover:decoration-white">Learn more</Link>
+                </p>
+              </div>
+            </div>
 
             <div className="mt-8 rounded-[20px] border border-white/10 bg-[#181818] p-4 text-sm text-[#d3d3d3]">
               <div className="flex items-center gap-3"><ShieldCheck size={16} className="text-white" /> 30-day easy returns</div>
