@@ -324,11 +324,11 @@ export default function ProductDetailPage() {
         <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#111111] p-3">
-              <div className="absolute inset-x-3 top-3 z-10 flex items-center justify-between">
-                <button type="button" aria-label="Previous image" onClick={() => setActiveImageIndex((index) => (index === 0 ? galleryImages.length - 1 : index - 1))} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm">
+              <div className="pointer-events-none absolute inset-x-3 inset-y-0 z-10 flex items-center justify-between">
+                <button type="button" aria-label="Previous image" onClick={() => setActiveImageIndex((index) => (index === 0 ? galleryImages.length - 1 : index - 1))} className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm">
                   <ChevronLeft size={18} />
                 </button>
-                <button type="button" aria-label="Next image" onClick={() => setActiveImageIndex((index) => (index === galleryImages.length - 1 ? 0 : index + 1))} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm">
+                <button type="button" aria-label="Next image" onClick={() => setActiveImageIndex((index) => (index === galleryImages.length - 1 ? 0 : index + 1))} className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm">
                   <ChevronRight size={18} />
                 </button>
               </div>
