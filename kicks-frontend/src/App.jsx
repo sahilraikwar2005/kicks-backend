@@ -144,6 +144,19 @@ function ScrollToTop() {
 const unwrapPayload = (payload) => payload?.data ?? payload ?? {};
 const formatMoney = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
+// Maps real upload API failures (POST /uploads/images) to user-friendly text.
+// Backend contract: 400 invalid/empty file, 413 over size limit, 415 unsupported
+// type, 401/403 auth, 502/503 Cloudinary/storage unavailable.
+function getUploadErrorMessage(error) {
+  const status = Number(error?.status);
+  if (status === 415) return 'Unsupported file type. Use JPG, PNG or WebP, then choose the file again.';
+  if (status === 413) return 'File exceeds the 5 MB limit. Choose a smaller image to retry.';
+  if (status === 401 || status === 403) return 'Your session expired. Please log in again, then retry the upload.';
+  if (status === 502 || status === 503) return 'Upload service unavailable. Please try again in a moment.';
+  if (error?.message) return `${error.message} Choose the files again to retry.`;
+  return 'Image upload failed. Choose the files again to retry.';
+}
+
 const statusClasses = {
   PENDING: 'bg-[#1e1e1e] text-[#d9d9d9]',
   PROCESSING: 'bg-[#2b2610] text-[#f4d66a]',
@@ -3773,15 +3786,27 @@ function AdminPage({ initialSection }) {
         for (const file of valid) {
           const form = new FormData();
           form.append('image', file);
-          const response = await apiClient.post('/uploads/images', form);
+          // NOTE: apiClient defaults to Content-Type: application/json, which makes
+          // axios JSON-stringify FormData (file never leaves the browser) and multer
+          // then sees no file -> backend 400 "Invalid upload file". Strip the header
+          // for this request only so the browser sets multipart/form-data + boundary.
+          const response = await apiClient.post('/uploads/images', form, {
+            transformRequest: [
+              (data, headers) => {
+                if (headers && typeof headers.delete === 'function') headers.delete('Content-Type');
+                else if (headers) delete headers['Content-Type'];
+                return data;
+              },
+            ],
+          });
           const uploaded = unwrapPayload(response.data) ?? {};
-          if (!uploaded.url) throw new Error(`Upload failed for "${file.name || 'file'}".`);
+          if (!uploaded.url) throw new Error(`Upload failed for "${file.name || 'file'}". Choose the file again to retry.`);
           const id = makeMediaId();
           setMediaItems((items) => [...items, { id, kind: 'upload', url: uploaded.url, publicId: uploaded.publicId || '' }]);
           setSessionUploadIds((ids) => [...ids, id]);
         }
       } catch (error) {
-        setUploadError(error?.message || 'Image upload failed. Please try again.');
+        setUploadError(getUploadErrorMessage(error));
       } finally {
         setUploading(false);
       }
@@ -3838,16 +3863,16 @@ function AdminPage({ initialSection }) {
             title={editingProduct ? 'Edit product' : 'Add product'}
             actions={(
               <>
-                <button type="button" onClick={closeEditor} className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30">
-                  <ArrowLeft size={14} /> Back to Products
+                <button type="button" onClick={closeEditor} aria-label="Back to products" className="inline-flex h-[34px] items-center gap-1.5 rounded-[10px] border border-white/10 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60">
+                  <ArrowLeft size={13} /> Back to Products
                 </button>
                 <button
                   type="button"
                   onClick={saveProduct}
                   disabled={savingProduct || uploading}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#FFC800] px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+                  className="inline-flex h-[36px] items-center gap-1.5 rounded-[10px] bg-[#FFC800] px-4 text-xs font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60"
                 >
-                  {(savingProduct || uploading) && <Loader2 size={14} className="animate-spin" />}
+                  {(savingProduct || uploading) && <Loader2 size={13} className="animate-spin" />}
                   {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
                 </button>
               </>
@@ -3906,12 +3931,12 @@ function AdminPage({ initialSection }) {
                 <div className="border-t border-white/10 pt-6">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Variants</p>
                   <div className="mt-4 grid gap-4 md:grid-cols-3">
-                    <input value={productForm.variants[0]?.sku || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], sku: event.target.value }] })} placeholder="SKU" aria-label="Variant SKU" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input value={productForm.variants[0]?.size || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], size: event.target.value }] })} placeholder="Size" aria-label="Variant size" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input value={productForm.variants[0]?.color || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], color: event.target.value }] })} placeholder="Color" aria-label="Variant color" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input type="number" value={productForm.variants[0]?.price ?? productForm.price} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], price: Number(event.target.value) }], price: Number(event.target.value) })} placeholder="Variant price" aria-label="Variant price" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input type="number" value={productForm.variants[0]?.stock ?? 0} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], stock: Number(event.target.value) }] })} placeholder="Stock" aria-label="Variant stock" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input value={productForm.variants[0]?.images || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], images: event.target.value }] })} placeholder="Variant image URLs" aria-label="Variant image URLs" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                    <input value={productForm.variants[0]?.sku || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], sku: event.target.value }] })} placeholder="SKU" aria-label="Variant SKU" className="kicks-field" />
+                    <input value={productForm.variants[0]?.size || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], size: event.target.value }] })} placeholder="Size" aria-label="Variant size" className="kicks-field" />
+                    <input value={productForm.variants[0]?.color || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], color: event.target.value }] })} placeholder="Color" aria-label="Variant color" className="kicks-field" />
+                    <input type="number" value={productForm.variants[0]?.price ?? productForm.price} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], price: Number(event.target.value) }], price: Number(event.target.value) })} placeholder="Variant price" aria-label="Variant price" className="kicks-field" />
+                    <input type="number" value={productForm.variants[0]?.stock ?? 0} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], stock: Number(event.target.value) }] })} placeholder="Stock" aria-label="Variant stock" className="kicks-field" />
+                    <input value={productForm.variants[0]?.images || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], images: event.target.value }] })} placeholder="Variant image URLs" aria-label="Variant image URLs" className="kicks-field" />
                   </div>
                 </div>
 
@@ -3959,8 +3984,8 @@ function AdminPage({ initialSection }) {
               </label>
 
               {uploadError && (
-                <p role="alert" className="mt-3 rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-xs leading-relaxed text-red-200">
-                  {uploadError} Choose the files again to retry.
+                <p role="alert" className="mt-3 rounded-[10px] border border-red-500/30 bg-red-500/10 p-2.5 text-xs leading-relaxed text-red-200">
+                  {uploadError}
                 </p>
               )}
 
@@ -3974,14 +3999,14 @@ function AdminPage({ initialSection }) {
                       )}
                       <div className="absolute inset-x-1.5 bottom-1.5 flex items-center justify-between gap-1">
                         <span className="flex gap-1">
-                          <button type="button" onClick={() => moveMediaItem(item.id, -1)} disabled={index === 0} aria-label={`Move image ${index + 1} left`} title="Move left" className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
+                          <button type="button" onClick={() => moveMediaItem(item.id, -1)} disabled={index === 0} aria-label={`Move image ${index + 1} left`} title="Move left" className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:opacity-30">
                             <ChevronLeft size={13} />
                           </button>
-                          <button type="button" onClick={() => moveMediaItem(item.id, 1)} disabled={index === mediaItems.length - 1} aria-label={`Move image ${index + 1} right`} title="Move right" className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
+                          <button type="button" onClick={() => moveMediaItem(item.id, 1)} disabled={index === mediaItems.length - 1} aria-label={`Move image ${index + 1} right`} title="Move right" className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:opacity-30">
                             <ChevronRight size={13} />
                           </button>
                         </span>
-                        <button type="button" onClick={() => removeMediaItem(item.id)} aria-label={`Remove image ${index + 1}`} title="Remove image" className="flex h-7 w-7 items-center justify-center rounded-full border border-red-500/30 bg-black/60 text-red-200 backdrop-blur-sm transition hover:bg-red-500/20">
+                        <button type="button" onClick={() => removeMediaItem(item.id)} aria-label={`Remove image ${index + 1}`} title="Remove image" className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-red-500/30 bg-black/60 text-red-200 backdrop-blur-sm transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-400/60">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -4000,10 +4025,10 @@ function AdminPage({ initialSection }) {
                     onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addImageUrl(); } }}
                     placeholder="https://…"
                     inputMode="url"
-                    className="min-w-0 flex-1 rounded-full border border-white/10 bg-[#181818] px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/30"
+                    className="min-w-0 flex-1 kicks-field kicks-field-sm"
                   />
-                  <button type="button" onClick={addImageUrl} disabled={!urlInput.trim()} aria-label="Add image URL" title="Add image URL" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-40">
-                    <Plus size={15} />
+                  <button type="button" onClick={addImageUrl} disabled={!urlInput.trim()} aria-label="Add image URL" title="Add image URL" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-black transition hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-not-allowed disabled:opacity-40">
+                    <Plus size={14} />
                   </button>
                 </div>
               </div>
@@ -4013,15 +4038,15 @@ function AdminPage({ initialSection }) {
           </aside>
         </div>
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button type="button" onClick={closeEditor} className="rounded-full border border-white/10 px-6 py-3 text-sm text-white transition hover:border-white/30">Cancel</button>
+          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
+            <button type="button" onClick={closeEditor} className="inline-flex h-9 items-center justify-center rounded-[10px] border border-white/10 px-5 text-[13px] text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60">Cancel</button>
             <button
               type="button"
               onClick={saveProduct}
               disabled={savingProduct || uploading}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FFC800] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[10px] bg-[#FFC800] px-5 text-[13px] font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60"
             >
-              {(savingProduct || uploading) && <Loader2 size={15} className="animate-spin" />}
+              {(savingProduct || uploading) && <Loader2 size={14} className="animate-spin" />}
               {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
             </button>
           </div>
