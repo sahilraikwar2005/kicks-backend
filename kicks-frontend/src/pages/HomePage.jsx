@@ -63,34 +63,34 @@ export default function HomePage() {
         </div>
 
         <div className="relative mx-auto flex min-h-[82vh] w-full max-w-[1400px] flex-col justify-center px-4 py-16 sm:py-20 lg:min-h-[90vh] lg:px-8">
-          <p className="hero-rise text-[11px] font-medium uppercase tracking-[0.4em] text-[#cfcfcf]">
+          <p className="hero-rise kicks-eyebrow">
             Premium sneakers · Engineered for motion
           </p>
-          <h1 className="mt-4 font-black uppercase leading-[0.88] tracking-[-0.05em] text-white text-[19vw] sm:mt-5 sm:text-8xl lg:text-[8.5rem] xl:text-[10rem]">
+          <h1 className="mt-4 font-black uppercase leading-[0.88] tracking-[-0.05em] text-white text-[16vw] sm:mt-5 sm:text-7xl lg:text-8xl xl:text-[8.5rem]">
             <span className="hero-rise block" style={{ animationDelay: '90ms' }}>Move</span>
             <span className="hero-rise block text-[#e2e2e2]" style={{ animationDelay: '200ms' }}>Different</span>
           </h1>
-          <p className="hero-rise mt-5 max-w-md text-sm leading-relaxed text-[#c9c9c9] sm:mt-6 sm:text-base" style={{ animationDelay: '300ms' }}>
+          <p className="hero-rise kicks-body mt-5 max-w-md sm:mt-6" style={{ animationDelay: '300ms' }}>
             Premium sneakers designed for movement, comfort, and everyday expression.
           </p>
-          <div className="hero-rise mt-7 flex flex-wrap items-center gap-4 sm:mt-9" style={{ animationDelay: '400ms' }}>
+          <div className="hero-rise mt-7 flex flex-wrap items-center gap-3 sm:mt-9" style={{ animationDelay: '400ms' }}>
             <Link
               to="/shop"
               aria-label="Shop KICKS sneakers"
-              className="group/btn inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur transition-all duration-200 hover:border-white hover:bg-white/20 hover:text-white focus:outline-none focus:ring-3 focus:ring-white/60 focus:ring-offset-0"
+              className="kicks-btn kicks-btn-primary group/btn"
             >
               Shop KICKS
-              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent text-white transition-all duration-200 group-hover/btn:bg-black/90">
-                <ArrowRight size={16} strokeWidth={2.6} className="translate-x-0 transition-transform duration-200 group-hover/btn:translate-x-1" />
+              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent text-current transition-all duration-200">
+                <ArrowRight size={15} strokeWidth={2.6} className="translate-x-0 transition-transform duration-200 group-hover/btn:translate-x-1" />
               </span>
             </Link>
             <a
               href="#best-sellers"
               aria-label="Scroll to best sellers"
               title="Scroll to best sellers"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 text-white backdrop-blur-sm transition hover:border-white/60 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70"
+              className="kicks-icon-btn h-11 w-11"
             >
-              <ArrowDown size={18} />
+              <ArrowDown size={17} />
             </a>
           </div>
         </div>
@@ -109,15 +109,15 @@ export default function HomePage() {
       <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.4em] text-[#b5b5b5]">Choose your pace</p>
-            <h2 className="mt-3 text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">Shop by category</h2>
+            <p className="kicks-eyebrow">Choose your pace</p>
+            <h2 className="kicks-section-title mt-3">Shop by category</h2>
           </div>
           <Link
             to="/shop"
             aria-label="Explore all categories"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/40 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/60 sm:px-5"
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
           >
-            Explore all <ArrowRight size={14} />
+            Explore all <ArrowRight size={13} />
           </Link>
         </div>
 
@@ -171,41 +171,44 @@ export default function HomePage() {
       <section id="best-sellers" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.4em] text-[#b5b5b5]">Curated for movement</p>
-            <h2 className="mt-3 text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">New arrivals</h2>
+            <p className="kicks-eyebrow">Curated for movement</p>
+            <h2 className="kicks-section-title mt-3">New arrivals</h2>
           </div>
           <Link
             to="/shop"
             aria-label="View all new arrivals"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/40 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/60 sm:px-5"
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
           >
-            View all <ArrowRight size={14} />
+            View all <ArrowRight size={13} />
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {[...Array(4)].map((_, index) => (
-              <div key={index} className="h-[300px] animate-pulse rounded-[24px] bg-[#151515] sm:h-[380px]" />
+              <div key={index}>
+                <div className="aspect-square animate-pulse rounded-[14px] bg-[#151515]" />
+                <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-[#1c1c1c]" />
+              </div>
             ))}
           </div>
         ) : isError ? (
-          <div className="mt-8 rounded-[24px] border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            <p className="text-sm text-[#d2d2d2] sm:text-base">Unable to load new arrivals right now.</p>
+          <div className="mt-8 rounded-2xl border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
+            <p className="kicks-body">Unable to load new arrivals right now.</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="mt-5 inline-flex rounded-full border border-white/15 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/40"
+              className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5"
             >
               Retry
             </button>
           </div>
         ) : newArrivals.length === 0 ? (
-          <div className="mt-8 rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-8 text-center text-sm text-[#d2d2d2] sm:mt-10 sm:p-10 sm:text-base">
+          <div className="kicks-body mt-8 rounded-2xl border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
             Fresh drops landing soon. Browse the full collection meanwhile.
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {newArrivals.map((product) => (
               <ProductCard key={product?._id || product?.slug} product={product} />
             ))}
@@ -216,41 +219,44 @@ export default function HomePage() {
       <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.4em] text-[#b5b5b5]">Most wanted</p>
-            <h2 className="mt-3 text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">Best sellers</h2>
+            <p className="kicks-eyebrow">Most wanted</p>
+            <h2 className="kicks-section-title mt-3">Best sellers</h2>
           </div>
           <Link
             to="/shop"
             aria-label="Shop all best sellers"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/40 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/60 sm:px-5"
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
           >
-            Shop all <ArrowRight size={14} />
+            Shop all <ArrowRight size={13} />
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {[...Array(4)].map((_, index) => (
-              <div key={index} className="h-[300px] animate-pulse rounded-[24px] bg-[#151515] sm:h-[380px]" />
+              <div key={index}>
+                <div className="aspect-square animate-pulse rounded-[14px] bg-[#151515]" />
+                <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-[#1c1c1c]" />
+              </div>
             ))}
           </div>
         ) : isError ? (
-          <div className="mt-8 rounded-[24px] border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            <p className="text-sm text-[#d2d2d2] sm:text-base">Unable to load best sellers right now.</p>
+          <div className="mt-8 rounded-2xl border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
+            <p className="kicks-body">Unable to load best sellers right now.</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="mt-5 inline-flex rounded-full border border-white/15 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/40"
+              className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5"
             >
               Retry
             </button>
           </div>
         ) : bestSellers.length === 0 ? (
-          <div className="mt-8 rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-8 text-center text-sm text-[#d2d2d2] sm:mt-10 sm:p-10 sm:text-base">
+          <div className="kicks-body mt-8 rounded-2xl border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
             No best sellers flagged right now. Explore the full collection.
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {bestSellers.map((product) => (
               <ProductCard key={product?._id || product?.slug} product={product} />
             ))}

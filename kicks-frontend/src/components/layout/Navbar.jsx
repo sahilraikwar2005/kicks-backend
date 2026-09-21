@@ -42,37 +42,37 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl">
-      <nav className="mx-auto max-w-[1400px] px-3 py-3 sm:px-4 sm:py-4 lg:px-8">
+      <nav className="kicks-page py-2.5">
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:justify-self-start">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5 lg:justify-self-start">
             <button
               type="button"
               onClick={() => setMobileOpen((current) => !current)}
               aria-label="Toggle navigation menu"
               aria-expanded={mobileOpen}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-white lg:hidden"
+              className="kicks-icon-btn lg:hidden"
             >
-              <Menu size={18} />
+              <Menu size={16} />
             </button>
-            <Link to="/" className="truncate text-base font-black uppercase tracking-[0.25em] text-white sm:text-xl sm:tracking-[0.35em]">
+            <Link to="/" className="truncate text-sm font-black uppercase tracking-[0.3em] text-white sm:text-base" aria-label="KICKS home">
               KICKS
             </Link>
           </div>
 
           {!isAdmin && (
-            <div className="hidden items-center gap-9 lg:flex lg:justify-self-center">
+            <div className="hidden items-center gap-7 lg:flex lg:justify-self-center">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `relative py-1 text-xs uppercase tracking-[0.24em] transition ${isActive ? 'text-white' : 'text-[#8f8f8f] hover:text-white'}`
+                    `relative py-1 text-[11px] uppercase tracking-[0.22em] transition ${isActive ? 'text-white' : 'text-[#8f8f8f] hover:text-white'}`
                   }
                 >
                   {({ isActive }) => (
                     <>
                       <span>{item.label}</span>
-                      {isActive && <span aria-hidden="true" className="absolute inset-x-0 -bottom-1 h-[2px] rounded-full bg-white" />}
+                      {isActive && <span aria-hidden="true" className="absolute inset-x-0 -bottom-0.5 h-[2px] rounded-full bg-white" />}
                     </>
                   )}
                 </NavLink>
@@ -81,38 +81,38 @@ export default function Navbar() {
           )}
 
           {isAdmin ? (
-            <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:justify-self-end">
+            <div className="flex shrink-0 items-center gap-2 lg:justify-self-end">
               <Link
                 to="/admin"
                 aria-label="Open Admin Control Center"
                 title="Admin Control Center"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/50 sm:px-4"
+                className="kicks-btn kicks-btn-dark kicks-btn-sm"
               >
-                <ShieldCheck size={14} /> <span className="hidden sm:inline">Control Center</span><span className="sm:hidden">Admin</span>
+                <ShieldCheck size={13} /> <span className="hidden sm:inline">Control Center</span><span className="sm:hidden">Admin</span>
               </Link>
               <button
                 type="button"
                 onClick={logout}
                 aria-label="Log out"
                 title="Log out"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-red-500/40 hover:text-red-200 sm:px-4"
+                className="kicks-btn kicks-btn-secondary kicks-btn-sm"
               >
-                <LogOut size={14} /> <span className="hidden sm:inline">Logout</span>
+                <LogOut size={13} /> <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           ) : (
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:justify-self-end">
-            <Link to="/shop" aria-label="Search products" title="Search products" className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35 sm:inline-flex">
-              <Search size={16} />
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:justify-self-end">
+            <Link to="/shop" aria-label="Search products" title="Search products" className="kicks-icon-btn hidden sm:inline-flex">
+              <Search size={15} />
             </Link>
 
             {isAuthenticated && (
               <Link
                 to="/account/notifications"
                 aria-label={`${unreadNotifications} unread notifications`}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white"
+                className="kicks-icon-btn relative"
               >
-                <Bell size={16} />
+                <Bell size={15} />
                 {unreadNotifications > 0 && (
                   <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-semibold text-black">
                     {unreadNotifications > 9 ? '9+' : unreadNotifications}
@@ -121,24 +121,24 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Link to="/wishlist" aria-label="Wishlist" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white">
-              <Heart size={16} />
+            <Link to="/wishlist" aria-label="Wishlist" className="kicks-icon-btn">
+              <Heart size={15} />
             </Link>
-            <Link to="/cart" aria-label={`Cart${cartCount ? `, ${cartCount} items` : ''}`} className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white">
-              <ShoppingBag size={16} />
+            <Link to="/cart" aria-label={`Cart${cartCount ? `, ${cartCount} items` : ''}`} className="kicks-icon-btn relative">
+              <ShoppingBag size={15} />
               {cartCount > 0 && <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-semibold text-black">{cartCount > 9 ? '9+' : cartCount}</span>}
             </Link>
 
             {isAuthenticated ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Link
                   to="/account"
                   aria-label="Open account"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-[#181818] text-sm font-medium text-white transition hover:border-white/40 hover:bg-[#222222] focus:outline-none focus:ring-2 focus:ring-white/50 sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-white/15 bg-[#181818] px-3 text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/50"
                 >
-                  <User size={14} /> <span className="hidden sm:inline">{user?.firstName || 'Account'}</span>
+                  <User size={13} /> <span className="hidden sm:inline max-w-20 truncate">{user?.firstName || 'Account'}</span>
                 </Link>
-                <button type="button" onClick={logout} aria-label="Log out" className="hidden rounded-full border border-white/15 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white sm:inline-flex">
+                <button type="button" onClick={logout} aria-label="Log out" className="hidden h-9 items-center rounded-[10px] border border-white/15 px-3 text-[11px] uppercase tracking-[0.14em] text-white sm:inline-flex">
                   Logout
                 </button>
               </div>
@@ -146,9 +146,9 @@ export default function Navbar() {
               <Link
                 to="/login"
                 aria-label="Log in to your account"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#181818] px-3 py-2 text-xs font-medium text-white transition hover:border-white/40 hover:bg-[#222222] focus:outline-none focus:ring-2 focus:ring-white/50 sm:px-4 sm:text-sm"
+                className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-white/15 bg-[#181818] px-3 text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/50"
               >
-                <User size={14} /> Login
+                <User size={13} /> Login
               </Link>
             )}
           </div>
@@ -156,21 +156,21 @@ export default function Navbar() {
         </div>
 
         {mobileOpen && (
-          <div className="mt-4 rounded-[22px] border border-white/10 bg-[#111111] p-3 lg:hidden">
-            <div className="flex flex-col gap-2">
+          <div className="mt-3 rounded-2xl border border-white/10 bg-[#111111] p-2.5 lg:hidden">
+            <div className="flex flex-col gap-1.5">
               {isAdmin ? (
                 <>
                   <Link
                     to="/admin"
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-full bg-white px-4 py-2 text-sm uppercase tracking-[0.18em] text-black"
+                    className="kicks-btn kicks-btn-primary kicks-btn-sm w-full"
                   >
                     Admin Panel
                   </Link>
                   <Link
                     to="/"
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-full px-4 py-2 text-sm uppercase tracking-[0.18em] text-[#d4d4d4]"
+                    className="rounded-[10px] px-4 py-2 text-xs uppercase tracking-[0.18em] text-[#d4d4d4]"
                   >
                     Storefront
                   </Link>
@@ -180,7 +180,7 @@ export default function Navbar() {
                       setMobileOpen(false);
                       logout();
                     }}
-                    className="rounded-full px-4 py-2 text-left text-sm uppercase tracking-[0.18em] text-red-200"
+                    className="rounded-[10px] px-4 py-2 text-left text-xs uppercase tracking-[0.18em] text-red-200"
                   >
                     Log out
                   </button>
@@ -192,7 +192,7 @@ export default function Navbar() {
                     to={item.to}
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
-                      `rounded-full px-4 py-2 text-sm uppercase tracking-[0.18em] ${isActive ? 'bg-white text-black' : 'text-[#d4d4d4]'}`
+                      `rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] ${isActive ? 'bg-white text-black' : 'text-[#d4d4d4]'}`
                     }
                   >
                     {item.label}

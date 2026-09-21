@@ -240,7 +240,7 @@ function PasswordField({ label, name, register, error, placeholder = 'Enter pass
           id={name}
           type={showPassword ? 'text' : 'password'}
           {...register(name)}
-          className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 pr-12 text-white outline-none transition focus:border-white/25"
+          className="w-full kicks-field pr-12 text-white outline-none transition focus:border-white/25"
           placeholder={placeholder}
           aria-label={label || placeholder}
         />
@@ -264,8 +264,8 @@ function CategoriesPage() {
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Categories | KICKS" description="Browse premium sneaker categories" />
       <div className="mb-8">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Shop all</p>
-        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Categories</h1>
+        <p className="kicks-eyebrow">Shop all</p>
+        <h1 className="mt-3 kicks-section-title">Categories</h1>
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {['Running', 'Lifestyle', 'Training', 'Basketball', 'Football', 'Skate', 'Court', 'Performance'].map((category) => (
@@ -289,7 +289,7 @@ function AboutPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="About | KICKS" description="About KICKS" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">About us</p>
+        <p className="kicks-eyebrow">About us</p>
         <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">More than a shoe store.</h1>
         <p className="mt-6 max-w-2xl text-lg text-[#d0d0d0]">
           KICKS brings together premium craftsmanship, performance-driven design, and effortless street style for the modern mover.
@@ -305,8 +305,8 @@ function ContactPage() {
       <PageMeta title="Contact | KICKS" description="Contact the KICKS team" />
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Contact</p>
-          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Let’s talk.</h1>
+          <p className="kicks-eyebrow">Contact</p>
+          <h1 className="mt-4 kicks-section-title">Let’s talk.</h1>
           <div className="mt-8 space-y-5 text-[#d2d2d2]">
             <p>support@kicks.example</p>
             <p>+91 98765 43210</p>
@@ -316,12 +316,12 @@ function ContactPage() {
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <form className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2">
-              <input className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Your name" />
-              <input className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Your email" />
+              <input className="kicks-field text-white outline-none" placeholder="Your name" />
+              <input className="kicks-field text-white outline-none" placeholder="Your email" />
             </div>
-            <input className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Subject" />
+            <input className="w-full kicks-field text-white outline-none" placeholder="Subject" />
             <textarea rows={6} className="w-full rounded-[24px] border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Your message" />
-            <button type="submit" className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Send message</button>
+            <button type="submit" className="kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Send message</button>
           </form>
         </div>
       </div>
@@ -334,8 +334,8 @@ function FaqPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="FAQ | KICKS" description="Frequently asked questions" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">FAQ</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Frequently asked questions</h1>
+        <p className="kicks-eyebrow">FAQ</p>
+        <h1 className="mt-4 kicks-section-title">Frequently asked questions</h1>
         <div className="mt-8 space-y-4 text-[#d6d6d6]">
           {['Do you ship nationwide?', 'How long does a return take?', 'Can I track my order?', 'Do you offer cash on delivery?'].map((question) => (
             <div key={question} className="rounded-[18px] border border-white/10 bg-[#171717] p-5">
@@ -354,8 +354,8 @@ function PolicyPage({ title }) {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title={`${title} | KICKS`} description={title} />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Policy</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">{title}</h1>
+        <p className="kicks-eyebrow">Policy</p>
+        <h1 className="mt-4 kicks-section-title">{title}</h1>
         <div className="mt-8 space-y-5 text-[#d1d1d1]">
           <p>These terms and policies are applied in line with the KICKS storefront experience and your purchase rights.</p>
           <p>For the live business rules, the backend is the source of truth for shipping timelines, returns, eligibility, and payment compliance.</p>
@@ -370,8 +370,8 @@ function AuthenticityPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Authenticity & Product Information | KICKS" description="Product authenticity and information disclosure" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-12">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Product Information</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Authenticity &amp; Product Information</h1>
+        <p className="kicks-eyebrow">Product Information</p>
+        <h1 className="mt-4 kicks-section-title">Authenticity &amp; Product Information</h1>
         <div className="mt-8 max-w-3xl space-y-5 text-sm leading-relaxed text-[#d1d1d1] sm:text-base">
           <p>Product descriptions, images, branding references, and availability are provided for informational purposes. Unless explicitly stated and verified, KICKS does not represent products as officially brand-authorized or independently authenticated.</p>
           <p>Customers should review the product information carefully before placing an order. If you have questions about a specific product, please contact our support team before purchase.</p>
@@ -398,10 +398,10 @@ function AuthenticityPage() {
 //       <PageMeta title="Wishlist | KICKS" description="Your saved items" />
 //       <div className="mb-8 flex items-center justify-between gap-4">
 //         <div>
-//           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Saved</p>
-//           <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Wishlist</h1>
+//           <p className="kicks-eyebrow">Saved</p>
+//           <h1 className="mt-3 kicks-section-title">Wishlist</h1>
 //         </div>
-//         {items.length > 0 && <Link to="/shop" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Browse styles</Link>}
+//         {items.length > 0 && <Link to="/shop" className="kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Browse styles</Link>}
 //       </div>
 
 //       {isLoading ? (
@@ -414,7 +414,7 @@ function AuthenticityPage() {
 //         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
 //           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your wishlist is empty</h2>
 //           <p className="mt-4 text-[#c3c3c3]">Save the pairs you love to revisit them later.</p>
-//           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Shop now</Link>
+//           <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Shop now</Link>
 //         </div>
 //       ) : (
 //         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -509,7 +509,7 @@ function WishlistPage() {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="mt-7 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+            className="mt-7 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-white/90"
           >
             Log in
           </button>
@@ -524,12 +524,12 @@ function WishlistPage() {
 
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">
+          <p className="kicks-eyebrow">
             Saved
           </p>
 
           <div className="mt-3 flex items-center gap-3">
-            <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">
+            <h1 className="kicks-section-title">
               Wishlist
             </h1>
 
@@ -544,7 +544,7 @@ function WishlistPage() {
         {items.length > 0 && (
           <Link
             to="/shop"
-            className="inline-flex w-fit rounded-full border border-white/10 px-4 py-2 text-sm text-white transition hover:border-white/30"
+            className="inline-flex w-fit kicks-btn kicks-btn-secondary kicks-btn-sm text-sm transition hover:border-white/30"
           >
             Browse styles
           </Link>
@@ -573,7 +573,7 @@ function WishlistPage() {
           <button
             type="button"
             onClick={() => wishlistQuery.refetch()}
-            className="mt-5 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black"
+            className="mt-5 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold"
           >
             Retry
           </button>
@@ -590,7 +590,7 @@ function WishlistPage() {
 
           <Link
             to="/shop"
-            className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+            className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-white/90"
           >
             Shop now
           </Link>
@@ -795,8 +795,8 @@ function CartPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Cart | KICKS" description="Shopping cart" />
       <div className="mb-6 sm:mb-8">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Your cart</p>
-        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Cart</h1>
+        <p className="kicks-eyebrow">Your cart</p>
+        <h1 className="mt-3 kicks-section-title">Cart</h1>
       </div>
 
       {isLoading ? (
@@ -807,7 +807,7 @@ function CartPage() {
         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your cart is empty</h2>
           <p className="mt-4 text-sm text-[#c3c3c3] sm:text-base">Add a few premium pairs and continue to checkout.</p>
-          <Link to="/shop" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black sm:mt-8">Continue shopping</Link>
+          <Link to="/shop" className="mt-6 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium sm:mt-8">Continue shopping</Link>
         </div>
       ) : (
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.1fr_0.9fr]">
@@ -854,7 +854,7 @@ function CartPage() {
               <div className="flex justify-between"><span>Discount</span><span>{formatMoney(0)}</span></div>
               <div className="flex justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(subtotal)}</span></div>
             </div>
-            <button type="button" onClick={() => navigate('/checkout')} className="mt-6 block w-full rounded-full bg-white px-6 py-3.5 text-center text-sm font-semibold text-black sm:py-3 sm:font-medium">Proceed to checkout</button>
+            <button type="button" onClick={() => navigate('/checkout')} className="mt-6 block w-full kicks-btn kicks-btn-primary text-sm font-semibold sm:py-3 sm:font-medium">Proceed to checkout</button>
             <button type="button" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()} className="mt-3 w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white disabled:cursor-wait disabled:opacity-60 sm:mt-4">{clearMutation.isPending ? 'Clearing...' : 'Clear cart'}</button>
           </aside>
         </div>
@@ -1058,7 +1058,7 @@ function CheckoutPage() {
         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your cart is empty</h2>
           <p className="mt-4 text-[#c3c3c3]">Add a few premium pairs and continue to checkout.</p>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1068,8 +1068,8 @@ function CheckoutPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Checkout | KICKS" description="Checkout" />
       <div className="mb-6 sm:mb-8">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Checkout</p>
-        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Secure checkout</h1>
+        <p className="kicks-eyebrow">Checkout</p>
+        <h1 className="mt-3 kicks-section-title">Secure checkout</h1>
       </div>
 
       <div className="grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -1077,7 +1077,7 @@ function CheckoutPage() {
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-white sm:text-2xl">Delivery Address</h2>
-              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="shrink-0 rounded-full border border-white/10 px-4 py-2 text-sm text-white transition hover:border-white/30">
+              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="shrink-0 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm transition hover:border-white/30">
                 {showAddressForm ? 'Close form' : 'Add new address'}
               </button>
             </div>
@@ -1126,17 +1126,17 @@ function CheckoutPage() {
 
             {showAddressForm && (
               <form onSubmit={submitAddress} className="mt-5 grid gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:grid-cols-2">
-                <input value={addressForm.firstName} onChange={(event) => setAddressForm((current) => ({ ...current, firstName: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="First name" />
-                <input value={addressForm.lastName} onChange={(event) => setAddressForm((current) => ({ ...current, lastName: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Last name" />
-                <input value={addressForm.phone} onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none md:col-span-2" placeholder="Phone" />
-                <input value={addressForm.addressLine1} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine1: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none md:col-span-2" placeholder="Address line 1" />
-                <input value={addressForm.addressLine2} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine2: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none md:col-span-2" placeholder="Address line 2 (optional)" />
-                <input value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="City" />
-                <input value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="State" />
-                <input value={addressForm.postalCode} onChange={(event) => setAddressForm((current) => ({ ...current, postalCode: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Postal code" />
-                <input value={addressForm.country} onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))} className="rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Country" />
+                <input value={addressForm.firstName} onChange={(event) => setAddressForm((current) => ({ ...current, firstName: event.target.value }))} className="kicks-field text-white outline-none" placeholder="First name" />
+                <input value={addressForm.lastName} onChange={(event) => setAddressForm((current) => ({ ...current, lastName: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Last name" />
+                <input value={addressForm.phone} onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))} className="kicks-field text-white outline-none md:col-span-2" placeholder="Phone" />
+                <input value={addressForm.addressLine1} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine1: event.target.value }))} className="kicks-field text-white outline-none md:col-span-2" placeholder="Address line 1" />
+                <input value={addressForm.addressLine2} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine2: event.target.value }))} className="kicks-field text-white outline-none md:col-span-2" placeholder="Address line 2 (optional)" />
+                <input value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} className="kicks-field text-white outline-none" placeholder="City" />
+                <input value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} className="kicks-field text-white outline-none" placeholder="State" />
+                <input value={addressForm.postalCode} onChange={(event) => setAddressForm((current) => ({ ...current, postalCode: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Postal code" />
+                <input value={addressForm.country} onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Country" />
                 <div className="md:col-span-2 flex justify-end">
-                  <button type="submit" disabled={addressCreateMutation.isPending} className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black disabled:cursor-wait disabled:opacity-60">
+                  <button type="submit" disabled={addressCreateMutation.isPending} className="kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium disabled:cursor-wait disabled:opacity-60">
                     {addressCreateMutation.isPending ? 'Saving...' : 'Save address'}
                   </button>
                 </div>
@@ -1181,7 +1181,7 @@ function CheckoutPage() {
             disabled={!activeAddressId || isProcessingPayment}
             onClick={payNow}
             title={!activeAddressId ? 'Select a delivery address above to enable payment' : 'Pay securely with Razorpay'}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-center text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-60 sm:py-3 sm:font-medium"
+            className="mt-6 flex w-full items-center justify-center gap-2 kicks-btn kicks-btn-primary text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:py-3 sm:font-medium"
           >
             {isProcessingPayment && <Loader2 size={15} className="animate-spin" />}
             {isProcessingPayment ? 'Preparing payment...' : `Pay now • ${formatMoney(total)}`}
@@ -1218,9 +1218,9 @@ function OrderSuccessPage() {
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
-          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order unavailable</h1>
+          <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load your order details.</p>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1239,9 +1239,9 @@ function OrderSuccessPage() {
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
-          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order unavailable</h1>
+          <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now. Please try again.</p>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1254,9 +1254,9 @@ function OrderSuccessPage() {
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Payment pending | KICKS" description="Payment confirmation is still pending" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
-          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Payment pending</h1>
+          <h1 className="kicks-section-title">Payment pending</h1>
           <p className="mt-4 text-[#d3d3d3]">Your payment is still being confirmed. Please check again shortly.</p>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1268,8 +1268,8 @@ function OrderSuccessPage() {
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-12">
         <div className="flex flex-col items-center text-center">
           <div aria-hidden="true" className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black">✓</div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order status</p>
-          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order placed successfully</h1>
+          <p className="kicks-eyebrow">Order status</p>
+          <h1 className="mt-4 kicks-section-title">Order placed successfully</h1>
         </div>
 
         <div className="mt-8 grid gap-4 rounded-[24px] border border-white/10 bg-[#181818] p-5 text-left md:grid-cols-2">
@@ -1317,7 +1317,7 @@ function OrderSuccessPage() {
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link to={`/account/orders/${id}`} className="inline-flex flex-1 items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-medium text-black">View order</Link>
+          <Link to={`/account/orders/${id}`} className="inline-flex flex-1 items-center justify-center kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">View order</Link>
           <Link to="/shop" className="inline-flex flex-1 items-center justify-center rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white">Continue shopping</Link>
         </div>
       </div>
@@ -1333,7 +1333,7 @@ function OrdersPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="My orders | KICKS" description="Order history" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-        <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">My orders</h1>
+        <h1 className="kicks-section-title">My orders</h1>
         {isLoading ? (
           <div className="mt-6 h-[200px] animate-pulse rounded-[24px] bg-[#181818]" />
         ) : isError ? (
@@ -1416,9 +1416,9 @@ function OrderDetailPage() {
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order details | KICKS" description="Order details" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
-          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order not found</h1>
+          <h1 className="kicks-section-title">Order not found</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not find this order.</p>
-          <Link to="/account/orders" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back to orders</Link>
+          <Link to="/account/orders" className="mt-6 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Back to orders</Link>
         </div>
       </div>
     );
@@ -1437,10 +1437,10 @@ function OrderDetailPage() {
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order details | KICKS" description="Order details" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
-          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order unavailable</h1>
+          <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now.</p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/account/orders" className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back to orders</Link>
+            <Link to="/account/orders" className="inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Back to orders</Link>
             <Link to="/shop" className="inline-flex rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white">Continue shopping</Link>
           </div>
         </div>
@@ -1456,17 +1456,17 @@ function OrderDetailPage() {
       <PageMeta title="Order details | KICKS" description="Order details" />
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order details</p>
-          <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">{order.orderNumber || order._id || id}</h1>
+          <p className="kicks-eyebrow">Order details</p>
+          <h1 className="mt-3 kicks-section-title">{order.orderNumber || order._id || id}</h1>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link to="/account/orders" className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-white">Back to orders</Link>
+          <Link to="/account/orders" className="inline-flex kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Back to orders</Link>
           {trackingQuery.isLoading ? (
             <button type="button" disabled className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-wait">
               <Loader2 size={15} className="animate-spin" /> Checking tracking...
             </button>
           ) : trackingUrl ? (
-            <button type="button" onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-black">
+            <button type="button" onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">
               Track Order <ExternalLink size={15} />
             </button>
           ) : (
@@ -1479,12 +1479,12 @@ function OrderDetailPage() {
               Invoice unavailable
             </button>
           ) : (
-            <button type="button" onClick={() => invoiceMutation.mutate(order._id || id)} disabled={invoiceMutation.isPending} className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-white disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={() => invoiceMutation.mutate(order._id || id)} disabled={invoiceMutation.isPending} className="inline-flex items-center gap-2 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm disabled:cursor-wait disabled:opacity-60">
               {invoiceMutation.isPending && <Loader2 size={15} className="animate-spin" />}
               {invoiceMutation.isPending ? 'Downloading...' : 'Download Invoice'}
             </button>
           )}
-          <Link to="/shop" className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-black">Continue shopping</Link>
+          <Link to="/shop" className="inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
         </div>
       </div>
 
@@ -1861,7 +1861,7 @@ function AccountAddressesSection() {
           <button
             type="button"
             onClick={() => { resetForm(); setIsAdding(true); }}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-[#e4e4e4]"
+            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-[#e4e4e4]"
           >
             <Plus size={15} /> Add New Address
           </button>
@@ -1887,48 +1887,48 @@ function AccountAddressesSection() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">First Name *</label>
-                <input {...register('firstName')} placeholder="First name" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('firstName')} placeholder="First name" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
                 {errors.firstName && <p className="mt-1 text-xs text-red-300">{errors.firstName.message}</p>}
               </div>
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">Last Name *</label>
-                <input {...register('lastName')} placeholder="Last name" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('lastName')} placeholder="Last name" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
                 {errors.lastName && <p className="mt-1 text-xs text-red-300">{errors.lastName.message}</p>}
               </div>
             </div>
 
             <div>
               <label className="mb-2 block text-xs text-[#c0c0c0]">Phone Number *</label>
-              <input {...register('phone')} placeholder="+91 98765 43210" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              <input {...register('phone')} placeholder="+91 98765 43210" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
               {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone.message}</p>}
             </div>
 
             <div>
               <label className="mb-2 block text-xs text-[#c0c0c0]">Address Line 1 *</label>
-              <input {...register('addressLine1')} placeholder="Flat / House No. / Building / Street" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+              <input {...register('addressLine1')} placeholder="Flat / House No. / Building / Street" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
               {errors.addressLine1 && <p className="mt-1 text-xs text-red-300">{errors.addressLine1.message}</p>}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">Address Line 2 (Optional)</label>
-                <input {...register('addressLine2')} placeholder="Apartment, suite, etc." className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('addressLine2')} placeholder="Apartment, suite, etc." className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
               </div>
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">Landmark (Optional)</label>
-                <input {...register('landmark')} placeholder="Near Metro / Park" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('landmark')} placeholder="Near Metro / Park" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">City *</label>
-                <input {...register('city')} placeholder="City" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('city')} placeholder="City" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
                 {errors.city && <p className="mt-1 text-xs text-red-300">{errors.city.message}</p>}
               </div>
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">State *</label>
-                <input {...register('state')} placeholder="State" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('state')} placeholder="State" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
                 {errors.state && <p className="mt-1 text-xs text-red-300">{errors.state.message}</p>}
               </div>
             </div>
@@ -1936,12 +1936,12 @@ function AccountAddressesSection() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">Postal / PIN Code *</label>
-                <input {...register('postalCode')} placeholder="PIN Code" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('postalCode')} placeholder="PIN Code" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
                 {errors.postalCode && <p className="mt-1 text-xs text-red-300">{errors.postalCode.message}</p>}
               </div>
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">Country *</label>
-                <input {...register('country')} placeholder="Country" className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none focus:border-white/30" />
+                <input {...register('country')} placeholder="Country" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
               </div>
             </div>
 
@@ -1954,7 +1954,7 @@ function AccountAddressesSection() {
               <button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#e4e4e4] disabled:opacity-60"
+                className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-[#e4e4e4] disabled:opacity-60"
               >
                 {(isSubmitting || createMutation.isPending || updateMutation.isPending) && <Loader2 size={16} className="animate-spin" />}
                 {editingAddressId ? 'Update Address' : 'Save Address'}
@@ -1989,7 +1989,7 @@ function AccountAddressesSection() {
           <button
             type="button"
             onClick={() => { resetForm(); setIsAdding(true); }}
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black"
+            className="mt-5 inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-xs font-semibold uppercase tracking-[0.16em]"
           >
             <Plus size={14} /> Add Address
           </button>
@@ -2097,7 +2097,7 @@ function AccountOrdersSection() {
           <p className="mt-1 text-sm text-[#a0a0a0]">Explore our catalog and find your next favorite pair.</p>
           <Link
             to="/shop"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black"
+            className="mt-5 inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-xs font-semibold uppercase tracking-[0.16em]"
           >
             Start Shopping
           </Link>
@@ -2249,7 +2249,7 @@ function AccountPasswordSection() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting && <Loader2 size={16} className="animate-spin" />}
             {isSubmitting ? 'Updating...' : 'Update Password'}
@@ -2328,7 +2328,7 @@ function AccountPage({ initialTab }) {
       <PageMeta title="My Account | KICKS" description="Manage your KICKS customer account and preferences" />
 
       <div className="mb-6 sm:mb-8">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Customer Center</p>
+        <p className="kicks-eyebrow">Customer Center</p>
         <h1 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white sm:text-3xl md:text-4xl">
           My Account
         </h1>
@@ -2521,13 +2521,13 @@ function LoginPage() {
     <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Login | KICKS" description="Login to your KICKS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Welcome back</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Login</h1>
+        <p className="kicks-eyebrow">Welcome back</p>
+        <h1 className="mt-4 kicks-section-title">Login</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
           <div>
             <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-            <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" placeholder="you@example.com" />
+            <input {...register('email')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" placeholder="you@example.com" />
             {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
           </div>
 
@@ -2539,7 +2539,7 @@ function LoginPage() {
             placeholder="Your password"
           />
 
-          <button disabled={isSubmitting} type="submit" className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
+          <button disabled={isSubmitting} type="submit" className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
             {isSubmitting ? 'Signing in...' : 'Login'}
           </button>
 
@@ -2589,26 +2589,26 @@ function RegisterPage() {
     <div className="mx-auto max-w-[700px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Register | KICKS" description="Create a KICKS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Start here</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Create account</h1>
+        <p className="kicks-eyebrow">Start here</p>
+        <h1 className="mt-4 kicks-section-title">Create account</h1>
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-[#d5d5d5]">First name</label>
-              <input {...register('firstName')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
+              <input {...register('firstName')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
               {errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}
             </div>
             <div>
               <label className="mb-2 block text-sm text-[#d5d5d5]">Last name</label>
-              <input {...register('lastName')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
+              <input {...register('lastName')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
               {errors.lastName && <p className="mt-2 text-sm text-red-300">{errors.lastName.message}</p>}
             </div>
           </div>
 
           <div>
             <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-            <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
+            <input {...register('email')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
             {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
           </div>
 
@@ -2620,7 +2620,7 @@ function RegisterPage() {
             placeholder="Create a password"
           />
 
-          <button type="submit" className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={isSubmitting}>
+          <button type="submit" className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={isSubmitting}>
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
 
@@ -2655,18 +2655,18 @@ function ForgotPasswordPage() {
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Forgot password | KICKS" description="Recover your KICKS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Account</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Forgot password</h1>
+        <p className="kicks-eyebrow">Account</p>
+        <h1 className="mt-4 kicks-section-title">Forgot password</h1>
         {submitted ? (
           <p className="mt-6 text-[#d0d0d0]">If the email exists, a reset link has been sent.</p>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
             <div>
               <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-              <input {...register('email')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none transition focus:border-white/25" />
+              <input {...register('email')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
               {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
           </form>
         )}
       </div>
@@ -2698,8 +2698,8 @@ function ResetPasswordPage() {
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Reset password | KICKS" description="Set a new password" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Security</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Reset password</h1>
+        <p className="kicks-eyebrow">Security</p>
+        <h1 className="mt-4 kicks-section-title">Reset password</h1>
         {status ? (
           <p className="mt-6 text-[#d0d0d0]">{status}</p>
         ) : (
@@ -2711,7 +2711,7 @@ function ResetPasswordPage() {
               error={errors.password?.message}
               placeholder="Choose a new password"
             />
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Reset password'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Reset password'}</button>
           </form>
         )}
       </div>
@@ -2744,7 +2744,7 @@ function VerifyEmailPage() {
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Verify email | KICKS" description="Verify your account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
-        <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Email verification</h1>
+        <h1 className="kicks-section-title">Email verification</h1>
         <p className="mt-6 text-[#d1d1d1]">{message}</p>
       </div>
     </div>
@@ -2773,8 +2773,8 @@ function ChangePasswordPage() {
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Change password | KICKS" description="Change your password" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Security</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Change password</h1>
+        <p className="kicks-eyebrow">Security</p>
+        <h1 className="mt-4 kicks-section-title">Change password</h1>
         {status ? (
           <p className="mt-6 text-[#d0d0d0]">{status}</p>
         ) : (
@@ -2793,7 +2793,7 @@ function ChangePasswordPage() {
               error={errors.newPassword?.message}
               placeholder="New password"
             />
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Update password'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Update password'}</button>
           </form>
         )}
       </div>
@@ -2861,32 +2861,32 @@ function AddressBookPage() {
       <PageMeta title="Addresses | KICKS" description="Manage delivery addresses" />
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Address book</p>
-          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Add address</h1>
+          <p className="kicks-eyebrow">Address book</p>
+          <h1 className="mt-4 kicks-section-title">Add address</h1>
           <form onSubmit={handleSubmit((values) => createMutation.mutate(values))} className="mt-8 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div><input {...register('firstName')} placeholder="First name" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />{errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}</div>
-              <div><input {...register('lastName')} placeholder="Last name" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />{errors.lastName && <p className="mt-2 text-sm text-red-300">{errors.lastName.message}</p>}</div>
+              <div><input {...register('firstName')} placeholder="First name" className="w-full kicks-field text-white" />{errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}</div>
+              <div><input {...register('lastName')} placeholder="Last name" className="w-full kicks-field text-white" />{errors.lastName && <p className="mt-2 text-sm text-red-300">{errors.lastName.message}</p>}</div>
             </div>
-            <input {...register('phone')} placeholder="Phone" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
-            <input {...register('addressLine1')} placeholder="Address line 1" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
-            <input {...register('addressLine2')} placeholder="Address line 2 (optional)" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
-            <input {...register('landmark')} placeholder="Landmark (optional)" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
+            <input {...register('phone')} placeholder="Phone" className="w-full kicks-field text-white" />
+            <input {...register('addressLine1')} placeholder="Address line 1" className="w-full kicks-field text-white" />
+            <input {...register('addressLine2')} placeholder="Address line 2 (optional)" className="w-full kicks-field text-white" />
+            <input {...register('landmark')} placeholder="Landmark (optional)" className="w-full kicks-field text-white" />
             <div className="grid gap-4 md:grid-cols-2">
-              <input {...register('city')} placeholder="City" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
-              <input {...register('state')} placeholder="State" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
+              <input {...register('city')} placeholder="City" className="w-full kicks-field text-white" />
+              <input {...register('state')} placeholder="State" className="w-full kicks-field text-white" />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <input {...register('postalCode')} placeholder="Postal code" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
-              <input {...register('country')} placeholder="Country" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />
+              <input {...register('postalCode')} placeholder="Postal code" className="w-full kicks-field text-white" />
+              <input {...register('country')} placeholder="Country" className="w-full kicks-field text-white" />
             </div>
             <label className="flex items-center gap-3 text-sm text-[#d3d3d3]"><input type="checkbox" {...register('isDefault')} className="h-4 w-4" /> Set as default</label>
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">{isSubmitting ? 'Saving...' : 'Save address'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">{isSubmitting ? 'Saving...' : 'Save address'}</button>
           </form>
         </div>
 
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Saved</p>
+          <p className="kicks-eyebrow">Saved</p>
           <h2 className="mt-4 text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your addresses</h2>
           {isLoading ? <div className="mt-6 h-[200px] animate-pulse rounded-[20px] bg-[#181818]" /> : isError ? <div className="mt-6 text-[#d2d2d2]">Unable to load addresses.</div> : addresses.length === 0 ? <div className="mt-6 rounded-[18px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">No addresses saved yet.</div> : <div className="mt-6 space-y-4">{addresses.map((address) => (
             <div key={address._id || address.id} className="rounded-[20px] border border-white/10 bg-[#181818] p-5">
@@ -2938,7 +2938,7 @@ function NotificationsPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Notifications | KICKS" description="Your updates" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-        <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Notifications</h1>
+        <h1 className="kicks-section-title">Notifications</h1>
         {isLoading ? (
           <div className="mt-6 space-y-4">
             {[1, 2, 3].map((item) => <div key={item} className="h-32 animate-pulse rounded-[20px] bg-[#181818]" />)}
@@ -3014,8 +3014,8 @@ function BlogPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Journal | KICKS" description="KICKS stories and style insights" />
       <div className="mb-8">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Journal</p>
-        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Stories & style</h1>
+        <p className="kicks-eyebrow">Journal</p>
+        <h1 className="mt-3 kicks-section-title">Stories & style</h1>
       </div>
       {isLoading ? <div className="grid gap-6 lg:grid-cols-3"><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /></div> : isError ? <div className="rounded-[24px] border border-white/10 bg-[#111111] p-8 text-[#d4d4d4]">Unable to load editorial content.</div> : <div className="grid gap-6 lg:grid-cols-3">{posts.map((post) => (
         <Link key={post.slug || post._id} to={`/blog/${post.slug || post._id}`} className="overflow-hidden rounded-[24px] border border-white/10 bg-[#111111]">
@@ -3050,7 +3050,7 @@ function BlogDetailPage() {
         <img src={post.coverImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80'} alt={post.title} className="h-[420px] w-full object-cover" />
       </div>
       <div className="mt-8 max-w-[900px]">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">{post.category || 'Journal'}</p>
+        <p className="kicks-eyebrow">{post.category || 'Journal'}</p>
         <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">{post.title}</h1>
         <div className="mt-8 space-y-5 text-lg leading-8 text-[#d5d5d5]" dangerouslySetInnerHTML={{ __html: post.content || post.body || 'No article content available.' }} />
       </div>
@@ -3075,8 +3075,8 @@ function CmsPage() {
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title={`${page.title} | KICKS`} description={page.description || 'KICKS content page'} />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Content</p>
-        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">{page.title}</h1>
+        <p className="kicks-eyebrow">Content</p>
+        <h1 className="mt-4 kicks-section-title">{page.title}</h1>
         <div className="mt-8 space-y-5 text-[#d5d5d5] leading-8" dangerouslySetInnerHTML={{ __html: page.content || page.body || 'Content is unavailable.' }} />
       </div>
     </div>
@@ -3862,20 +3862,20 @@ function AdminPage({ initialSection }) {
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Basics</p>
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                    <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" placeholder="auto-generated from name" /></FormField>
-                    <FormField label="Brand"><select value={productForm.brand} onChange={(event) => setProductForm({ ...productForm, brand: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select brand</option>{brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
-                    <FormField label="Category"><select value={productForm.category} onChange={(event) => setProductForm({ ...productForm, category: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select category</option>{categories.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
-                    <FormField label="Gender"><select value={productForm.gender} onChange={(event) => setProductForm({ ...productForm, gender: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="UNISEX">UNISEX</option><option value="MEN">MEN</option><option value="WOMEN">WOMEN</option><option value="KIDS">KIDS</option></select></FormField>
-                    <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
+                    <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full kicks-field text-white" /></FormField>
+                    <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full kicks-field text-white" placeholder="auto-generated from name" /></FormField>
+                    <FormField label="Brand"><select value={productForm.brand} onChange={(event) => setProductForm({ ...productForm, brand: event.target.value })} className="w-full kicks-field text-white"><option value="">Select brand</option>{brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
+                    <FormField label="Category"><select value={productForm.category} onChange={(event) => setProductForm({ ...productForm, category: event.target.value })} className="w-full kicks-field text-white"><option value="">Select category</option>{categories.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
+                    <FormField label="Gender"><select value={productForm.gender} onChange={(event) => setProductForm({ ...productForm, gender: event.target.value })} className="w-full kicks-field text-white"><option value="UNISEX">UNISEX</option><option value="MEN">MEN</option><option value="WOMEN">WOMEN</option><option value="KIDS">KIDS</option></select></FormField>
+                    <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full kicks-field text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
                   </div>
                 </div>
 
                 <div className="border-t border-white/10 pt-6">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Pricing</p>
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <FormField label="Price"><input type="number" min="0" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: Number(event.target.value) })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                    <FormField label="Sale price"><input type="number" min="0" value={productForm.salePrice} onChange={(event) => setProductForm({ ...productForm, salePrice: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Price"><input type="number" min="0" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: Number(event.target.value) })} className="w-full kicks-field text-white" /></FormField>
+                    <FormField label="Sale price"><input type="number" min="0" value={productForm.salePrice} onChange={(event) => setProductForm({ ...productForm, salePrice: event.target.value })} className="w-full kicks-field text-white" /></FormField>
                   </div>
                 </div>
 
@@ -3897,7 +3897,7 @@ function AdminPage({ initialSection }) {
                 <div className="border-t border-white/10 pt-6">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Description</p>
                   <div className="mt-4 grid gap-4">
-                    <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full kicks-field text-white" /></FormField>
                     <FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                     <FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                   </div>
@@ -3918,9 +3918,9 @@ function AdminPage({ initialSection }) {
                 <div className="border-t border-white/10 pt-6">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">SEO</p>
                   <div className="mt-4 grid gap-4">
-                    <FormField label="SEO title"><input value={productForm.seo.title} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, title: event.target.value } })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="SEO title"><input value={productForm.seo.title} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, title: event.target.value } })} className="w-full kicks-field text-white" /></FormField>
                     <FormField label="SEO description"><input value={productForm.seo.description} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, description: event.target.value } })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                    <FormField label="SEO keywords"><input value={productForm.seo.keywords} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, keywords: event.target.value } })} placeholder="comma separated" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="SEO keywords"><input value={productForm.seo.keywords} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, keywords: event.target.value } })} placeholder="comma separated" className="w-full kicks-field text-white" /></FormField>
                   </div>
                 </div>
               </div>
@@ -4045,17 +4045,17 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex-1"><SearchInput value={search} onChange={setSearch} placeholder="Search products" /></div>
             <FilterBar>
-              <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={status} onChange={(event) => setStatus(event.target.value)} className="kicks-field text-sm text-white">
                 <option value="">All statuses</option>
                 <option value="PUBLISHED">PUBLISHED</option>
                 <option value="DRAFT">DRAFT</option>
                 <option value="ARCHIVED">ARCHIVED</option>
               </select>
-              <select value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={category} onChange={(event) => setCategory(event.target.value)} className="kicks-field text-sm text-white">
                 <option value="">All categories</option>
                 {categories.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}
               </select>
-              <select value={brand} onChange={(event) => setBrand(event.target.value)} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={brand} onChange={(event) => setBrand(event.target.value)} className="kicks-field text-sm text-white">
                 <option value="">All brands</option>
                 {brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}
               </select>
@@ -4272,13 +4272,13 @@ function AdminPage({ initialSection }) {
             <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[24px] border border-white/10 bg-[#0d0d0d] p-5">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Adjust inventory</h3>
-                <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); setShowMovements(false); }} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
+                <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); setShowMovements(false); }} className="kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Close</button>
               </div>
               {adjustError && <div className="mb-4 rounded-[16px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{adjustError}</div>}
               <div className="space-y-4">
-                <input type="number" value={delta} onChange={(event) => setDelta(event.target.value)} placeholder="Delta (+/-)" aria-label="Stock delta" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-                <input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason" aria-label="Reason" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-                <input value={referenceId} onChange={(event) => setReferenceId(event.target.value)} placeholder="Reference ID" aria-label="Reference ID" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
+                <input type="number" value={delta} onChange={(event) => setDelta(event.target.value)} placeholder="Delta (+/-)" aria-label="Stock delta" className="w-full kicks-field text-white" />
+                <input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason" aria-label="Reason" className="w-full kicks-field text-white" />
+                <input value={referenceId} onChange={(event) => setReferenceId(event.target.value)} placeholder="Reference ID" aria-label="Reference ID" className="w-full kicks-field text-white" />
                 <button type="button" onClick={adjustInventory} className="w-full rounded-full bg-[#FFC800] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#ffd233]">Apply adjustment</button>
                 <button type="button" onClick={() => setShowMovements((current) => !current)} className="w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white transition hover:border-white/30">
                   {showMovements ? 'Hide movement history' : 'View movement history'}
@@ -4393,7 +4393,7 @@ function AdminPage({ initialSection }) {
           actions={(
             <div className="flex flex-wrap gap-3">
               <SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search orders" />
-              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter by status" className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter by status" className="kicks-field text-sm text-white">
                 <option value="">All statuses</option>
                 <option value="PENDING">PENDING</option>
                 <option value="CONFIRMED">CONFIRMED</option>
@@ -4679,11 +4679,11 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex-1"><SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search orders, AWB, customer…" /></div>
             <div className="flex flex-wrap gap-3">
-              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} aria-label="Filter by status" className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} aria-label="Filter by status" className="kicks-field text-sm text-white">
                 <option value="">All statuses</option>
                 {shipmentStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <select value={providerFilter} onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }} aria-label="Filter by provider" className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={providerFilter} onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }} aria-label="Filter by provider" className="kicks-field text-sm text-white">
                 <option value="">All providers</option>
                 <option value="shiprocket">Shiprocket</option>
                 <option value="manual">Manual</option>
@@ -4699,7 +4699,7 @@ function AdminPage({ initialSection }) {
               onChange={(e) => { setCreateOrderId(e.target.value); setCreateError(''); }}
               placeholder="Enter Order ID to ship…"
               aria-label="Order ID to ship"
-              className="flex-1 rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white placeholder:text-[#666]"
+              className="flex-1 kicks-field text-sm text-white placeholder:text-[#666]"
             />
             <button
               type="button"
@@ -4718,7 +4718,7 @@ function AdminPage({ initialSection }) {
         {isLoading ? <Skeleton lines={8} /> : isError ? (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
             <ErrorState message="Unable to load shipments." />
-            <button type="button" onClick={() => refetch()} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-white">Retry</button>
+            <button type="button" onClick={() => refetch()} className="mt-4 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Retry</button>
           </div>
         ) : shipments.length === 0 ? (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
@@ -5140,7 +5140,7 @@ function AdminPage({ initialSection }) {
               value={value ?? ''}
               placeholder={field.placeholder}
               onChange={(event) => setDrafts((current) => ({ ...current, [field.key]: event.target.value }))}
-              className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
+              className="w-full kicks-field text-sm text-white outline-none transition focus:border-white/30"
             />
           )}
           {field.hint && <p className="mt-1.5 text-xs text-[#8d8d8d]">{field.hint}</p>}
@@ -5179,7 +5179,7 @@ function AdminPage({ initialSection }) {
         ) : settingsQuery.isError ? (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
             <ErrorState message="Unable to load settings." />
-            <button type="button" onClick={() => settingsQuery.refetch()} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-white">Retry</button>
+            <button type="button" onClick={() => settingsQuery.refetch()} className="mt-4 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Retry</button>
           </div>
         ) : group.custom ? (
           <div className="grid gap-6 lg:grid-cols-2">
@@ -5217,7 +5217,7 @@ function AdminPage({ initialSection }) {
                 <button
                   type="submit"
                   disabled={pwSaving || pwForm.formState.isSubmitting}
-                  className="w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+                  className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
                 >
                   {pwSaving ? 'Updating...' : 'Update password'}
                 </button>
@@ -5387,7 +5387,7 @@ function NotFoundPage() {
       <PageMeta title="Page not found | KICKS" description="The page you requested does not exist" />
       <h1 className="text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">404</h1>
       <p className="mt-5 text-[#c7c7c7]">This page does not exist yet.</p>
-      <Link to="/" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back home</Link>
+      <Link to="/" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Back home</Link>
     </div>
   );
 }

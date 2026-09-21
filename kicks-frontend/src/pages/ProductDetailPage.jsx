@@ -315,10 +315,10 @@ export default function ProductDetailPage() {
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 md:py-10 lg:px-8">
         <div className="mb-6 flex items-center justify-between gap-3">
-          <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#111111] px-4 py-2 text-sm text-white transition hover:border-white/20">
-            <ArrowLeft size={16} /> Back
+          <button type="button" onClick={() => navigate(-1)} className="kicks-btn kicks-btn-dark kicks-btn-sm">
+            <ArrowLeft size={14} /> Back
           </button>
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">{product?.brand?.name || 'KICKS'} / {product?.category?.name || 'Sneaker'}</div>
+          <div className="kicks-meta text-right">{product?.brand?.name || 'KICKS'} / {product?.category?.name || 'Sneaker'}</div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
@@ -367,12 +367,16 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 md:p-8">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-[#a3a3a3]">{product?.brand?.name || 'KICKS'}</p>
-            <h1 className="mt-4 break-words text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl md:text-4xl">{product?.name}</h1>
+            <p className="kicks-meta">{product?.brand?.name || 'KICKS'}</p>
+            <h1 className="mt-3 break-words text-2xl font-black uppercase tracking-[-0.04em] text-white sm:text-3xl">{product?.name}</h1>
 
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#d3d3d3]">
-              <span className="flex items-center gap-2"><Star size={15} className="fill-white text-white" /> {product?.rating ?? 4.8}</span>
-              <span>•</span>
+              {product?.rating != null && (
+                <>
+                  <span className="flex items-center gap-2"><Star size={15} className="fill-white text-white" /> {product.rating}</span>
+                  <span>•</span>
+                </>
+              )}
               <span>{product?.gender || 'UNISEX'}</span>
               <span>•</span>
               <span>Free delivery</span>
@@ -412,7 +416,7 @@ export default function ProductDetailPage() {
                   <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Size</p>
                   {selectedSize && <span className="text-xs text-[#d3d3d3]">{selectedSize}</span>}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {sizeOptions.map((size) => {
                     const isAvailable = Boolean(sizeAvailability[size]);
                     const isSelected = size === selectedSize;
@@ -423,13 +427,9 @@ export default function ProductDetailPage() {
                         aria-label={`Select size ${size}`}
                         disabled={!isAvailable}
                         onClick={() => setSelectedSize(size)}
-                        className={`rounded-full border px-4 py-2 text-sm transition ${
-                          isSelected
-                            ? 'border-white bg-white text-black'
-                            : !isAvailable
-                              ? 'cursor-not-allowed border-white/10 bg-[#171717] text-[#666]'
-                              : 'border-white/15 text-white hover:border-white/30'
-                        }`}
+                        aria-pressed={isSelected}
+                        className="kicks-pill"
+                        style={isAvailable ? undefined : { opacity: 0.35, cursor: 'not-allowed' }}
                       >
                         {size}
                       </button>
@@ -444,7 +444,7 @@ export default function ProductDetailPage() {
                     <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Color</p>
                     {selectedColor && <span className="text-xs text-[#d3d3d3]">{selectedColor}</span>}
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {colorOptions.map((color) => {
                       const hasStock = Boolean(colorAvailability[color]);
                       const isSelected = color === selectedColor;
@@ -455,13 +455,9 @@ export default function ProductDetailPage() {
                           aria-label={`Select color ${color}`}
                           disabled={!hasStock}
                           onClick={() => setSelectedColor(color)}
-                          className={`rounded-full border px-4 py-2 text-sm transition ${
-                            isSelected
-                              ? 'border-white bg-white text-black'
-                              : !hasStock
-                                ? 'cursor-not-allowed border-white/10 bg-[#171717] text-[#666]'
-                                : 'border-white/15 text-white hover:border-white/30'
-                          }`}
+                          aria-pressed={isSelected}
+                          className="kicks-pill"
+                          style={hasStock ? undefined : { opacity: 0.35, cursor: 'not-allowed' }}
                         >
                           {color}
                         </button>
@@ -491,28 +487,28 @@ export default function ProductDetailPage() {
               </div>
             ) : (
             <>
-            <div className="mt-6 flex items-center gap-2 sm:mt-8 sm:gap-3">
-              <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[#171717]">
-                <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-11 w-11 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40 sm:h-12 sm:w-12">
-                  <Minus size={16} />
+            <div className="mt-6 flex items-center gap-2 sm:mt-8">
+              <div className="inline-flex h-11 shrink-0 items-center rounded-[10px] border border-white/10 bg-[#171717]">
+                <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-11 w-10 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
+                  <Minus size={15} />
                 </button>
-                <span className="min-w-10 text-center text-sm font-medium text-white sm:min-w-12">{quantity}</span>
-                <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => handleQuantityChange(1)} disabled={isOutOfStock || quantity >= Math.max(currentStock || 1, 1)} className="flex h-11 w-11 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40 sm:h-12 sm:w-12">
-                  <Plus size={16} />
+                <span className="min-w-8 text-center text-[13px] font-medium text-white">{quantity}</span>
+                <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => handleQuantityChange(1)} disabled={isOutOfStock || quantity >= Math.max(currentStock || 1, 1)} className="flex h-11 w-10 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
+                  <Plus size={15} />
                 </button>
               </div>
 
-              <button type="button" onClick={handleAddToCart} disabled={cartMutation.isPending || isOutOfStock || !selectedVariant} className="min-w-0 flex-1 rounded-full bg-white px-4 py-3.5 text-sm font-medium text-black transition hover:bg-[#e9e9e9] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-4">
+              <button type="button" onClick={handleAddToCart} disabled={cartMutation.isPending || isOutOfStock || !selectedVariant} className="kicks-btn kicks-btn-primary min-w-0 flex-1">
                 {cartMutation.isPending ? 'Adding...' : 'Add to cart'}
               </button>
 
-              <button type="button" onClick={handleWishlistToggle} disabled={wishlistMutation.isPending} aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`} aria-pressed={isWishlisted} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#111111] text-white transition hover:border-white/30 disabled:cursor-wait disabled:opacity-60 sm:h-12 sm:w-12">
-                <Heart size={18} className={isWishlisted ? 'fill-white' : ''} />
+              <button type="button" onClick={handleWishlistToggle} disabled={wishlistMutation.isPending} aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`} aria-pressed={isWishlisted} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'} className="kicks-icon-btn h-11 w-11 shrink-0">
+                <Heart size={16} className={isWishlisted ? 'fill-white' : ''} />
               </button>
             </div>
 
-            <button type="button" onClick={handleBuyNow} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[#181818] px-6 py-4 text-sm font-medium text-white transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50" disabled={isOutOfStock || !selectedVariant}>
-              <ShoppingBag size={16} /> Buy now
+            <button type="button" onClick={handleBuyNow} className="kicks-btn kicks-btn-secondary mt-2.5 w-full" disabled={isOutOfStock || !selectedVariant}>
+              <ShoppingBag size={14} /> Buy now
             </button>
             </>
             )}
@@ -554,7 +550,9 @@ export default function ProductDetailPage() {
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-8">
             <p className="text-[10px] uppercase tracking-[0.3em] text-[#9a9a9a]">Reviews</p>
             <div className="mt-3 flex items-center gap-3">
-              <span className="flex items-center gap-2 text-2xl font-bold text-white"><Star size={18} className="fill-white text-white" /> {product?.rating ?? 4.8}</span>
+              {product?.rating != null && (
+                <span className="flex items-center gap-2 text-2xl font-bold text-white"><Star size={18} className="fill-white text-white" /> {product.rating}</span>
+              )}
               <span className="text-sm text-[#d3d3d3]">{reviewsQuery.data?.length || 0} verified reviews</span>
             </div>
 
@@ -606,7 +604,7 @@ export default function ProductDetailPage() {
                   <textarea id="review-comment" rows={4} {...reviewForm.register('comment')} className="w-full rounded-[20px] border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none" placeholder="Share what you liked about this sneaker." />
                   {reviewForm.formState.errors.comment && <p className="mt-2 text-sm text-red-300">{reviewForm.formState.errors.comment.message}</p>}
                 </div>
-                <button type="submit" disabled={reviewMutation.isPending} className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black disabled:cursor-wait disabled:opacity-60">
+                <button type="submit" disabled={reviewMutation.isPending} className="kicks-btn kicks-btn-primary kicks-btn-sm">
                   {reviewMutation.isPending ? 'Submitting...' : 'Submit review'}
                 </button>
               </form>
@@ -621,11 +619,11 @@ export default function ProductDetailPage() {
           </div>
 
           {recommendationQuery.isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {[...Array(4)].map((_, index) => <div key={index} className="h-[340px] animate-pulse rounded-[24px] bg-[#111111]" />)}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
+              {[...Array(4)].map((_, index) => <div key={index} className="aspect-square animate-pulse rounded-[14px] bg-[#111111]" />)}
             </div>
           ) : recommendationQuery.data?.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
               {recommendationQuery.data.map((item) => (
                 <ProductCard key={item?._id || item?.slug} product={item} />
               ))}
