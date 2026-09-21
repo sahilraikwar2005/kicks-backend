@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import {
   AlertCircle,
@@ -11,7 +11,9 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  Heart,
   KeyRound,
+  LayoutDashboard,
   Loader2,
   LogOut,
   MapPin,
@@ -106,6 +108,17 @@ function PageMeta({ title, description = 'Premium sneaker storefront.' }) {
   );
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+  const navigationType = useNavigationType();
+
+  useEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, search, navigationType]);
+
+  return null;
+}
+
 const unwrapPayload = (payload) => payload?.data ?? payload ?? {};
 const formatMoney = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
@@ -123,6 +136,7 @@ const statusClasses = {
 function AppShell() {
   return (
     <Layout>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
@@ -150,6 +164,8 @@ function AppShell() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/account/profile" element={<AccountPage initialTab="profile" />} />
+          <Route path="/account/security" element={<AccountPage initialTab="security" />} />
           <Route path="/account/addresses" element={<AddressBookPage />} />
           <Route path="/account/notifications" element={<NotificationsPage />} />
           <Route path="/account/orders" element={<OrdersPage />} />
@@ -220,11 +236,11 @@ function PasswordField({ label, name, register, error, placeholder = 'Enter pass
 
 function CategoriesPage() {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Categories | KICKS" description="Browse premium sneaker categories" />
       <div className="mb-8">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Shop all</p>
-        <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Categories</h1>
+        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Categories</h1>
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {['Running', 'Lifestyle', 'Training', 'Basketball', 'Football', 'Skate', 'Court', 'Performance'].map((category) => (
@@ -245,11 +261,11 @@ function CategoriesPage() {
 
 function AboutPage() {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="About | KICKS" description="About KICKS" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">About us</p>
-        <h1 className="mt-4 text-5xl font-black uppercase tracking-[-0.08em] text-white">More than a shoe store.</h1>
+        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">More than a shoe store.</h1>
         <p className="mt-6 max-w-2xl text-lg text-[#d0d0d0]">
           KICKS brings together premium craftsmanship, performance-driven design, and effortless street style for the modern mover.
         </p>
@@ -260,12 +276,12 @@ function AboutPage() {
 
 function ContactPage() {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Contact | KICKS" description="Contact the KICKS team" />
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Contact</p>
-          <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Let’s talk.</h1>
+          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Let’s talk.</h1>
           <div className="mt-8 space-y-5 text-[#d2d2d2]">
             <p>support@kicks.example</p>
             <p>+91 98765 43210</p>
@@ -290,11 +306,11 @@ function ContactPage() {
 
 function FaqPage() {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="FAQ | KICKS" description="Frequently asked questions" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">FAQ</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Frequently asked questions</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Frequently asked questions</h1>
         <div className="mt-8 space-y-4 text-[#d6d6d6]">
           {['Do you ship nationwide?', 'How long does a return take?', 'Can I track my order?', 'Do you offer cash on delivery?'].map((question) => (
             <div key={question} className="rounded-[18px] border border-white/10 bg-[#171717] p-5">
@@ -310,11 +326,11 @@ function FaqPage() {
 
 function PolicyPage({ title }) {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title={`${title} | KICKS`} description={title} />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Policy</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">{title}</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">{title}</h1>
         <div className="mt-8 space-y-5 text-[#d1d1d1]">
           <p>These terms and policies are applied in line with the KICKS storefront experience and your purchase rights.</p>
           <p>For the live business rules, the backend is the source of truth for shipping timelines, returns, eligibility, and payment compliance.</p>
@@ -336,12 +352,12 @@ function PolicyPage({ title }) {
 //   const items = Array.isArray(wishlist) ? wishlist : wishlist.items ?? [];
 
 //   return (
-//     <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+//     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
 //       <PageMeta title="Wishlist | KICKS" description="Your saved items" />
 //       <div className="mb-8 flex items-center justify-between gap-4">
 //         <div>
 //           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Saved</p>
-//           <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Wishlist</h1>
+//           <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Wishlist</h1>
 //         </div>
 //         {items.length > 0 && <Link to="/shop" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Browse styles</Link>}
 //       </div>
@@ -353,8 +369,8 @@ function PolicyPage({ title }) {
 //       ) : isError ? (
 //         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-[#d7d7d7]">Unable to load wishlist from the backend.</div>
 //       ) : items.length === 0 ? (
-//         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-//           <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your wishlist is empty</h2>
+//         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
+//           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your wishlist is empty</h2>
 //           <p className="mt-4 text-[#c3c3c3]">Save the pairs you love to revisit them later.</p>
 //           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Shop now</Link>
 //         </div>
@@ -438,9 +454,9 @@ function WishlistPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-16 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-10 sm:py-16 lg:px-8">
         <PageMeta title="Wishlist | KICKS" description="Your saved items" />
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-10 text-center">
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-10">
           <h1 className="text-3xl font-black uppercase tracking-[-0.05em] text-white">
             Your wishlist
           </h1>
@@ -461,17 +477,17 @@ function WishlistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Wishlist | KICKS" description="Your saved items" />
 
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">
             Saved
           </p>
 
           <div className="mt-3 flex items-center gap-3">
-            <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">
+            <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">
               Wishlist
             </h1>
 
@@ -494,11 +510,11 @@ function WishlistPage() {
       </div>
 
       {wishlistQuery.isLoading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(4)].map((_, index) => (
             <div
               key={index}
-              className="h-[390px] animate-pulse rounded-[26px] border border-white/5 bg-[#111111]"
+              className="h-[260px] animate-pulse rounded-[26px] border border-white/5 bg-[#111111] sm:h-[390px]"
             />
           ))}
         </div>
@@ -521,8 +537,8 @@ function WishlistPage() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-10 text-center md:p-14">
-          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">
+        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-6 text-center sm:p-10 md:p-14">
+          <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">
             Your wishlist is empty
           </h2>
 
@@ -538,7 +554,7 @@ function WishlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
             const product = item?.product ?? item;
             const productId = product?._id || product?.id || item?.productId;
@@ -585,13 +601,13 @@ function WishlistPage() {
                     <img
                       src={product?.images?.[0]}
                       alt={product?.name || 'Saved product'}
-                      className="h-64 w-full object-cover transition duration-500 hover:scale-105"
+                      className="h-40 w-full object-cover transition duration-500 hover:scale-105 sm:h-56 lg:h-64"
                       loading="lazy"
                     />
                   </Link>
 
                   {discount > 0 && (
-                    <span className="absolute left-3 top-3 rounded-full bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-black">
+                    <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-black sm:left-3 sm:top-3 sm:text-[10px]">
                       -{discount}%
                     </span>
                   )}
@@ -604,31 +620,32 @@ function WishlistPage() {
                       removeMutation.variables === productId
                     }
                     aria-label={`Remove ${product?.name || 'product'} from wishlist`}
-                    className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition hover:border-white/40 disabled:cursor-wait disabled:opacity-50"
+                    title="Remove from wishlist"
+                    className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition hover:border-white/40 disabled:cursor-wait disabled:opacity-50 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
 
-                <div className="p-4">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">
+                <div className="p-3 sm:p-4">
+                  <p className="truncate text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">
                     {product?.brand?.name || 'KICKS'}
                   </p>
 
                   <Link
                     to={`/products/${product?.slug || productId}`}
-                    className="mt-2 block text-lg font-semibold text-white hover:text-white/80"
+                    className="mt-2 block break-words text-base font-semibold text-white line-clamp-2 hover:text-white/80 sm:text-lg"
                   >
                     {product?.name || 'Sneaker'}
                   </Link>
 
-                  <div className="mt-3 flex items-center gap-3">
-                    <span className="text-lg font-semibold text-white">
+                  <div className="mt-2 flex items-center gap-2 sm:mt-3 sm:gap-3">
+                    <span className="text-base font-semibold text-white sm:text-lg">
                       {formatMoney(displayPrice)}
                     </span>
 
                     {salePrice && (
-                      <span className="text-sm text-[#777] line-through">
+                      <span className="min-w-0 truncate text-xs text-[#777] line-through sm:text-sm">
                         {formatMoney(basePrice)}
                       </span>
                     )}
@@ -644,11 +661,11 @@ function WishlistPage() {
                     {isOutOfStock ? 'Out of stock' : 'In stock'}
                   </p>
 
-                  <div className="mt-5 flex gap-3">
+                  <div className="mt-4 flex gap-2 sm:mt-5 sm:gap-3">
                     {isOutOfStock ? (
                       <Link
                         to={`/products/${product?.slug || productId}`}
-                        className="flex-1 rounded-full border border-white/15 px-4 py-3 text-center text-sm font-medium text-white transition hover:border-white/35"
+                        className="flex-1 rounded-full border border-white/15 px-3 py-2.5 text-center text-xs font-medium text-white transition hover:border-white/35 sm:px-4 sm:py-3 sm:text-sm"
                       >
                         View details
                       </Link>
@@ -673,7 +690,7 @@ function WishlistPage() {
                             cartMutation.isPending &&
                             cartMutation.variables?.productId === productId
                           }
-                          className="flex-1 rounded-full bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+                          className="min-w-0 flex-1 rounded-full bg-white px-3 py-2.5 text-xs font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm"
                         >
                           {cartMutation.isPending &&
                           cartMutation.variables?.productId === productId
@@ -684,7 +701,8 @@ function WishlistPage() {
                         <Link
                           to={`/products/${product?.slug || productId}`}
                           aria-label={`View ${product?.name || 'product'}`}
-                          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35"
+                          title="View product"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35 sm:h-11 sm:w-11"
                         >
                           <ShoppingBag size={16} />
                         </Link>
@@ -702,6 +720,7 @@ function WishlistPage() {
 }
 
 function CartPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { data, isLoading, isError } = useQuery({ queryKey: ['cart'], queryFn: () => cartApi.getCart() });
@@ -731,26 +750,26 @@ function CartPage() {
   const cartImageFallback = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Cart | KICKS" description="Shopping cart" />
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Your cart</p>
-        <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Cart</h1>
+        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Cart</h1>
       </div>
 
       {isLoading ? (
         <div className="h-[300px] animate-pulse rounded-[28px] bg-[#111111]" />
       ) : isError ? (
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-[#d7d7d7]">Unable to load cart from the backend.</div>
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-sm text-[#d7d7d7] sm:p-8 sm:text-base">Unable to load cart from the backend.</div>
       ) : items.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your cart is empty</h2>
-          <p className="mt-4 text-[#c3c3c3]">Add a few premium pairs and continue to checkout.</p>
-          <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
+        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
+          <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your cart is empty</h2>
+          <p className="mt-4 text-sm text-[#c3c3c3] sm:text-base">Add a few premium pairs and continue to checkout.</p>
+          <Link to="/shop" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black sm:mt-8">Continue shopping</Link>
         </div>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-3 sm:space-y-4">
             {items.map((item) => {
               const product = item.product || (typeof item.productId === 'object' ? item.productId : {}) || {};
               const variantId = item.variantId || item.variant?._id || item._id;
@@ -762,35 +781,39 @@ function CartPage() {
               const color = item.color || item.variant?.color || 'N/A';
 
               return (
-                <div key={variantId} className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-[#111111] p-4 md:flex-row md:items-center">
-                  <img src={image} alt={product?.name || 'Cart item'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = cartImageFallback; }} />
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-white">{product?.name || 'KICKS product'}</h3>
-                    <p className="mt-1 text-sm text-[#9d9d9d]">{product?.brand?.name || 'KICKS'} • Size {size} • Color {color}</p>
-                    <p className="mt-2 text-sm font-medium text-white">{formatMoney(price)} each</p>
+                <div key={variantId} className="flex gap-3 rounded-[24px] border border-white/10 bg-[#111111] p-3 sm:gap-4 sm:p-4 md:items-center">
+                  <img src={image} alt={product?.name || 'Cart item'} className="h-20 w-20 shrink-0 rounded-[16px] object-cover sm:h-24 sm:w-24 sm:rounded-[18px]" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = cartImageFallback; }} />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="break-words text-base font-semibold text-white line-clamp-2 sm:text-xl">{product?.name || 'KICKS product'}</h3>
+                    <p className="mt-1 truncate text-xs text-[#9d9d9d] sm:text-sm">{product?.brand?.name || 'KICKS'} • Size {size} • Color {color}</p>
+                    <p className="mt-1 text-xs font-medium text-white sm:mt-2 sm:text-sm">{formatMoney(price)} each</p>
+                    <div className="mt-2 flex items-center gap-2 sm:gap-3">
+                      <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => updateMutation.mutate({ variantId, quantity: Math.max(1, quantity - 1) })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-10 sm:w-10">−</button>
+                      <span className="min-w-6 text-center text-sm font-medium text-white sm:min-w-8">{quantity}</span>
+                      <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => updateMutation.mutate({ variantId, quantity: quantity + 1 })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-10 sm:w-10">+</button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button type="button" aria-label="Decrease quantity" onClick={() => updateMutation.mutate({ variantId, quantity: Math.max(1, quantity - 1) })} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white">−</button>
-                    <span className="min-w-8 text-center text-sm font-medium text-white">{quantity}</span>
-                    <button type="button" aria-label="Increase quantity" onClick={() => updateMutation.mutate({ variantId, quantity: quantity + 1 })} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white">+</button>
+                  <div className="flex shrink-0 flex-col items-end justify-between gap-2">
+                    <div className="text-sm font-semibold text-white sm:text-lg">{formatMoney(subtotal)}</div>
+                    <button type="button" onClick={() => removeMutation.mutate(variantId)} disabled={removeMutation.isPending && removeMutation.variables === variantId} aria-label="Remove item" title="Remove item" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-wait disabled:opacity-60">
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <div className="text-lg font-semibold text-white">{formatMoney(subtotal)}</div>
-                  <button type="button" onClick={() => removeMutation.mutate(variantId)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Remove</button>
                 </div>
               );
             })}
           </div>
 
-          <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
-            <h2 className="text-2xl font-bold text-white">Summary</h2>
-            <div className="mt-6 space-y-4 text-[#d2d2d2]">
+          <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-5 sm:p-6">
+            <h2 className="text-xl font-bold text-white sm:text-2xl">Summary</h2>
+            <div className="mt-5 space-y-3 text-sm text-[#d2d2d2] sm:mt-6 sm:space-y-4 sm:text-base">
               <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
               <div className="flex justify-between"><span>Shipping</span><span>Free</span></div>
               <div className="flex justify-between"><span>Discount</span><span>{formatMoney(0)}</span></div>
               <div className="flex justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(subtotal)}</span></div>
             </div>
-            <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: ['cart'] })} className="mt-6 block w-full rounded-full bg-white px-6 py-3 text-center text-sm font-medium text-black">Proceed to checkout</button>
-            <button type="button" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()} className="mt-4 w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white disabled:cursor-wait disabled:opacity-60">{clearMutation.isPending ? 'Clearing...' : 'Clear cart'}</button>
+            <button type="button" onClick={() => navigate('/checkout')} className="mt-6 block w-full rounded-full bg-white px-6 py-3.5 text-center text-sm font-semibold text-black sm:py-3 sm:font-medium">Proceed to checkout</button>
+            <button type="button" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()} className="mt-3 w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white disabled:cursor-wait disabled:opacity-60 sm:mt-4">{clearMutation.isPending ? 'Clearing...' : 'Clear cart'}</button>
           </aside>
         </div>
       )}
@@ -981,7 +1004,7 @@ function CheckoutPage() {
 
   if (cartLoading || addressesLoading) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
         <div className="h-[300px] animate-pulse rounded-[28px] bg-[#111111]" />
       </div>
     );
@@ -989,9 +1012,9 @@ function CheckoutPage() {
 
   if (cartError || items.length === 0) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
-        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-          <h2 className="text-3xl font-black uppercase tracking-[-0.06em] text-white">Your cart is empty</h2>
+      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
+        <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
+          <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your cart is empty</h2>
           <p className="mt-4 text-[#c3c3c3]">Add a few premium pairs and continue to checkout.</p>
           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
         </div>
@@ -1000,25 +1023,25 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Checkout | KICKS" description="Checkout" />
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Checkout</p>
-        <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Secure checkout</h1>
+        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Secure checkout</h1>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
-        <div className="space-y-6">
-          <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="min-w-0 space-y-6">
+          <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-bold text-white">Shipping</h2>
-              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Delivery Address</h2>
+              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="shrink-0 rounded-full border border-white/10 px-4 py-2 text-sm text-white transition hover:border-white/30">
                 {showAddressForm ? 'Close form' : 'Add new address'}
               </button>
             </div>
 
             {addressList.length > 0 ? (
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 space-y-3" role="radiogroup" aria-label="Choose a delivery address">
                 {addressList.map((address) => {
                   const addressId = address._id || address.id;
                   const isSelected = activeAddressId === addressId;
@@ -1026,24 +1049,38 @@ function CheckoutPage() {
                     <button
                       key={addressId}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-label={`Deliver to ${address.firstName} ${address.lastName}, ${address.city} ${address.postalCode}`}
                       onClick={() => setSelectedAddressId(addressId)}
-                      className={`w-full rounded-[20px] border p-4 text-left transition ${isSelected ? 'border-white bg-[#1a1a1a]' : 'border-white/10 bg-[#181818]'}`}
+                      className={`flex w-full items-start gap-3 rounded-[20px] border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-white/60 sm:gap-4 ${isSelected ? 'border-white bg-[#1a1a1a] ring-1 ring-white/60' : 'border-white/10 bg-[#181818] hover:border-white/25'}`}
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-white">{address.firstName} {address.lastName}</p>
-                          <p className="mt-1 text-sm text-[#d7d7d7]">{address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ''}</p>
-                          <p className="text-sm text-[#d7d7d7]">{address.city}, {address.state} {address.postalCode}</p>
-                          <p className="text-sm text-[#d7d7d7]">{address.country}</p>
-                          <p className="mt-1 text-sm text-[#d7d7d7]">{address.phone}</p>
-                        </div>
-                        {address.isDefault && <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-[#d7d7d7]">Default</span>}
-                      </div>
+                      <span
+                        aria-hidden="true"
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${isSelected ? 'border-white bg-white text-black' : 'border-white/25 text-transparent'}`}
+                      >
+                        <Check size={14} strokeWidth={3} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-white">{address.firstName} {address.lastName}</span>
+                          {isSelected && <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-black">Selected</span>}
+                          {address.isDefault && <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[#d7d7d7]">Default</span>}
+                        </span>
+                        <span className="mt-1.5 block text-sm leading-relaxed text-[#d7d7d7]">{address.addressLine1}{address.addressLine2 ? `, ${address.addressLine2}` : ''}</span>
+                        <span className="block text-sm text-[#d7d7d7]">{address.city}, {address.state} {address.postalCode}</span>
+                        <span className="mt-1 block text-xs text-[#9d9d9d]">{address.phone}</span>
+                      </span>
                     </button>
                   );
                 })}
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-5 rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-5 text-center" role="alert">
+                <p className="text-sm font-semibold text-white">Select delivery address</p>
+                <p className="mx-auto mt-1 max-w-sm text-xs text-[#a8a8a8]">No saved address yet. Add your first delivery address below — payment stays disabled until an address is selected.</p>
+              </div>
+            )}
 
             {showAddressForm && (
               <form onSubmit={submitAddress} className="mt-5 grid gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:grid-cols-2">
@@ -1067,8 +1104,8 @@ function CheckoutPage() {
 
         </div>
 
-        <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-6">
-          <h2 className="text-2xl font-bold text-white">Order summary</h2>
+        <aside className="rounded-[28px] border border-white/10 bg-[#111111] p-5 sm:p-6 lg:sticky lg:top-24 lg:self-start">
+          <h2 className="text-xl font-bold text-white sm:text-2xl">Order summary</h2>
 
           <div className="mt-6 space-y-4">
             {items.map((item) => {
@@ -1099,14 +1136,16 @@ function CheckoutPage() {
 
           <button
             type="button"
-            disabled={!selectedAddressId || isProcessingPayment}
+            disabled={!activeAddressId || isProcessingPayment}
             onClick={payNow}
-            className="mt-6 block w-full rounded-full bg-white px-6 py-3 text-center text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
+            title={!activeAddressId ? 'Select a delivery address above to enable payment' : 'Pay securely with Razorpay'}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-center text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-60 sm:py-3 sm:font-medium"
           >
-            {isProcessingPayment ? 'Preparing payment...' : 'Pay now'}
+            {isProcessingPayment && <Loader2 size={15} className="animate-spin" />}
+            {isProcessingPayment ? 'Preparing payment...' : `Pay now • ${formatMoney(total)}`}
           </button>
 
-          {!selectedAddressId && <p className="mt-3 text-sm text-red-300">Please select or add a delivery address.</p>}
+          {!activeAddressId && <p role="alert" className="mt-3 text-center text-sm text-red-300">Select a delivery address above to enable payment.</p>}
         </aside>
       </div>
     </div>
@@ -1129,10 +1168,10 @@ function OrderSuccessPage() {
 
   if (!id) {
     return (
-      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12 text-center">
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order unavailable</h1>
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
+          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load your order details.</p>
           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
         </div>
@@ -1142,7 +1181,7 @@ function OrderSuccessPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <div className="h-[320px] animate-pulse rounded-[28px] bg-[#111111]" />
       </div>
     );
@@ -1150,10 +1189,10 @@ function OrderSuccessPage() {
 
   if (isError || !order?._id) {
     return (
-      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12 text-center">
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order unavailable</h1>
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
+          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now. Please try again.</p>
           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
         </div>
@@ -1165,10 +1204,10 @@ function OrderSuccessPage() {
 
   if (!isPaid) {
     return (
-      <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Payment pending | KICKS" description="Payment confirmation is still pending" />
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12 text-center">
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Payment pending</h1>
+        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
+          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Payment pending</h1>
           <p className="mt-4 text-[#d3d3d3]">Your payment is still being confirmed. Please check again shortly.</p>
           <Link to="/shop" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Continue shopping</Link>
         </div>
@@ -1177,13 +1216,13 @@ function OrderSuccessPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Order placed | KICKS" description="Your order was successful" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-12">
         <div className="flex flex-col items-center text-center">
           <div aria-hidden="true" className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black">✓</div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order status</p>
-          <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Order placed successfully</h1>
+          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order placed successfully</h1>
         </div>
 
         <div className="mt-8 grid gap-4 rounded-[24px] border border-white/10 bg-[#181818] p-5 text-left md:grid-cols-2">
@@ -1244,10 +1283,10 @@ function OrdersPage() {
   const orders = unwrapPayload(data)?.orders ?? [];
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="My orders | KICKS" description="Order history" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-        <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">My orders</h1>
+        <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">My orders</h1>
         {isLoading ? (
           <div className="mt-6 h-[200px] animate-pulse rounded-[24px] bg-[#181818]" />
         ) : isError ? (
@@ -1327,10 +1366,10 @@ function OrderDetailPage() {
 
   if (!id) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order details | KICKS" description="Order details" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order not found</h1>
+          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order not found</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not find this order.</p>
           <Link to="/account/orders" className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back to orders</Link>
         </div>
@@ -1340,7 +1379,7 @@ function OrderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
         <div className="h-[320px] animate-pulse rounded-[28px] bg-[#111111]" />
       </div>
     );
@@ -1348,10 +1387,10 @@ function OrderDetailPage() {
 
   if (isError || !order._id) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
         <PageMeta title="Order details | KICKS" description="Order details" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Order unavailable</h1>
+          <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now.</p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Link to="/account/orders" className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back to orders</Link>
@@ -1366,12 +1405,12 @@ function OrderDetailPage() {
   const paymentMethod = order.paymentId ? 'Razorpay' : 'Payment pending';
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Order details | KICKS" description="Order details" />
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Order details</p>
-          <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">{order.orderNumber || order._id || id}</h1>
+          <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">{order.orderNumber || order._id || id}</h1>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link to="/account/orders" className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm text-white">Back to orders</Link>
@@ -1430,7 +1469,7 @@ function OrderDetailPage() {
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">Products</h2>
+            <h2 className="text-xl font-bold text-white sm:text-2xl">Products</h2>
             {items.map((item) => {
               const image = item.product?.images?.[0] || item.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
               const unitPrice = Number(item.unitPrice || item.finalPrice || 0);
@@ -1454,7 +1493,7 @@ function OrderDetailPage() {
 
           <div className="space-y-5">
             <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
-              <h2 className="text-2xl font-bold text-white">Summary</h2>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Summary</h2>
               <div className="mt-5 space-y-3 text-[#d9d9d9]">
                 <div className="flex items-center justify-between gap-4"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
                 <div className="flex items-center justify-between gap-4"><span>Discount</span><span>{formatMoney(discount)}</span></div>
@@ -1465,7 +1504,7 @@ function OrderDetailPage() {
             </div>
 
             <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
-              <h2 className="text-2xl font-bold text-white">Shipping address</h2>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Shipping address</h2>
               <div className="mt-5 space-y-1 text-[#d9d9d9]">
                 <p className="text-white">{shippingAddress.firstName || ''} {shippingAddress.lastName || ''}</p>
                 <p>{shippingAddress.phone || 'Phone unavailable'}</p>
@@ -1482,53 +1521,159 @@ function OrderDetailPage() {
   );
 }
 
-function AccountProfileSection({ user }) {
+function AccountOverviewSection({ user, onNavigate }) {
+  const ordersQuery = useQuery({ queryKey: ['orders'], queryFn: () => ordersApi.listForUser() });
+  const addressesQuery = useQuery({ queryKey: ['addresses'], queryFn: () => addressesApi.list() });
+  const wishlistQuery = useQuery({ queryKey: ['wishlist'], queryFn: () => wishlistApi.getWishlist() });
+
+  const orders = unwrapPayload(ordersQuery.data)?.orders ?? [];
+  const addresses = unwrapPayload(addressesQuery.data)?.addresses ?? [];
+  const wishlistPayload = unwrapPayload(wishlistQuery.data);
+  const wishlist = wishlistPayload?.wishlist ?? [];
+  const wishlistItems = Array.isArray(wishlist) ? wishlist : wishlist?.productIds ?? wishlist?.items ?? [];
+  const wishlistCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
+
+  const loading = ordersQuery.isLoading || addressesQuery.isLoading || wishlistQuery.isLoading;
+  const recentOrder = [...orders].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0] || null;
+  const defaultAddress = addresses.find((address) => address.isDefault) || addresses[0] || null;
+  const initials = `${user?.firstName?.charAt(0) || ''}${user?.lastName?.charAt(0) || ''}`.toUpperCase() || 'K';
+
+  const cards = [
+    {
+      id: 'orders',
+      label: 'Total Orders',
+      value: loading ? '—' : String(orders.length),
+      detail: recentOrder ? `Latest: ${recentOrder.orderNumber || 'recent order'}` : 'No orders yet',
+      icon: Package,
+    },
+    {
+      id: 'orders',
+      label: 'Recent Order',
+      value: loading ? '—' : recentOrder ? formatMoney(recentOrder.grandTotal || recentOrder.total || 0) : '—',
+      detail: recentOrder ? `${recentOrder.status || 'PENDING'} • ${recentOrder.createdAt ? new Date(recentOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'recent'}` : 'Nothing purchased yet',
+      icon: ShoppingBag,
+    },
+    {
+      id: 'addresses',
+      label: 'Saved Addresses',
+      value: loading ? '—' : String(addresses.length),
+      detail: defaultAddress ? `${defaultAddress.city || ''}${defaultAddress.city ? ', ' : ''}${defaultAddress.postalCode || ''}`.trim() || 'Default set' : 'None saved',
+      icon: MapPin,
+    },
+    {
+      id: 'profile',
+      label: 'Wishlist',
+      value: loading ? '—' : String(wishlistCount),
+      detail: wishlistCount === 1 ? '1 saved item' : `${wishlistCount} saved items`,
+      icon: Heart,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6 md:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#181818] text-3xl font-black text-white">
-            {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'K'}
+    <div className="space-y-4 sm:space-y-6">
+      <div className="rounded-[24px] border border-white/10 bg-[#111111] p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#181818] text-2xl font-black text-white sm:h-20 sm:w-20 sm:text-3xl" aria-hidden="true">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {user?.emailVerified ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#181818] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[#9feec8]">
+                  <Check size={11} /> Verified
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border border-white/10 bg-[#181818] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[#a0a0a0]">
+                  Unverified
+                </span>
+              )}
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-[#181818] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[#a0a0a0]">
+                Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Active'}
+              </span>
+            </div>
+            <h2 className="mt-2 truncate text-xl font-black uppercase tracking-[-0.04em] text-white sm:text-2xl">
+              {user?.firstName || 'Customer'} {user?.lastName || ''}
+            </h2>
+            <p className="mt-1 truncate text-sm text-[#a1a1a1]">{user?.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('profile')}
+            className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/35 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/60"
+          >
+            View profile <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <button
+              key={`${card.id}-${card.label}`}
+              type="button"
+              onClick={() => onNavigate(card.id)}
+              className="rounded-[20px] border border-white/10 bg-[#111111] p-4 text-left transition hover:border-white/25 hover:bg-[#141414] focus:outline-none focus:ring-2 focus:ring-white/60 sm:p-5"
+            >
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#181818] text-white" aria-hidden="true">
+                <Icon size={15} />
+              </span>
+              <span className="mt-3 block text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">{card.label}</span>
+              <span className="mt-1 block truncate text-xl font-bold text-white sm:text-2xl">{card.value}</span>
+              <span className="mt-1 block truncate text-xs text-[#a0a0a0]">{card.detail}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AccountProfileSection({ user }) {
+  const initials = `${user?.firstName?.charAt(0) || ''}${user?.lastName?.charAt(0) || ''}`.toUpperCase() || 'K';
+  const details = [
+    { label: 'First name', value: user?.firstName || '—' },
+    { label: 'Last name', value: user?.lastName || '—' },
+    { label: 'Account email', value: user?.email || '—', truncate: true },
+    { label: 'Phone number', value: user?.phone || 'Not provided' },
+    { label: 'Account role', value: user?.role || 'CUSTOMER' },
+    {
+      label: 'Member since',
+      value: user?.createdAt
+        ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+        : 'Active',
+    },
+  ];
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="rounded-[24px] border border-white/10 bg-[#111111] p-5 sm:p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#181818] text-2xl font-black text-white" aria-hidden="true">
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#181818] px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">
               <Sparkles size={12} className="text-white" /> Verified Member
             </div>
-            <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em] text-white">
+            <h2 className="mt-2 truncate text-xl font-black uppercase tracking-[-0.04em] text-white sm:text-2xl">
               {user?.firstName || 'Customer'} {user?.lastName || ''}
             </h2>
-            <p className="mt-1 text-sm text-[#a1a1a1]">{user?.email}</p>
+            <p className="mt-1 truncate text-sm text-[#a1a1a1]">{user?.email}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">First name</p>
-          <p className="mt-2 text-base font-semibold text-white">{user?.firstName || '—'}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Last name</p>
-          <p className="mt-2 text-base font-semibold text-white">{user?.lastName || '—'}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Account email</p>
-          <p className="mt-2 truncate text-base font-semibold text-white">{user?.email || '—'}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Phone number</p>
-          <p className="mt-2 text-base font-semibold text-white">{user?.phone || 'Not provided'}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Account role</p>
-          <p className="mt-2 text-base font-semibold text-white">{user?.role || 'CUSTOMER'}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Member since</p>
-          <p className="mt-2 text-base font-semibold text-white">
-            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Active'}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        {details.map((item) => (
+          <div key={item.label} className="min-w-0 rounded-[20px] border border-white/10 bg-[#111111] p-4 sm:p-5">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">{item.label}</p>
+            <p className={`mt-2 text-sm font-semibold text-white sm:text-base ${item.truncate ? 'truncate' : 'break-words'}`} title={item.truncate ? item.value : undefined}>
+              {item.value}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1790,7 +1935,7 @@ function AccountAddressesSection() {
           <p>Unable to load addresses right now.</p>
         </div>
       ) : addresses.length === 0 ? (
-        <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-10 text-center">
+        <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-6 text-center sm:p-10">
           <MapPin size={32} className="mx-auto text-[#666666]" />
           <h3 className="mt-3 text-lg font-bold text-white">No addresses saved</h3>
           <p className="mt-1 text-sm text-[#a0a0a0]">Add a delivery address to speed up checkout.</p>
@@ -1899,7 +2044,7 @@ function AccountOrdersSection() {
           <p>Unable to load your orders right now.</p>
         </div>
       ) : orders.length === 0 ? (
-        <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-10 text-center">
+        <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-6 text-center sm:p-10">
           <Package size={32} className="mx-auto text-[#666666]" />
           <h3 className="mt-3 text-lg font-bold text-white">No orders yet</h3>
           <p className="mt-1 text-sm text-[#a0a0a0]">Explore our catalog and find your next favorite pair.</p>
@@ -1976,6 +2121,8 @@ function AccountOrdersSection() {
 
 function AccountPasswordSection() {
   const { showToast } = useToast();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const passwordChangeSchema = z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z.string().min(8, 'New password must be at least 8 characters'),
@@ -2000,6 +2147,22 @@ function AccountPasswordSection() {
       reset();
     } catch (error) {
       showToast(error?.message || 'Unable to update password. Please check your current password.', 'error');
+    }
+  };
+
+  const signOutEverywhere = async () => {
+    if (!window.confirm('Sign out on all devices, including this one? You will need to log in again.')) return;
+    try {
+      await authApi.logoutAll();
+    } catch (error) {
+      showToast(error?.message || 'Unable to sign out everywhere.', 'error');
+      return;
+    }
+    showToast('Signed out everywhere. Please log in again.', 'success');
+    try {
+      await logout();
+    } finally {
+      navigate('/login', { replace: true });
     }
   };
 
@@ -2046,73 +2209,153 @@ function AccountPasswordSection() {
           </button>
         </form>
       </div>
+
+      <div className="rounded-[24px] border border-white/10 bg-[#111111] p-5 sm:p-6">
+        <h3 className="text-base font-bold text-white sm:text-lg">Active sessions</h3>
+        <p className="mt-2 text-sm leading-relaxed text-[#a8a8a8]">
+          Signed in on another phone or computer? End every session at once. You will be signed out here too and need to log in again.
+        </p>
+        <button
+          type="button"
+          onClick={signOutEverywhere}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+        >
+          <LogOut size={14} /> Sign out everywhere
+        </button>
+      </div>
     </div>
   );
 }
 
-function AccountPage() {
+function AccountPage({ initialTab }) {
   const { user, logout, loading } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'profile';
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const activeTab = searchParams.get('tab') || initialTab || 'overview';
 
   const setTab = (tab) => {
-    setSearchParams({ tab });
+    setSearchParams(tab === 'overview' ? {} : { tab });
+  };
+
+  const confirmLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+      setShowLogoutConfirm(false);
+      showToast('Signed out. See you soon.', 'success');
+      navigate('/', { replace: true });
+    }
   };
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 py-12 lg:px-8">
+      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-12 lg:px-8">
         <div className="h-64 animate-pulse rounded-[28px] bg-[#111111]" />
       </div>
     );
   }
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User2 },
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'orders', label: 'Orders', icon: Package },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
-    { id: 'orders', label: 'My Orders', icon: ShoppingBag },
     { id: 'security', label: 'Security', icon: KeyRound },
+    { id: 'profile', label: 'Profile', icon: User2 },
   ];
 
+  const initials = `${user?.firstName?.charAt(0) || ''}${user?.lastName?.charAt(0) || ''}`.toUpperCase() || 'K';
+
+  const navButtonClass = (isActive) => `flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] transition focus:outline-none focus:ring-2 focus:ring-white/60 ${
+    isActive ? 'bg-white text-black' : 'text-[#a0a0a0] hover:bg-white/5 hover:text-white'
+  }`;
+
+  const validTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'overview';
+
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-10 lg:px-8">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-10 lg:px-8">
       <PageMeta title="My Account | KICKS" description="Manage your KICKS customer account and preferences" />
 
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Customer Center</p>
-          <h1 className="mt-2 text-3xl font-black uppercase tracking-[-0.05em] text-white md:text-4xl">
-            My Account
-          </h1>
-        </div>
-        <button
-          onClick={() => logout()}
-          type="button"
-          className="inline-flex items-center gap-2 self-start rounded-full border border-white/15 bg-[#141414] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 sm:self-auto"
-        >
-          <LogOut size={14} /> Logout
-        </button>
+      <div className="mb-6 sm:mb-8">
+        <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Customer Center</p>
+        <h1 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white sm:text-3xl md:text-4xl">
+          My Account
+        </h1>
       </div>
 
-      {/* Account Layout */}
-      <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-        {/* Navigation Sidebar */}
-        <aside className="h-fit rounded-[24px] border border-white/10 bg-[#111111] p-3">
-          <nav className="flex flex-row gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-x-visible lg:pb-0">
+      {/* Mobile profile summary */}
+      <div className="mb-4 rounded-[24px] border border-white/10 bg-[#111111] p-4 sm:p-5 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#181818] text-lg font-black text-white" aria-hidden="true">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-bold text-white">
+              {user?.firstName || 'Customer'} {user?.lastName || ''}
+            </p>
+            <p className="truncate text-xs text-[#a1a1a1]">{user?.email}</p>
+          </div>
+          <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] ${user?.emailVerified ? 'border-white/10 text-[#9feec8]' : 'border-white/10 text-[#a0a0a0]'}`}>
+            {user?.emailVerified ? 'Verified' : 'Unverified'}
+          </span>
+        </div>
+      </div>
+
+      {/* Mobile pill navigation */}
+      <div className="mb-4 lg:hidden">
+        <nav aria-label="Account sections" className="flex gap-2 overflow-x-auto pb-1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = validTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTab(tab.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-white/60 ${
+                  isActive ? 'bg-white text-black' : 'border border-white/10 text-[#c4c4c4] hover:border-white/30 hover:text-white'
+                }`}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        {/* Desktop sidebar */}
+        <aside className="hidden h-fit rounded-[24px] border border-white/10 bg-[#111111] p-3 lg:block">
+          <div className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#151515] p-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-[#181818] text-lg font-black text-white" aria-hidden="true">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-white">
+                {user?.firstName || 'Customer'} {user?.lastName || ''}
+              </p>
+              <p className="truncate text-xs text-[#a1a1a1]">{user?.email}</p>
+            </div>
+          </div>
+
+          <p className="px-2 pb-2 pt-4 text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Account</p>
+          <nav aria-label="Account sections" className="flex flex-col gap-1.5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+              const isActive = validTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setTab(tab.id)}
-                  className={`flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                    isActive
-                      ? 'bg-white text-black'
-                      : 'text-[#a0a0a0] hover:bg-white/5 hover:text-white'
-                  }`}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={navButtonClass(isActive)}
                 >
                   <Icon size={16} />
                   <span>{tab.label}</span>
@@ -2120,16 +2363,86 @@ function AccountPage() {
               );
             })}
           </nav>
+
+          <div className="my-3 border-t border-white/10" />
+
+          <div className="flex flex-col gap-1.5">
+            <Link
+              to="/"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[#a0a0a0] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+            >
+              <ExternalLink size={16} />
+              <span>Storefront</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[#f0a8a8] transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+            >
+              <LogOut size={16} />
+              <span>Log out</span>
+            </button>
+          </div>
         </aside>
 
         {/* Section Content */}
         <main className="min-w-0">
-          {activeTab === 'profile' && <AccountProfileSection user={user} />}
-          {activeTab === 'addresses' && <AccountAddressesSection />}
-          {activeTab === 'orders' && <AccountOrdersSection />}
-          {activeTab === 'security' && <AccountPasswordSection />}
+          {validTab === 'overview' && <AccountOverviewSection user={user} onNavigate={setTab} />}
+          {validTab === 'profile' && <AccountProfileSection user={user} />}
+          {validTab === 'addresses' && <AccountAddressesSection />}
+          {validTab === 'orders' && <AccountOrdersSection />}
+          {validTab === 'security' && <AccountPasswordSection />}
         </main>
       </div>
+
+      {/* Mobile logout */}
+      <div className="mt-6 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setShowLogoutConfirm(true)}
+          aria-label="Log out of your account"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-red-500/30 bg-red-500/5 px-6 py-3.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+        >
+          <LogOut size={16} /> Log out
+        </button>
+      </div>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="presentation" onClick={() => { if (!loggingOut) setShowLogoutConfirm(false); }}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-dialog-title"
+            className="w-full max-w-sm rounded-[24px] border border-white/10 bg-[#141414] p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 text-red-200" aria-hidden="true">
+              <LogOut size={20} />
+            </div>
+            <h2 id="logout-dialog-title" className="mt-4 text-center text-xl font-bold text-white">Log out?</h2>
+            <p className="mt-2 text-center text-sm text-[#a8a8a8]">Are you sure you want to log out?</p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={loggingOut}
+                className="rounded-full border border-white/15 px-4 py-3 text-sm font-medium text-white transition hover:border-white/35 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogout}
+                disabled={loggingOut}
+                aria-label="Confirm log out"
+                className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+              >
+                {loggingOut ? 'Logging out...' : 'Log out'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2157,11 +2470,11 @@ function LoginPage() {
   if (isAuthenticated) return <Navigate to="/account" replace />;
 
   return (
-    <div className="mx-auto max-w-[600px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Login | KICKS" description="Login to your KICKS account" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Welcome back</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Login</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Login</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
           <div>
@@ -2225,11 +2538,11 @@ function RegisterPage() {
   if (isAuthenticated) return <Navigate to="/account" replace />;
 
   return (
-    <div className="mx-auto max-w-[700px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[700px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Register | KICKS" description="Create a KICKS account" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Start here</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Create account</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Create account</h1>
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
@@ -2291,11 +2604,11 @@ function ForgotPasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[520px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Forgot password | KICKS" description="Recover your KICKS account" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Account</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Forgot password</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Forgot password</h1>
         {submitted ? (
           <p className="mt-6 text-[#d0d0d0]">If the email exists, a reset link has been sent.</p>
         ) : (
@@ -2334,11 +2647,11 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[520px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Reset password | KICKS" description="Set a new password" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Security</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Reset password</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Reset password</h1>
         {status ? (
           <p className="mt-6 text-[#d0d0d0]">{status}</p>
         ) : (
@@ -2380,10 +2693,10 @@ function VerifyEmailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[520px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Verify email | KICKS" description="Verify your account" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
-        <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Email verification</h1>
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
+        <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Email verification</h1>
         <p className="mt-6 text-[#d1d1d1]">{message}</p>
       </div>
     </div>
@@ -2409,11 +2722,11 @@ function ChangePasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[520px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Change password | KICKS" description="Change your password" />
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-10">
+      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Security</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Change password</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Change password</h1>
         {status ? (
           <p className="mt-6 text-[#d0d0d0]">{status}</p>
         ) : (
@@ -2496,12 +2809,12 @@ function AddressBookPage() {
   const addresses = unwrapPayload(data)?.addresses ?? [];
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Addresses | KICKS" description="Manage delivery addresses" />
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Address book</p>
-          <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">Add address</h1>
+          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Add address</h1>
           <form onSubmit={handleSubmit((values) => createMutation.mutate(values))} className="mt-8 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div><input {...register('firstName')} placeholder="First name" className="w-full rounded-full border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white" />{errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}</div>
@@ -2526,7 +2839,7 @@ function AddressBookPage() {
 
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Saved</p>
-          <h2 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white">Your addresses</h2>
+          <h2 className="mt-4 text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your addresses</h2>
           {isLoading ? <div className="mt-6 h-[200px] animate-pulse rounded-[20px] bg-[#181818]" /> : isError ? <div className="mt-6 text-[#d2d2d2]">Unable to load addresses.</div> : addresses.length === 0 ? <div className="mt-6 rounded-[18px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">No addresses saved yet.</div> : <div className="mt-6 space-y-4">{addresses.map((address) => (
             <div key={address._id || address.id} className="rounded-[20px] border border-white/10 bg-[#181818] p-5">
               <div className="flex items-start justify-between gap-4">
@@ -2574,10 +2887,10 @@ function NotificationsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Notifications | KICKS" description="Your updates" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
-        <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-white">Notifications</h1>
+        <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Notifications</h1>
         {isLoading ? (
           <div className="mt-6 space-y-4">
             {[1, 2, 3].map((item) => <div key={item} className="h-32 animate-pulse rounded-[20px] bg-[#181818]" />)}
@@ -2650,18 +2963,18 @@ function BlogPage() {
   const posts = unwrapPayload(data)?.posts ?? unwrapPayload(data)?.items ?? [];
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Journal | KICKS" description="KICKS stories and style insights" />
       <div className="mb-8">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Journal</p>
-        <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">Stories & style</h1>
+        <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">Stories & style</h1>
       </div>
       {isLoading ? <div className="grid gap-6 lg:grid-cols-3"><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /></div> : isError ? <div className="rounded-[24px] border border-white/10 bg-[#111111] p-8 text-[#d4d4d4]">Unable to load editorial content.</div> : <div className="grid gap-6 lg:grid-cols-3">{posts.map((post) => (
         <Link key={post.slug || post._id} to={`/blog/${post.slug || post._id}`} className="overflow-hidden rounded-[24px] border border-white/10 bg-[#111111]">
           <img src={post.coverImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1000&q=80'} alt={post.title || 'Blog article'} className="h-72 w-full object-cover" />
           <div className="p-6">
             <p className="text-[10px] uppercase tracking-[0.28em] text-[#a1a1a1]">{post.category || 'Culture'}</p>
-            <h3 className="mt-3 text-2xl font-bold text-white">{post.title}</h3>
+            <h3 className="mt-3 text-xl font-bold text-white sm:text-2xl">{post.title}</h3>
             <p className="mt-3 text-[#d0d0d0]">{post.shortDescription || post.excerpt || 'Read the latest KICKS conversation.'}</p>
           </div>
         </Link>
@@ -2683,14 +2996,14 @@ function BlogDetailPage() {
   if (isError || !post.title) return <div className="mx-auto max-w-[1200px] px-4 py-12 text-white lg:px-8">Story unavailable.</div>;
 
   return (
-    <article className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <article className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title={`${post.title} | KICKS`} description={post.shortDescription || post.excerpt || 'KICKS editorial'} />
       <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[#111111]">
         <img src={post.coverImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80'} alt={post.title} className="h-[420px] w-full object-cover" />
       </div>
       <div className="mt-8 max-w-[900px]">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">{post.category || 'Journal'}</p>
-        <h1 className="mt-4 text-5xl font-black uppercase tracking-[-0.08em] text-white">{post.title}</h1>
+        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">{post.title}</h1>
         <div className="mt-8 space-y-5 text-lg leading-8 text-[#d5d5d5]" dangerouslySetInnerHTML={{ __html: post.content || post.body || 'No article content available.' }} />
       </div>
     </article>
@@ -2711,11 +3024,11 @@ function CmsPage() {
   if (isError || !page.title) return <div className="mx-auto max-w-[1200px] px-4 py-12 text-white lg:px-8">Page unavailable.</div>;
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title={`${page.title} | KICKS`} description={page.description || 'KICKS content page'} />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Content</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em] text-white">{page.title}</h1>
+        <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">{page.title}</h1>
         <div className="mt-8 space-y-5 text-[#d5d5d5] leading-8" dangerouslySetInnerHTML={{ __html: page.content || page.body || 'Content is unavailable.' }} />
       </div>
     </div>
@@ -2813,8 +3126,8 @@ function StatusBadge({ status }) {
 
 function EmptyState({ title, description }) {
   return (
-    <div className="rounded-[22px] border border-dashed border-white/15 bg-[#121212] p-10 text-center">
-      <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">{title}</h3>
+    <div className="rounded-[22px] border border-dashed border-white/15 bg-[#121212] p-6 text-center sm:p-10">
+      <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">{title}</h3>
       <p className="mt-3 text-[#d5d5d5]">{description}</p>
     </div>
   );
@@ -3124,7 +3437,7 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[#8b8b8b]">Catalog</div>
-              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Products</h3>
+              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Products</h3>
             </div>
             <button type="button" onClick={openCreate} className="rounded-full bg-white px-5 py-3 text-sm font-medium text-black">Add product</button>
           </div>
@@ -3178,7 +3491,7 @@ function AdminPage({ initialSection }) {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[#0d0d0d] p-6">
               <div className="mb-6 flex items-center justify-between">
-                <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">{editingProduct ? 'Edit product' : 'Add product'}</h3>
+                <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">{editingProduct ? 'Edit product' : 'Add product'}</h3>
                 <button type="button" onClick={() => setIsFormOpen(false)} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
               </div>
 
@@ -3270,7 +3583,7 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Inventory</div>
-              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Stock control</h3>
+              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Stock control</h3>
             </div>
             <label className="flex items-center gap-3 text-sm text-[#d8d8d8]"><input type="checkbox" checked={lowStockOnly} onChange={(event) => setLowStockOnly(event.target.checked)} className="h-4 w-4" /> Low stock only</label>
           </div>
@@ -3305,7 +3618,7 @@ function AdminPage({ initialSection }) {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-xl rounded-[28px] border border-white/10 bg-[#0d0d0d] p-6">
               <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Adjust inventory</h3>
+                <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Adjust inventory</h3>
                 <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); }} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
               </div>
               {adjustError && <div className="mb-4 rounded-[16px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{adjustError}</div>}
@@ -3377,7 +3690,7 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Operations</div>
-              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Orders</h3>
+              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Orders</h3>
             </div>
             <div className="flex flex-wrap gap-3">
               <SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search orders" />
@@ -3455,7 +3768,7 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">People</div>
-              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Customers</h3>
+              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Customers</h3>
             </div>
             <div className="w-full max-w-md"><SearchInput value={search} onChange={setSearch} placeholder="Search customers" /></div>
           </div>
@@ -3552,7 +3865,7 @@ function AdminPage({ initialSection }) {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Logistics</div>
-              <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Shipping</h3>
+              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Shipping</h3>
               <p className="mt-1 text-sm text-[#a0a0a0]">{total} shipment{total !== 1 ? 's' : ''} total</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -3823,7 +4136,7 @@ function AdminPage({ initialSection }) {
       <div className="space-y-6">
         <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
           <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Workspace</div>
-          <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Settings</h3>
+          <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Settings</h3>
         </div>
 
         {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load settings." /> : (
@@ -3863,12 +4176,12 @@ function AdminPage({ initialSection }) {
   };
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-12 lg:px-8">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Admin | KICKS" description="KICKS administrator dashboard" />
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Admin</p>
-          <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">KICKS control center</h1>
+          <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">KICKS control center</h1>
         </div>
         <div className="flex items-center gap-3">
           <Link to="/" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Storefront</Link>
@@ -3903,7 +4216,7 @@ function NotFoundPage() {
   return (
     <div className="mx-auto max-w-[900px] px-4 py-20 text-center lg:px-8">
       <PageMeta title="Page not found | KICKS" description="The page you requested does not exist" />
-      <h1 className="text-5xl font-black uppercase tracking-[-0.08em] text-white">404</h1>
+      <h1 className="text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">404</h1>
       <p className="mt-5 text-[#c7c7c7]">This page does not exist yet.</p>
       <Link to="/" className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Back home</Link>
     </div>

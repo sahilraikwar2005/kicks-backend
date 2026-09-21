@@ -79,12 +79,12 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <article className="group rounded-[24px] border border-white/10 bg-[#111111] p-4 transition hover:-translate-y-1 hover:border-white/20">
+    <article className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#111111] p-3 transition hover:-translate-y-1 hover:border-white/20 sm:p-4">
       <div className="relative overflow-hidden rounded-[20px] bg-[#1a1a1a]">
         <img
           src={product?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'}
           alt={product?.name || 'Product'}
-          className="h-64 w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-40 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-56 lg:h-64"
           loading="lazy"
           onError={(event) => {
             event.currentTarget.onerror = null;
@@ -95,14 +95,15 @@ export default function ProductCard({ product }) {
           type="button"
           onClick={handleWishlist}
           disabled={wishlistMutation.isPending}
-          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-sm transition hover:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60"
+          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-sm transition hover:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
           aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`}
           aria-pressed={isWishlisted}
+          title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           <Heart size={16} className={isWishlisted ? 'fill-white' : ''} />
         </button>
         {discount > 0 && (
-          <span className="absolute left-3 top-3 rounded-full bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black">
+          <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-black sm:left-3 sm:top-3 sm:text-[10px]">
             -{discount}%
           </span>
         )}
@@ -120,29 +121,29 @@ export default function ProductCard({ product }) {
         {isOutOfStock ? <span className="text-red-200">Out of stock</span> : isLowStock ? <span className="text-[#f3d87d]">Low stock</span> : <span className="text-[#9feec8]">In stock</span>}
       </div>
 
-      <Link to={`/products/${product?.slug}`} className="mt-3 block text-xl font-medium text-white hover:text-white/80">
+      <Link to={`/products/${product?.slug}`} className="mt-2 block break-words text-base font-medium text-white line-clamp-2 hover:text-white/80 sm:mt-3 sm:text-xl">
         {product?.name}
       </Link>
 
-      <div className="mt-3 flex items-center gap-3 text-sm">
+      <div className="mt-2 flex items-center gap-2 text-xs sm:mt-3 sm:gap-3 sm:text-sm">
         {salePrice ? (
           <>
-            <span className="text-lg font-semibold text-white">₹{salePrice.toLocaleString('en-IN')}</span>
-            <span className="text-[#8e8e8e] line-through">₹{price.toLocaleString('en-IN')}</span>
+            <span className="text-base font-semibold text-white sm:text-lg">₹{salePrice.toLocaleString('en-IN')}</span>
+            <span className="min-w-0 truncate text-[#8e8e8e] line-through">₹{price.toLocaleString('en-IN')}</span>
           </>
         ) : (
-          <span className="text-lg font-semibold text-white">₹{price.toLocaleString('en-IN')}</span>
+          <span className="text-base font-semibold text-white sm:text-lg">₹{price.toLocaleString('en-IN')}</span>
         )}
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div className="mt-4 flex items-center justify-between gap-2 sm:mt-5 sm:gap-3">
         {isOutOfStock ? (
-          <Link to={`/products/${product?.slug}`} className="flex-1 rounded-full border border-white/15 px-4 py-3 text-center text-sm font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70">
+          <Link to={`/products/${product?.slug}`} className="flex-1 rounded-full border border-white/15 px-3 py-2.5 text-center text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 sm:px-4 sm:py-3 sm:text-sm">
             View details
           </Link>
         ) : (
           <>
-            <button type="button" onClick={handleQuickAdd} disabled={cartMutation.isPending} className="flex-1 rounded-full border border-white/15 px-4 py-3 text-sm font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={handleQuickAdd} disabled={cartMutation.isPending} className="min-w-0 flex-1 rounded-full border border-white/15 px-3 py-2.5 text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm">
               {cartMutation.isPending ? 'Adding...' : 'Quick add'}
             </button>
             <button
@@ -150,7 +151,8 @@ export default function ProductCard({ product }) {
               onClick={handleQuickAdd}
               disabled={cartMutation.isPending}
               aria-label={`Add ${product?.name || 'product'} to cart`}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#111111] disabled:cursor-wait disabled:opacity-60"
+              title="Add to cart"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#111111] disabled:cursor-wait disabled:opacity-60 sm:h-11 sm:w-11"
             >
               <ShoppingBag size={16} />
             </button>

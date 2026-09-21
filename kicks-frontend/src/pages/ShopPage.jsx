@@ -109,11 +109,11 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-10 lg:px-8">
-      <div className="mb-8 flex items-end justify-between gap-4">
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-10 lg:px-8">
+      <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
         <div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Shop</p>
-          <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.06em] text-white">All sneakers</h1>
+          <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">All sneakers</h1>
           <p className="mt-3 text-sm text-[#a7a7a7]">{query.data?.total ?? 0} styles in the current selection</p>
         </div>
         <button
@@ -126,7 +126,7 @@ export default function ShopPage() {
         </button>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className={`${mobileFiltersOpen ? 'fixed inset-0 z-[80] block overflow-y-auto bg-[#090909] p-4' : 'hidden'} lg:static lg:block lg:overflow-visible lg:bg-transparent lg:p-0`}>
           <div className="space-y-6 rounded-[24px] border border-white/10 bg-[#111111] p-5">
             <div className="flex items-center justify-between lg:hidden">
@@ -178,23 +178,23 @@ export default function ShopPage() {
         <section className="space-y-6" aria-live="polite">
           {query.isError ? (
             <div className="rounded-[24px] border border-red-500/30 bg-[#1b1515] p-10 text-center">
-              <h2 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Unable to load products</h2>
+              <h2 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Unable to load products</h2>
               <p className="mt-3 text-sm text-red-100">Please try again.</p>
               <button type="button" onClick={() => query.refetch()} className="mt-6 rounded-full border border-white/15 px-5 py-3 text-sm text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/60">Retry</button>
             </div>
           ) : query.isLoading ? (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {[...Array(6)].map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-[24px] bg-[#111111]" />)}
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {[...Array(6)].map((_, index) => <div key={index} className="h-[300px] animate-pulse rounded-[24px] bg-[#111111] sm:h-[430px]" />)}
             </div>
           ) : products.length === 0 ? (
             <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-              <h2 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">No sneakers found</h2>
+              <h2 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">No sneakers found</h2>
               <p className="mt-3 text-[#d1d1d1]">Try changing your search or filters.</p>
               <button type="button" onClick={clearFilters} className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-[#e5e5e5] focus:outline-none focus:ring-2 focus:ring-white/70"><RotateCcw size={15} /> Clear filters</button>
             </div>
           ) : (
             <>
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {products.map((product) => <ProductCard key={product?._id || product?.slug} product={product} />)}
               </div>
               {totalPages > 1 && (

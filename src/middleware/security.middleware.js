@@ -3,9 +3,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import compression from 'compression';
-import { env } from '../config/env.js';
-
-const allowedOrigins = [env.clientUrl, env.adminUrl, 'http://localhost:3000', 'http://localhost:5173'];
+import { isTrustedOrigin } from '../config/origins.js';
 
 export const securityMiddleware = {
   helmet: helmet({
@@ -14,7 +12,7 @@ export const securityMiddleware = {
   }),
   cors: cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || isTrustedOrigin(origin)) {
         callback(null, true);
         return;
       }

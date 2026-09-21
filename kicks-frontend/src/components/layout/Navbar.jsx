@@ -42,19 +42,19 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl">
-      <nav className="mx-auto max-w-[1400px] px-4 py-4 lg:px-8">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      <nav className="mx-auto max-w-[1400px] px-3 py-3 sm:px-4 sm:py-4 lg:px-8">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen((current) => !current)}
               aria-label="Toggle navigation menu"
               aria-expanded={mobileOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white lg:hidden"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-white lg:hidden"
             >
               <Menu size={18} />
             </button>
-            <Link to="/" className="text-xl font-black uppercase tracking-[0.35em] text-white">
+            <Link to="/" className="truncate text-base font-black uppercase tracking-[0.25em] text-white sm:text-xl sm:tracking-[0.35em]">
               KICKS
             </Link>
           </div>
@@ -73,7 +73,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <button type="button" aria-label="Search" className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white sm:inline-flex">
               <Search size={16} />
             </button>
@@ -123,7 +123,7 @@ export default function Navbar() {
               <Link
                 to="/login"
                 aria-label="Log in to your account"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#181818] px-4 py-2 text-sm font-medium text-white transition hover:border-white/40 hover:bg-[#222222] focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#181818] px-3 py-2 text-xs font-medium text-white transition hover:border-white/40 hover:bg-[#222222] focus:outline-none focus:ring-2 focus:ring-white/50 sm:px-4 sm:text-sm"
               >
                 <User size={14} /> Login
               </Link>

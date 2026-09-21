@@ -260,7 +260,7 @@ export default function ProductDetailPage() {
       <div className="mx-auto max-w-[1400px] px-4 py-10 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="space-y-4">
-            <div className="h-[420px] animate-pulse rounded-[28px] bg-[#111111] md:h-[560px]" />
+            <div className="h-[300px] animate-pulse rounded-[28px] bg-[#111111] sm:h-[420px] md:h-[560px]" />
             <div className="grid grid-cols-3 gap-4">
               {[...Array(3)].map((_, index) => <div key={index} className="h-32 animate-pulse rounded-[22px] bg-[#111111]" />)}
             </div>
@@ -285,7 +285,7 @@ export default function ProductDetailPage() {
       <div className="mx-auto max-w-[1200px] px-4 py-12 lg:px-8">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center md:p-12">
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Product unavailable</p>
-          <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white md:text-5xl">
+          <h1 className="mt-4 text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl md:text-5xl">
             {isNotFound ? 'Product not found' : 'Unable to load product'}
           </h1>
           <p className="mt-4 text-[#d2d2d2]">
@@ -335,7 +335,7 @@ export default function ProductDetailPage() {
               <img
                 src={galleryImages[activeImageIndex] || getImageFallback}
                 alt={product?.name || 'Product'}
-                className="h-[420px] w-full rounded-[22px] object-cover md:h-[560px]"
+                className="h-[300px] w-full rounded-[22px] object-cover sm:h-[420px] md:h-[560px]"
                 onError={(event) => {
                   event.currentTarget.onerror = null;
                   event.currentTarget.src = getImageFallback;
@@ -355,7 +355,7 @@ export default function ProductDetailPage() {
                   <img
                     src={image || getImageFallback}
                     alt={`${product?.name || 'Product'} ${index + 1}`}
-                    className="h-28 w-full rounded-[16px] object-cover md:h-32"
+                    className="h-20 w-full rounded-[16px] object-cover sm:h-28 md:h-32"
                     onError={(event) => {
                       event.currentTarget.onerror = null;
                       event.currentTarget.src = getImageFallback;
@@ -368,7 +368,7 @@ export default function ProductDetailPage() {
 
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 md:p-8">
             <p className="text-[10px] uppercase tracking-[0.3em] text-[#a3a3a3]">{product?.brand?.name || 'KICKS'}</p>
-            <h1 className="mt-4 text-3xl font-black uppercase tracking-[-0.06em] text-white md:text-4xl">{product?.name}</h1>
+            <h1 className="mt-4 break-words text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl md:text-4xl">{product?.name}</h1>
 
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#d3d3d3]">
               <span className="flex items-center gap-2"><Star size={15} className="fill-white text-white" /> {product?.rating ?? 4.8}</span>
@@ -381,14 +381,14 @@ export default function ProductDetailPage() {
             <div className="mt-5 flex flex-wrap items-center gap-3">
               {currentSalePrice ? (
                 <>
-                  <span className="text-3xl font-black text-white">{formatMoney(currentSalePrice)}</span>
+                  <span className="text-2xl font-black text-white sm:text-3xl">{formatMoney(currentSalePrice)}</span>
                   <span className="text-lg text-[#8d8d8d] line-through">{formatMoney(currentPrice)}</span>
                   <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black">
                     -{Math.round(((currentPrice - currentSalePrice) / currentPrice) * 100)}%
                   </span>
                 </>
               ) : (
-                <span className="text-3xl font-black text-white">{formatMoney(currentPrice)}</span>
+                <span className="text-2xl font-black text-white sm:text-3xl">{formatMoney(currentPrice)}</span>
               )}
             </div>
 
@@ -482,22 +482,22 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
-            <div className="mt-8 flex items-center gap-3">
-              <div className="inline-flex items-center rounded-full border border-white/10 bg-[#171717]">
-                <button type="button" aria-label="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-12 w-12 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
+            <div className="mt-6 flex items-center gap-2 sm:mt-8 sm:gap-3">
+              <div className="inline-flex shrink-0 items-center rounded-full border border-white/10 bg-[#171717]">
+                <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-11 w-11 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40 sm:h-12 sm:w-12">
                   <Minus size={16} />
                 </button>
-                <span className="min-w-12 text-center text-sm font-medium text-white">{quantity}</span>
-                <button type="button" aria-label="Increase quantity" onClick={() => handleQuantityChange(1)} disabled={isOutOfStock || quantity >= Math.max(currentStock || 1, 1)} className="flex h-12 w-12 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <span className="min-w-10 text-center text-sm font-medium text-white sm:min-w-12">{quantity}</span>
+                <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => handleQuantityChange(1)} disabled={isOutOfStock || quantity >= Math.max(currentStock || 1, 1)} className="flex h-11 w-11 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40 sm:h-12 sm:w-12">
                   <Plus size={16} />
                 </button>
               </div>
 
-              <button type="button" onClick={handleAddToCart} disabled={cartMutation.isPending || isOutOfStock || !selectedVariant} className="flex-1 rounded-full bg-white px-6 py-4 text-sm font-medium text-black transition hover:bg-[#e9e9e9] disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={handleAddToCart} disabled={cartMutation.isPending || isOutOfStock || !selectedVariant} className="min-w-0 flex-1 rounded-full bg-white px-4 py-3.5 text-sm font-medium text-black transition hover:bg-[#e9e9e9] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-4">
                 {cartMutation.isPending ? 'Adding...' : 'Add to cart'}
               </button>
 
-              <button type="button" onClick={handleWishlistToggle} disabled={wishlistMutation.isPending} aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`} aria-pressed={isWishlisted} className="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-[#111111] text-white transition hover:border-white/30 disabled:cursor-wait disabled:opacity-60">
+              <button type="button" onClick={handleWishlistToggle} disabled={wishlistMutation.isPending} aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`} aria-pressed={isWishlisted} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#111111] text-white transition hover:border-white/30 disabled:cursor-wait disabled:opacity-60 sm:h-12 sm:w-12">
                 <Heart size={18} className={isWishlisted ? 'fill-white' : ''} />
               </button>
             </div>
@@ -512,10 +512,10 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <section className="mt-16 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="mt-10 grid gap-6 sm:mt-16 sm:gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-8">
             <p className="text-[10px] uppercase tracking-[0.3em] text-[#9a9a9a]">Overview</p>
-            <h2 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white">Product details</h2>
+            <h2 className="mt-3 text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Product details</h2>
             <div className="mt-6 space-y-5 text-base leading-7 text-[#d0d0d0]">
               {product?.description && <p>{product.description}</p>}
               {product?.shortDescription && <p>{product.shortDescription}</p>}
@@ -591,18 +591,18 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        <section className="mt-16">
+        <section className="mt-10 sm:mt-16">
           <div className="mb-6">
             <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">More like this</p>
-            <h2 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white">You may also like</h2>
+            <h2 className="mt-3 text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">You may also like</h2>
           </div>
 
           {recommendationQuery.isLoading ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
               {[...Array(4)].map((_, index) => <div key={index} className="h-[340px] animate-pulse rounded-[24px] bg-[#111111]" />)}
             </div>
           ) : recommendationQuery.data?.length ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
               {recommendationQuery.data.map((item) => (
                 <ProductCard key={item?._id || item?.slug} product={item} />
               ))}
