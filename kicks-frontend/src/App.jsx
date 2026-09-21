@@ -5,14 +5,17 @@ import { Helmet, HelmetProvider } from 'react-helmet-async';
 import {
   AlertCircle,
   Archive,
+  ArrowLeft,
   ArrowRight,
   Bell,
   Check,
+  ChevronLeft,
   ChevronRight,
   Edit3,
   Eye,
   EyeOff,
   ExternalLink,
+  FileText,
   Heart,
   Info,
   KeyRound,
@@ -22,6 +25,7 @@ import {
   MapPin,
   Menu,
   Package,
+  Pencil,
   Plus,
   Settings,
   ShoppingBag,
@@ -3086,11 +3090,11 @@ function DataTable({ columns = [], rows = [], emptyMessage = 'No records found.'
 
   return (
     <div className="overflow-x-auto rounded-[22px] border border-white/10 bg-[#111111]">
-      <table className="min-w-full text-left text-sm text-[#d8d8d8]">
+      <table className="min-w-full text-left text-[13px] text-[#d8d8d8]">
         <thead className="bg-[#171717] text-[10px] uppercase tracking-[0.22em] text-[#9a9a9a]">
           <tr>
             {columns.map((column) => (
-              <th key={column.key} className="px-4 py-3 font-medium">{column.label}</th>
+              <th key={column.key} className="px-3 py-2.5 font-medium">{column.label}</th>
             ))}
           </tr>
         </thead>
@@ -3098,7 +3102,7 @@ function DataTable({ columns = [], rows = [], emptyMessage = 'No records found.'
           {rows.map((row, rowIndex) => (
             <tr key={row.id || row._id || rowIndex} className="border-t border-white/10 transition hover:bg-white/[0.02]">
               {columns.map((column) => (
-                <td key={`${rowIndex}-${column.key}`} className="px-4 py-3 align-top">
+                <td key={`${rowIndex}-${column.key}`} className="px-3 py-2.5 align-top">
                   {column.render ? column.render(row) : row[column.key] ?? '—'}
                 </td>
               ))}
@@ -3114,24 +3118,24 @@ function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-6 flex items-center justify-end gap-3">
-      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white disabled:opacity-40">Prev</button>
-      <span className="text-sm text-[#d5d5d5]">Page {page} / {totalPages}</span>
-      <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white disabled:opacity-40">Next</button>
+    <div className="mt-4 flex items-center justify-end gap-2">
+      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white disabled:opacity-40">Prev</button>
+      <span className="text-xs text-[#d5d5d5]">Page {page} / {totalPages}</span>
+      <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white disabled:opacity-40">Next</button>
     </div>
   );
 }
 
 function SearchInput({ value, onChange, placeholder = 'Search...' }) {
   return (
-    <div className="rounded-full border border-white/10 bg-[#181818] px-4 py-3">
+    <div className="rounded-full border border-white/10 bg-[#181818] px-4 py-2.5">
       <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm text-white placeholder:text-[#7d7d7d] outline-none" />
     </div>
   );
 }
 
 function FilterBar({ children }) {
-  return <div className="flex flex-wrap gap-3">{children}</div>;
+  return <div className="flex flex-wrap gap-2">{children}</div>;
 }
 
 function FormField({ label, children, hint }) {
@@ -3204,42 +3208,42 @@ function Toast({ message, type = 'info' }) {
 
 function AdminPageHeader({ eyebrow, title, meta, actions }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:mb-8 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mb-5 flex flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#8d8d8d]">{eyebrow}</p>}
-        <h2 className="mt-2 text-3xl font-black uppercase leading-[0.95] tracking-[-0.03em] text-white sm:text-4xl">{title}</h2>
-        {meta && <p className="mt-2 text-sm text-[#a0a0a0]">{meta}</p>}
+        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8d8d8d]">{eyebrow}</p>}
+        <h2 className="mt-1.5 text-2xl font-black uppercase leading-[0.95] tracking-[-0.03em] text-white sm:text-3xl">{title}</h2>
+        {meta && <p className="mt-1.5 text-[13px] text-[#a0a0a0]">{meta}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
 
 function AdminKpi({ icon: Icon, label, value, sub }) {
   return (
-    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5 transition hover:border-white/20">
-      <div className="flex items-center justify-between gap-3">
-        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{label}</p>
+    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-4 transition hover:border-white/20">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">{label}</p>
         {Icon && (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/30 bg-[#FFC800]/10 text-[#FFC800]" aria-hidden="true">
-            <Icon size={15} />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/30 bg-[#FFC800]/10 text-[#FFC800]" aria-hidden="true">
+            <Icon size={14} />
           </span>
         )}
       </div>
-      <p className="mt-3 truncate text-3xl font-black tracking-[-0.04em] text-white">{value}</p>
-      {sub && <p className="mt-1.5 truncate text-xs text-[#a0a0a0]">{sub}</p>}
+      <p className="mt-2 truncate text-2xl font-black tracking-[-0.04em] text-white">{value}</p>
+      {sub && <p className="mt-1 truncate text-xs text-[#a0a0a0]">{sub}</p>}
     </div>
   );
 }
 
 function AdminCard({ eyebrow, title, action, children, className = '' }) {
   return (
-    <section className={`rounded-[20px] border border-white/10 bg-[#111111] p-5 sm:p-6 ${className}`}>
+    <section className={`rounded-[20px] border border-white/10 bg-[#111111] p-4 sm:p-5 ${className}`}>
       {(eyebrow || title || action) && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{eyebrow}</p>}
-            {title && <h3 className="mt-1.5 text-xl font-bold text-white">{title}</h3>}
+            {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">{eyebrow}</p>}
+            {title && <h3 className="mt-1 text-lg font-bold text-white">{title}</h3>}
           </div>
           {action}
         </div>
@@ -3304,19 +3308,19 @@ function AdminPage({ initialSection }) {
 
   const renderSidebarBody = () => (
     <>
-      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 px-2 py-2" aria-label="KICKS admin home">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFC800] text-sm font-black text-black">K</span>
+      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5 px-2 py-1.5" aria-label="KICKS admin home">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFC800] text-xs font-black text-black">K</span>
         <span className="leading-tight">
           <span className="block text-sm font-black uppercase tracking-[0.28em] text-white">Kicks</span>
           <span className="block text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">Control Center</span>
         </span>
       </Link>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-5 space-y-5">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{group.label}</p>
-            <nav aria-label={group.label} className="space-y-1.5">
+            <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">{group.label}</p>
+            <nav aria-label={group.label} className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = section === item.id;
@@ -3326,11 +3330,11 @@ function AdminPage({ initialSection }) {
                     type="button"
                     onClick={() => setSection(item.id)}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.16em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
                       isActive ? 'bg-[#FFC800] text-black' : 'text-[#a8a8a8] hover:bg-white/5 hover:text-white'
                     }`}
                   >
-                    <Icon size={16} />
+                    <Icon size={15} />
                     <span>{item.label}</span>
                   </button>
                 );
@@ -3340,23 +3344,23 @@ function AdminPage({ initialSection }) {
         ))}
       </div>
 
-      <div className="mt-auto pt-6">
-        <div className="rounded-[18px] border border-white/10 bg-[#101010] p-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-sm font-black text-[#FFC800]" aria-hidden="true">
+      <div className="mt-auto pt-5">
+        <div className="rounded-[18px] border border-white/10 bg-[#101010] p-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-xs font-black text-[#FFC800]" aria-hidden="true">
               {adminInitials}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-white">{adminName}</p>
+              <p className="truncate text-[13px] font-bold text-white">{adminName}</p>
               <p className="text-[10px] uppercase tracking-[0.2em] text-[#8d8d8d]">Store admin</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#d5d5d5] transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d5d5d5] transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
           >
-            <LogOut size={14} /> Logout
+            <LogOut size={13} /> Logout
           </button>
         </div>
       </div>
@@ -3560,6 +3564,13 @@ function AdminPage({ initialSection }) {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [toast, setToast] = useState('');
+    const [mediaItems, setMediaItems] = useState([]);
+    const [sessionUploadIds, setSessionUploadIds] = useState([]);
+    const [urlInput, setUrlInput] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    const [savingProduct, setSavingProduct] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
     const [productForm, setProductForm] = useState({
       name: '',
       slug: '',
@@ -3576,9 +3587,9 @@ function AdminPage({ initialSection }) {
       description: '',
       tags: '',
       seo: { title: '', description: '', keywords: '' },
-      images: '',
       variants: [{ sku: '', size: 'US 9', color: 'Black', stock: 0, price: 0, salePrice: '', images: '' }],
     });
+    const makeMediaId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     const { data: categoriesData } = useQuery({ queryKey: ['admin-categories'], queryFn: () => apiClient.get('/categories').then((response) => response.data) });
     const { data: brandsData } = useQuery({ queryKey: ['admin-brands'], queryFn: () => apiClient.get('/brands').then((response) => response.data) });
@@ -3619,9 +3630,12 @@ function AdminPage({ initialSection }) {
         description: '',
         tags: '',
         seo: { title: '', description: '', keywords: '' },
-        images: '',
         variants: [{ sku: '', size: 'US 9', color: 'Black', stock: 0, price: 0, salePrice: '', images: '' }],
       });
+      setMediaItems([]);
+      setSessionUploadIds([]);
+      setUrlInput('');
+      setUploadError('');
       setIsFormOpen(true);
     };
 
@@ -3647,7 +3661,6 @@ function AdminPage({ initialSection }) {
           description: product.seo?.description || '',
           keywords: Array.isArray(product.seo?.keywords) ? product.seo.keywords.join(', ') : '',
         },
-        images: Array.isArray(product.images) ? product.images.join(', ') : '',
         variants: (product.variants || []).map((variant) => ({
           sku: variant.sku || '',
           size: variant.size || 'US 9',
@@ -3658,10 +3671,20 @@ function AdminPage({ initialSection }) {
           images: Array.isArray(variant.images) ? variant.images.join(', ') : '',
         })),
       });
+      setMediaItems(Array.isArray(product.images) ? product.images.filter(Boolean).map((url) => ({ id: makeMediaId(), kind: 'manual', url })) : []);
+      setSessionUploadIds([]);
+      setUrlInput('');
+      setUploadError('');
       setIsFormOpen(true);
     };
 
     const saveProduct = async () => {
+      if (savingProduct || uploading) return;
+      if (!productForm.name.trim()) {
+        setToast('Product name is required.');
+        return;
+      }
+      setSavingProduct(true);
       try {
         const payload = {
           name: productForm.name,
@@ -3683,7 +3706,7 @@ function AdminPage({ initialSection }) {
             description: productForm.seo.description,
             keywords: productForm.seo.keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean),
           },
-          images: productForm.images.split(',').map((image) => image.trim()).filter(Boolean),
+          images: mediaItems.map((item) => item.url).filter(Boolean),
           variants: productForm.variants.map((variant) => ({
             sku: variant.sku,
             size: variant.size,
@@ -3704,10 +3727,95 @@ function AdminPage({ initialSection }) {
         }
         setIsFormOpen(false);
         setPage(1);
+        setSessionUploadIds([]);
         await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       } catch (error) {
         setToast(error?.message || 'Unable to save product.');
+      } finally {
+        setSavingProduct(false);
       }
+    };
+
+    const cleanupSessionUploads = async () => {
+      const stale = mediaItems.filter((item) => item.kind === 'upload' && item.publicId && sessionUploadIds.includes(item.id));
+      setSessionUploadIds([]);
+      await Promise.allSettled(
+        stale.map((item) => apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`)),
+      );
+    };
+
+    const closeEditor = async () => {
+      await cleanupSessionUploads();
+      setIsFormOpen(false);
+      setEditingProduct(null);
+      setUploadError('');
+    };
+
+    const uploadFiles = async (files) => {
+      const list = Array.from(files || []);
+      if (list.length === 0 || uploading) return;
+      setUploadError('');
+      const valid = [];
+      for (const file of list) {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+          setUploadError(`Unsupported file type: ${file.name || 'file'}. Use JPG, PNG or WebP.`);
+          continue;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          setUploadError(`"${file.name || 'file'}" exceeds the 5 MB limit.`);
+          continue;
+        }
+        valid.push(file);
+      }
+      if (valid.length === 0) return;
+      setUploading(true);
+      try {
+        for (const file of valid) {
+          const form = new FormData();
+          form.append('image', file);
+          const response = await apiClient.post('/uploads/images', form);
+          const uploaded = unwrapPayload(response.data) ?? {};
+          if (!uploaded.url) throw new Error(`Upload failed for "${file.name || 'file'}".`);
+          const id = makeMediaId();
+          setMediaItems((items) => [...items, { id, kind: 'upload', url: uploaded.url, publicId: uploaded.publicId || '' }]);
+          setSessionUploadIds((ids) => [...ids, id]);
+        }
+      } catch (error) {
+        setUploadError(error?.message || 'Image upload failed. Please try again.');
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    const addImageUrl = () => {
+      const url = urlInput.trim();
+      if (!url) return;
+      setMediaItems((items) => [...items, { id: makeMediaId(), kind: 'manual', url }]);
+      setUrlInput('');
+    };
+
+    const removeMediaItem = async (id) => {
+      const item = mediaItems.find((entry) => entry.id === id);
+      setMediaItems((items) => items.filter((entry) => entry.id !== id));
+      if (item && item.kind === 'upload' && item.publicId && sessionUploadIds.includes(id)) {
+        setSessionUploadIds((ids) => ids.filter((entry) => entry !== id));
+        try {
+          await apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`);
+        } catch {
+          setUploadError('Removed from the product, but the uploaded file could not be deleted from storage.');
+        }
+      }
+    };
+
+    const moveMediaItem = (id, direction) => {
+      setMediaItems((items) => {
+        const index = items.findIndex((entry) => entry.id === id);
+        const next = index + direction;
+        if (index < 0 || next < 0 || next >= items.length) return items;
+        const reordered = [...items];
+        [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
+        return reordered;
+      });
     };
 
     const deleteProduct = async (productId, productName) => {
@@ -3722,15 +3830,213 @@ function AdminPage({ initialSection }) {
       }
     };
 
+    if (isFormOpen) {
+      return (
+        <div className="space-y-5">
+          <AdminPageHeader
+            eyebrow="Catalog"
+            title={editingProduct ? 'Edit product' : 'Add product'}
+            actions={(
+              <>
+                <button type="button" onClick={closeEditor} className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30">
+                  <ArrowLeft size={14} /> Back to Products
+                </button>
+                <button
+                  type="button"
+                  onClick={saveProduct}
+                  disabled={savingProduct || uploading}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#FFC800] px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+                >
+                  {(savingProduct || uploading) && <Loader2 size={14} className="animate-spin" />}
+                  {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
+                </button>
+              </>
+            )}
+          />
+
+          {toast && <div><Toast message={toast} /></div>}
+
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <AdminCard>
+              <div className="space-y-7">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Basics</p>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" placeholder="auto-generated from name" /></FormField>
+                    <FormField label="Brand"><select value={productForm.brand} onChange={(event) => setProductForm({ ...productForm, brand: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select brand</option>{brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
+                    <FormField label="Category"><select value={productForm.category} onChange={(event) => setProductForm({ ...productForm, category: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select category</option>{categories.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
+                    <FormField label="Gender"><select value={productForm.gender} onChange={(event) => setProductForm({ ...productForm, gender: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="UNISEX">UNISEX</option><option value="MEN">MEN</option><option value="WOMEN">WOMEN</option><option value="KIDS">KIDS</option></select></FormField>
+                    <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Pricing</p>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <FormField label="Price"><input type="number" min="0" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: Number(event.target.value) })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Sale price"><input type="number" min="0" value={productForm.salePrice} onChange={(event) => setProductForm({ ...productForm, salePrice: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Classification</p>
+                  <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#d5d5d5]">
+                      <input type="checkbox" checked={productForm.featured} onChange={(event) => setProductForm({ ...productForm, featured: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Featured
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#d5d5d5]">
+                      <input type="checkbox" checked={productForm.newArrival} onChange={(event) => setProductForm({ ...productForm, newArrival: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> New arrival
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#d5d5d5]">
+                      <input type="checkbox" checked={productForm.bestSeller} onChange={(event) => setProductForm({ ...productForm, bestSeller: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Bestseller
+                    </label>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Description</p>
+                  <div className="mt-4 grid gap-4">
+                    <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Variants</p>
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <input value={productForm.variants[0]?.sku || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], sku: event.target.value }] })} placeholder="SKU" aria-label="Variant SKU" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                    <input value={productForm.variants[0]?.size || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], size: event.target.value }] })} placeholder="Size" aria-label="Variant size" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                    <input value={productForm.variants[0]?.color || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], color: event.target.value }] })} placeholder="Color" aria-label="Variant color" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                    <input type="number" value={productForm.variants[0]?.price ?? productForm.price} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], price: Number(event.target.value) }], price: Number(event.target.value) })} placeholder="Variant price" aria-label="Variant price" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                    <input type="number" value={productForm.variants[0]?.stock ?? 0} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], stock: Number(event.target.value) }] })} placeholder="Stock" aria-label="Variant stock" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                    <input value={productForm.variants[0]?.images || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], images: event.target.value }] })} placeholder="Variant image URLs" aria-label="Variant image URLs" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">SEO</p>
+                  <div className="mt-4 grid gap-4">
+                    <FormField label="SEO title"><input value={productForm.seo.title} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, title: event.target.value } })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="SEO description"><input value={productForm.seo.description} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, description: event.target.value } })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="SEO keywords"><input value={productForm.seo.keywords} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, keywords: event.target.value } })} placeholder="comma separated" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                  </div>
+                </div>
+              </div>
+            </AdminCard>
+
+          <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+            <AdminCard eyebrow="Media" title="Product media">
+              <label
+                htmlFor="admin-product-images"
+                onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(event) => { event.preventDefault(); setDragActive(false); uploadFiles(event.dataTransfer?.files); }}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed px-4 py-8 text-center transition focus-within:border-white/40 ${dragActive ? 'border-[#FFC800] bg-[#FFC800]/5' : 'border-white/15 bg-[#141414] hover:border-white/30'}`}
+              >
+                <input
+                  id="admin-product-images"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="sr-only"
+                  onChange={(event) => { uploadFiles(event.target.files); event.target.value = ''; }}
+                />
+                {uploading ? (
+                  <>
+                    <Loader2 size={22} className="animate-spin text-[#FFC800]" aria-hidden="true" />
+                    <span className="mt-3 text-sm font-semibold text-white">Uploading...</span>
+                    <span className="mt-1 text-xs text-[#8d8d8d]">Please wait, do not close this page.</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus size={22} className="text-white" aria-hidden="true" />
+                    <span className="mt-3 text-sm font-semibold text-white">Drop images here</span>
+                    <span className="mt-1 text-xs text-[#8d8d8d]">or click to browse • JPG, PNG or WebP • max 5 MB each</span>
+                  </>
+                )}
+              </label>
+
+              {uploadError && (
+                <p role="alert" className="mt-3 rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-xs leading-relaxed text-red-200">
+                  {uploadError} Choose the files again to retry.
+                </p>
+              )}
+
+              {mediaItems.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2">
+                  {mediaItems.map((item, index) => (
+                    <div key={item.id} className="group relative overflow-hidden rounded-xl border border-white/10 bg-[#181818]">
+                      <img src={item.url} alt={`Product image ${index + 1}`} className="h-20 w-full object-cover sm:h-24" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = '0.25'; }} />
+                      {index === 0 && (
+                        <span className="absolute left-1.5 top-1.5 rounded-full bg-[#FFC800] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-black">Main</span>
+                      )}
+                      <div className="absolute inset-x-1.5 bottom-1.5 flex items-center justify-between gap-1">
+                        <span className="flex gap-1">
+                          <button type="button" onClick={() => moveMediaItem(item.id, -1)} disabled={index === 0} aria-label={`Move image ${index + 1} left`} title="Move left" className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
+                            <ChevronLeft size={13} />
+                          </button>
+                          <button type="button" onClick={() => moveMediaItem(item.id, 1)} disabled={index === mediaItems.length - 1} aria-label={`Move image ${index + 1} right`} title="Move right" className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
+                            <ChevronRight size={13} />
+                          </button>
+                        </span>
+                        <button type="button" onClick={() => removeMediaItem(item.id)} aria-label={`Remove image ${index + 1}`} title="Remove image" className="flex h-7 w-7 items-center justify-center rounded-full border border-red-500/30 bg-black/60 text-red-200 backdrop-blur-sm transition hover:bg-red-500/20">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4">
+                <label htmlFor="admin-image-url" className="mb-2 block text-xs uppercase tracking-[0.18em] text-[#a8a8a8]">Add image URL</label>
+                <div className="flex gap-2">
+                  <input
+                    id="admin-image-url"
+                    value={urlInput}
+                    onChange={(event) => setUrlInput(event.target.value)}
+                    onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addImageUrl(); } }}
+                    placeholder="https://…"
+                    inputMode="url"
+                    className="min-w-0 flex-1 rounded-full border border-white/10 bg-[#181818] px-4 py-2.5 text-sm text-white outline-none transition focus:border-white/30"
+                  />
+                  <button type="button" onClick={addImageUrl} disabled={!urlInput.trim()} aria-label="Add image URL" title="Add image URL" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-40">
+                    <Plus size={15} />
+                  </button>
+                </div>
+              </div>
+
+              <p className="mt-4 text-xs leading-relaxed text-[#8d8d8d]">The first image is used as the main storefront image.</p>
+            </AdminCard>
+          </aside>
+        </div>
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" onClick={closeEditor} className="rounded-full border border-white/10 px-6 py-3 text-sm text-white transition hover:border-white/30">Cancel</button>
+            <button
+              type="button"
+              onClick={saveProduct}
+              disabled={savingProduct || uploading}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FFC800] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+            >
+              {(savingProduct || uploading) && <Loader2 size={15} className="animate-spin" />}
+              {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         <AdminPageHeader
-          eyebrow="Catalog"
           title="Products"
           meta={`${unwrapPayload(data)?.total ?? filteredProducts.length} products in catalog`}
           actions={(
-            <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-[#FFC800] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#ffd233] focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60">
-              <Plus size={15} /> Add product
+            <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-[#FFC800] px-4 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#ffd233] focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60">
+              <Plus size={14} /> Add product
             </button>
           )}
         />
@@ -3771,9 +4077,13 @@ function AdminPage({ initialSection }) {
                     { key: 'price', label: 'Price', render: (row) => <span>{formatMoney(row.price || 0)}</span> },
                     { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
                     { key: 'actions', label: 'Actions', render: (row) => (
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => openEdit(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Edit</button>
-                        <button type="button" onClick={() => deleteProduct(row._id, row.name)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200 transition hover:bg-red-500/10">Delete</button>
+                      <div className="flex gap-1.5">
+                        <button type="button" onClick={() => openEdit(row)} aria-label={`Edit ${row.name}`} title="Edit product" className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white transition hover:border-white/30">
+                          <Pencil size={14} />
+                        </button>
+                        <button type="button" onClick={() => deleteProduct(row._id, row.name)} aria-label={`Delete ${row.name}`} title="Archive product" className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/30 text-red-200 transition hover:bg-red-500/10">
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     ) },
                   ]}
@@ -3812,54 +4122,7 @@ function AdminPage({ initialSection }) {
           <div className="mt-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>
         </AdminCard>
 
-        {isFormOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[#0d0d0d] p-6">
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">{editingProduct ? 'Edit product' : 'Add product'}</h3>
-                <button type="button" onClick={() => setIsFormOpen(false)} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
-              </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="md:col-span-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Basics</div>
-                <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="Brand"><select value={productForm.brand} onChange={(event) => setProductForm({ ...productForm, brand: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select brand</option>{brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
-                <FormField label="Category"><select value={productForm.category} onChange={(event) => setProductForm({ ...productForm, category: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select category</option>{categories.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
-                <FormField label="Gender"><select value={productForm.gender} onChange={(event) => setProductForm({ ...productForm, gender: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="UNISEX">UNISEX</option><option value="MEN">MEN</option><option value="WOMEN">WOMEN</option><option value="KIDS">KIDS</option></select></FormField>
-                <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
-                <FormField label="Price"><input type="number" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: Number(event.target.value) })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="Sale price"><input type="number" value={productForm.salePrice} onChange={(event) => setProductForm({ ...productForm, salePrice: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="Featured"><input type="checkbox" checked={productForm.featured} onChange={(event) => setProductForm({ ...productForm, featured: event.target.checked })} className="h-4 w-4" /></FormField>
-                <FormField label="New arrival"><input type="checkbox" checked={productForm.newArrival} onChange={(event) => setProductForm({ ...productForm, newArrival: event.target.checked })} className="h-4 w-4" /></FormField>
-                <FormField label="Bestseller"><input type="checkbox" checked={productForm.bestSeller} onChange={(event) => setProductForm({ ...productForm, bestSeller: event.target.checked })} className="h-4 w-4" /></FormField>
-                <div className="md:col-span-2 mt-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Content & media</div>
-                <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="Image URLs"><input value={productForm.images} onChange={(event) => setProductForm({ ...productForm, images: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="SEO title"><input value={productForm.seo.title} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, title: event.target.value } })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <FormField label="SEO description"><input value={productForm.seo.description} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, description: event.target.value } })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                <div className="md:col-span-2"><FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField></div>
-                <div className="md:col-span-2"><FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField></div>
-                <div className="md:col-span-2 mt-2 rounded-[20px] border border-white/10 bg-[#181818] p-4">
-                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Variant</div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <input value={productForm.variants[0]?.sku || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], sku: event.target.value }] })} placeholder="SKU" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input value={productForm.variants[0]?.size || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], size: event.target.value }] })} placeholder="Size" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input value={productForm.variants[0]?.color || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], color: event.target.value }] })} placeholder="Color" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input type="number" value={productForm.variants[0]?.price ?? productForm.price} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], price: Number(event.target.value) }], price: Number(event.target.value) })} placeholder="Variant price" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input type="number" value={productForm.variants[0]?.stock ?? 0} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], stock: Number(event.target.value) }] })} placeholder="Stock" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                    <input value={productForm.variants[0]?.images || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], images: event.target.value }] })} placeholder="Variant image URLs" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsFormOpen(false)} className="rounded-full border border-white/10 px-5 py-3 text-sm text-white">Cancel</button>
-                <button type="button" onClick={saveProduct} className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Save product</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -3960,13 +4223,14 @@ function AdminPage({ initialSection }) {
               <div className="hidden lg:block">
                 <DataTable
                   columns={[
+                    { key: 'image', label: '', render: (row) => (row.product?.images?.[0] ? <img src={row.product.images[0]} alt={row.product?.name || 'Product'} className="h-10 w-10 rounded-lg object-cover" loading="lazy" /> : <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-[#181818] text-[#666]" aria-label="No product image"><Package size={15} /></span>) },
                     { key: 'product', label: 'Product', render: (row) => <div className="font-semibold text-white">{row.product?.name || 'Product'}</div> },
                     { key: 'variant', label: 'Variant', render: (row) => <span className="font-mono text-xs text-[#c4c4c4]">{String(row.variant || '—').slice(-8) || '—'}</span> },
                     { key: 'availableStock', label: 'Stock', render: (row) => <span className="font-semibold text-white">{row.availableStock}</span> },
                     { key: 'state', label: 'State', render: (row) => stockPill(stockState(row)) },
                     { key: 'reservedStock', label: 'Reserved', render: (row) => <span>{row.reservedStock}</span> },
                     { key: 'lowStockThreshold', label: 'Threshold', render: (row) => <span>{row.lowStockThreshold}</span> },
-                    { key: 'actions', label: 'Adjust', render: (row) => <button type="button" onClick={() => { setAdjustError(''); setShowMovements(false); setAdjustingVariant(row.variant); }} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Adjust</button> },
+                    { key: 'actions', label: 'Adjust', render: (row) => <button type="button" onClick={() => { setAdjustError(''); setShowMovements(false); setAdjustingVariant(row.variant); }} aria-label={`Adjust stock for ${row.product?.name || 'product'}`} title="Adjust inventory" className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white transition hover:border-white/30"><Settings size={14} /></button> },
                   ]}
                   rows={items}
                   emptyMessage="No inventory records found."
@@ -3976,18 +4240,25 @@ function AdminPage({ initialSection }) {
                 {items.length === 0 ? (
                   <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No inventory records found.</div>
                 ) : items.map((row) => (
-                  <div key={row._id} className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate font-semibold text-white">{row.product?.name || 'Product'}</div>
-                        <div className="mt-0.5 truncate font-mono text-xs text-[#8d8d8d]">{String(row.variant || '')}</div>
+                  <div key={row._id} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#141414] p-3">
+                    {row.product?.images?.[0] ? (
+                      <img src={row.product.images[0]} alt={row.product?.name || 'Product'} className="h-12 w-12 shrink-0 rounded-xl object-cover" loading="lazy" />
+                    ) : (
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#181818] text-[#666]" aria-label="No product image">
+                        <Package size={16} />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-white">{row.product?.name || 'Product'}</div>
+                      <div className="mt-0.5 truncate font-mono text-[11px] text-[#8d8d8d]">{String(row.variant || '')}</div>
+                      <div className="mt-1.5 flex items-center gap-2 text-xs">
+                        <span className="text-[#a0a0a0]">Stock <strong className="text-white">{row.availableStock}</strong></span>
+                        {stockPill(stockState(row))}
                       </div>
-                      {stockPill(stockState(row))}
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                      <span className="text-[#a0a0a0]">Stock <strong className="text-white">{row.availableStock}</strong> • Reserved {row.reservedStock} • Threshold {row.lowStockThreshold}</span>
-                      <button type="button" onClick={() => { setAdjustError(''); setShowMovements(false); setAdjustingVariant(row.variant); }} className="shrink-0 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white">Adjust</button>
-                    </div>
+                    <button type="button" onClick={() => { setAdjustError(''); setShowMovements(false); setAdjustingVariant(row.variant); }} aria-label={`Adjust stock for ${row.product?.name || 'product'}`} title="Adjust inventory" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-white transition hover:border-white/30">
+                      <Settings size={15} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -3998,7 +4269,7 @@ function AdminPage({ initialSection }) {
 
         {adjustingVariant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[24px] border border-white/10 bg-[#0d0d0d] p-6">
+            <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[24px] border border-white/10 bg-[#0d0d0d] p-5">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Adjust inventory</h3>
                 <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); setShowMovements(false); }} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
@@ -4055,18 +4326,25 @@ function AdminPage({ initialSection }) {
     const totalOrders = unwrapPayload(data)?.total ?? orders.length;
     const expandedOrder = orders.find((order) => String(order._id) === String(expandedOrderId)) || null;
 
-    const orderActions = (row) => (
-      <div className="flex flex-wrap gap-2">
-        <select value={row.status} onChange={(event) => updateStatus(row._id, event.target.value)} aria-label={`Update status for ${row.orderNumber || 'order'}`} className="rounded-full border border-white/10 bg-[#181818] px-3 py-2 text-xs text-white">
-          {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((statusItem) => <option key={statusItem} value={statusItem}>{statusItem}</option>)}
-        </select>
-        <button type="button" onClick={() => createShipment(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Ship</button>
-        <button type="button" onClick={() => downloadInvoice(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Invoice</button>
-        <button type="button" onClick={() => setExpandedOrderId((current) => (String(current) === String(row._id) ? null : row._id))} aria-expanded={String(expandedOrderId) === String(row._id)} className="rounded-full border border-[#FFC800]/40 px-3 py-2 text-xs uppercase tracking-[0.2em] text-[#FFC800] transition hover:bg-[#FFC800]/10">
-          {String(expandedOrderId) === String(row._id) ? 'Hide' : 'Details'}
-        </button>
-      </div>
-    );
+    const orderActions = (row) => {
+      const expanded = String(expandedOrderId) === String(row._id);
+      return (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <select value={row.status} onChange={(event) => updateStatus(row._id, event.target.value)} aria-label={`Update status for ${row.orderNumber || 'order'}`} title="Update order status" className="rounded-full border border-white/10 bg-[#181818] px-2.5 py-1.5 text-[11px] text-white">
+            {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((statusItem) => <option key={statusItem} value={statusItem}>{statusItem}</option>)}
+          </select>
+          <button type="button" onClick={() => createShipment(row._id)} aria-label={`Create shipment for ${row.orderNumber || 'order'}`} title="Create shipment" className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white transition hover:border-white/30">
+            <Truck size={14} />
+          </button>
+          <button type="button" onClick={() => downloadInvoice(row._id)} aria-label={`Download invoice for ${row.orderNumber || 'order'}`} title="Download invoice" className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white transition hover:border-white/30">
+            <FileText size={14} />
+          </button>
+          <button type="button" onClick={() => setExpandedOrderId((current) => (String(current) === String(row._id) ? null : row._id))} aria-expanded={expanded} aria-label={expanded ? 'Hide order details' : 'View order details'} title={expanded ? 'Hide details' : 'View details'} className={`flex h-8 w-8 items-center justify-center rounded-xl border transition ${expanded ? 'border-[#FFC800]/50 bg-[#FFC800]/10 text-[#FFC800]' : 'border-[#FFC800]/40 text-[#FFC800] hover:bg-[#FFC800]/10'}`}>
+            <Eye size={14} />
+          </button>
+        </div>
+      );
+    };
 
     const updateStatus = async (id, status) => {
       setActionError('');
@@ -4427,7 +4705,7 @@ function AdminPage({ initialSection }) {
               type="button"
               onClick={handleCreateShipment}
               disabled={createBusy || !createOrderId.trim()}
-              className="flex items-center justify-center gap-2 rounded-full bg-[#FFC800] px-6 py-3 text-sm font-semibold text-black transition disabled:opacity-40"
+              className="flex items-center justify-center gap-2 rounded-full bg-[#FFC800] px-5 py-2.5 text-[13px] font-semibold text-black transition disabled:opacity-40"
             >
               {createBusy ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
               Create shipment
@@ -4480,9 +4758,9 @@ function AdminPage({ initialSection }) {
             </div>
 
             {/* Mobile Cards */}
-            <div className="space-y-3 lg:hidden">
+            <div className="space-y-2.5 lg:hidden">
               {shipments.map((s) => (
-                <div key={s._id} className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
+                <div key={s._id} className="rounded-[20px] border border-white/10 bg-[#111111] p-4">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="font-semibold text-white">{s.order?.orderNumber || '—'}</div>
@@ -4517,7 +4795,7 @@ function AdminPage({ initialSection }) {
         {/* Detail Drawer/Modal */}
         {detailOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-end bg-black/60 backdrop-blur-sm" onClick={closeDetail}>
-            <div className="h-full w-full max-w-[560px] overflow-y-auto bg-[#0a0a0a] p-6 shadow-2xl md:p-8" onClick={(e) => e.stopPropagation()}>
+            <div className="h-full w-full max-w-[560px] overflow-y-auto bg-[#0a0a0a] p-5 shadow-2xl md:p-6" onClick={(e) => e.stopPropagation()}>
               <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-xl font-black uppercase tracking-[-0.04em] text-white">Shipment details</h3>
                 <button type="button" onClick={closeDetail} className="rounded-full border border-white/10 p-2 text-white transition-colors hover:bg-white/10">
@@ -4874,7 +5152,7 @@ function AdminPage({ initialSection }) {
       <div className="space-y-6">
         <AdminPageHeader eyebrow="Workspace" title="Settings" />
         <AdminCard>
-          <nav aria-label="Settings sections" className="flex gap-2 overflow-x-auto pb-1">
+          <nav aria-label="Settings sections" className="flex gap-1.5 overflow-x-auto pb-1">
             {SETTINGS_GROUPS.map((entry) => {
               const Icon = entry.icon;
               const isActive = entry.id === group.id;
@@ -4884,11 +5162,11 @@ function AdminPage({ initialSection }) {
                   type="button"
                   onClick={() => { setActiveGroup(entry.id); setFormStatus(null); }}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
                     isActive ? 'bg-[#FFC800] text-black' : 'border border-white/10 text-[#c4c4c4] hover:border-white/30 hover:text-white'
                   }`}
                 >
-                  <Icon size={14} />
+                  <Icon size={13} />
                   <span>{entry.label}</span>
                 </button>
               );
@@ -4973,12 +5251,12 @@ function AdminPage({ initialSection }) {
             {formStatus && (
               <p className={`mt-4 text-sm ${formStatus.type === 'success' ? 'text-[#9feec8]' : 'text-red-300'}`}>{formStatus.message}</p>
             )}
-            <div className="mt-5 flex justify-end">
+            <div className="mt-4 flex justify-end">
               <button
                 type="button"
                 onClick={saveSection}
                 disabled={saving || dirtyKeys.length === 0}
-                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full bg-white px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? 'Saving...' : dirtyKeys.length > 0 ? `Save ${dirtyKeys.length} change${dirtyKeys.length === 1 ? '' : 's'}` : 'Saved'}
               </button>
@@ -5007,8 +5285,8 @@ function AdminPage({ initialSection }) {
     <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:py-8 lg:px-8">
       <PageMeta title="Admin | KICKS" description="KICKS administrator dashboard" />
 
-      <div className="grid items-start gap-6 xl:grid-cols-[264px_minmax(0,1fr)]">
-        <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[22px] border border-white/10 bg-[#0c0c0c] p-4 xl:flex">
+      <div className="grid items-start gap-5 xl:grid-cols-[232px_minmax(0,1fr)]">
+        <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[22px] border border-white/10 bg-[#0c0c0c] p-3 xl:flex">
           {renderSidebarBody()}
         </aside>
 
@@ -5032,35 +5310,35 @@ function AdminPage({ initialSection }) {
         )}
 
         <div className="min-w-0">
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-5 flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
               aria-label="Open admin menu"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 text-white xl:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-white xl:hidden"
             >
-              <Menu size={18} />
+              <Menu size={17} />
             </button>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] uppercase tracking-[0.24em] text-[#8d8d8d]">{todayLabel}</p>
-              <p className="mt-1 truncate text-lg font-bold text-white sm:text-xl">
+              <p className="mt-0.5 truncate text-base font-bold text-white sm:text-lg">
                 {greeting}, {user?.firstName || 'Admin'}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5">
               <Link
                 to="/faq"
                 aria-label="Help and FAQs"
                 title="Help and FAQs"
-                className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 sm:inline-flex"
+                className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 sm:inline-flex"
               >
-                <Info size={17} />
+                <Info size={16} />
               </Link>
               <Link
                 to="/"
-                className="hidden items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30 sm:inline-flex"
+                className="hidden items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30 sm:inline-flex"
               >
-                <ExternalLink size={13} /> Storefront
+                <ExternalLink size={12} /> Storefront
               </Link>
               <div className="relative">
                 <button
@@ -5069,7 +5347,8 @@ function AdminPage({ initialSection }) {
                   aria-label="Admin account menu"
                   aria-expanded={menuOpen}
                   aria-haspopup="menu"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-sm font-black text-[#FFC800] transition hover:bg-[#FFC800]/20"
+                  title="Admin account"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-[13px] font-black text-[#FFC800] transition hover:bg-[#FFC800]/20"
                 >
                   {adminInitials}
                 </button>

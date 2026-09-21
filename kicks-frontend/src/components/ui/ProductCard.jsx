@@ -123,11 +123,11 @@ export default function ProductCard({ product }) {
         {isOutOfStock ? <span className="text-red-200">Out of stock</span> : isLowStock ? <span className="text-[#f3d87d]">Low stock</span> : <span className="text-[#9feec8]">In stock</span>}
       </div>
 
-      <Link to={`/products/${product?.slug}`} className="mt-2 block break-words text-base font-medium text-white line-clamp-2 hover:text-white/80 sm:mt-3 sm:text-xl">
+      <Link to={`/products/${product?.slug}`} className="mt-1.5 block break-words text-base font-medium text-white line-clamp-2 hover:text-white/80 sm:mt-3 sm:text-xl">
         {product?.name}
       </Link>
 
-      <div className="mt-2 flex items-center gap-2 text-xs sm:mt-3 sm:gap-3 sm:text-sm">
+      <div className="mt-1.5 flex items-center gap-2 text-xs sm:mt-3 sm:gap-3 sm:text-sm">
         {salePrice ? (
           <>
             <span className="text-base font-semibold text-white sm:text-lg">₹{salePrice.toLocaleString('en-IN')}</span>
@@ -138,14 +138,14 @@ export default function ProductCard({ product }) {
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-2 sm:mt-5 sm:gap-3">
+      <div className="mt-3 flex items-center gap-1.5 sm:mt-5 sm:gap-3">
         {isOutOfStock || isAdmin ? (
-          <Link to={`/products/${product?.slug}`} className="flex-1 rounded-full border border-white/15 px-3 py-2.5 text-center text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 sm:px-4 sm:py-3 sm:text-sm">
+          <Link to={`/products/${product?.slug}`} className="flex-1 rounded-full border border-white/15 px-3 py-2 text-center text-[11px] font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 sm:px-4 sm:py-3 sm:text-sm">
             View details
           </Link>
         ) : (
           <>
-            <button type="button" onClick={handleQuickAdd} disabled={cartMutation.isPending} className="min-w-0 flex-1 rounded-full border border-white/15 px-3 py-2.5 text-xs font-medium text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm">
+            <button type="button" onClick={handleQuickAdd} disabled={cartMutation.isPending} className="h-9 min-w-0 flex-1 rounded-xl border border-white/15 px-3 text-[11px] font-semibold text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60 sm:h-auto sm:rounded-full sm:px-4 sm:py-3 sm:text-sm sm:font-medium">
               {cartMutation.isPending ? 'Adding...' : 'Quick add'}
             </button>
             <button
@@ -154,9 +154,9 @@ export default function ProductCard({ product }) {
               disabled={cartMutation.isPending}
               aria-label={`Add ${product?.name || 'product'} to cart`}
               title="Add to cart"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#111111] disabled:cursor-wait disabled:opacity-60 sm:h-11 sm:w-11"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-black transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#111111] disabled:cursor-wait disabled:opacity-60 sm:h-11 sm:w-11 sm:rounded-full"
             >
-              <ShoppingBag size={16} />
+              <ShoppingBag size={15} />
             </button>
           </>
         )}
