@@ -3323,8 +3323,10 @@ function AdminPage({ initialSection }) {
       }).then((response) => response.data),
     });
 
-    const categories = unwrapPayload(categoriesData) ?? [];
-    const brands = unwrapPayload(brandsData) ?? [];
+    const categoriesPayload = unwrapPayload(categoriesData);
+    const brandsPayload = unwrapPayload(brandsData);
+    const categories = Array.isArray(categoriesPayload) ? categoriesPayload : [];
+    const brands = Array.isArray(brandsPayload) ? brandsPayload : [];
     const products = unwrapPayload(data)?.items ?? unwrapPayload(data)?.products ?? [];
     const totalPages = unwrapPayload(data)?.totalPages || 1;
 
