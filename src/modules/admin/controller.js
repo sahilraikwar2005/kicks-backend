@@ -102,12 +102,20 @@ export const adminController = {
   adjustInventory: async (req, res) => {
     const delta = Number(req.body.delta);
     const existing = await Inventory.findOne({ variant: req.params.variantId }).select('_id product variant');
-    if (!existing) {
-      const error = new Error('Inventory not found');
-      error.statusCode = 404;
-      throw error;
+    let productId = existing?.product;
+    if (!productId) {
+      // Variants created by the Add Product workflow have no Inventory doc
+      // until first touch. Resolve the owning product so the atomic
+      // adjustStock path (which seeds from variant.stock) can proceed.
+      const ownerId = await inventoryService.resolveProductForVariant(req.params.variantId);
+      if (!ownerId) {
+        const error = new Error('Inventory not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      productId = ownerId;
     }
-    const item = await inventoryService.adjustStock(existing.product, req.params.variantId, delta, {
+    const item = await inventoryService.adjustStock(productId, req.params.variantId, delta, {
       reason: req.body.reason || 'admin_adjust',
       referenceId: req.body.referenceId || '',
       metadata: { actor: String(req.user._id), source: 'admin' },

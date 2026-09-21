@@ -90,6 +90,14 @@ const isAlreadyProcessed = async (productId, variantId, type, metadata = {}) => 
 };
 
 export const inventoryService = {
+  // Finds the owning product for a variant id. Used by admin flows so variants
+  // created by the Add Product workflow work immediately, with no separate
+  // inventory setup step (ensureInventory seeds from variant.stock on touch).
+  async resolveProductForVariant(variantId) {
+    if (!mongoose.isValidObjectId(variantId)) return null;
+    const owner = await Product.findOne({ 'variants._id': variantId }).select('_id').lean();
+    return owner ? owner._id : null;
+  },
   async reserveStock(productId, variantId, quantity, metadata = {}) {
     const qty = normalizeQty(quantity);
     const { inventory } = await ensureInventory(productId, variantId);

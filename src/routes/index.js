@@ -17,6 +17,7 @@ import cmsRoutes from '../modules/cms/routes.js';
 import notificationRoutes from '../modules/notifications/routes.js';
 import uploadRoutes from '../modules/uploads/routes.js';
 import inventoryRoutes from '../modules/inventory/routes.js';
+import aiRoutes from '../modules/ai/routes.js';
 
 const router = express.Router();
 
@@ -38,6 +39,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/admin', adminRoutes);
+router.use('/admin/ai', aiRoutes);
 
 router.get('/', (req, res) => {
   res.status(200).json({

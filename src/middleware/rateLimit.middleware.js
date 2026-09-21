@@ -24,3 +24,15 @@ export const apiRateLimiter = rateLimit({
     errors: ['Rate limit exceeded'],
   },
 });
+
+export const aiRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'AI analysis limit reached. Please try again in a few minutes.',
+    errors: ['Rate limit exceeded'],
+  },
+});

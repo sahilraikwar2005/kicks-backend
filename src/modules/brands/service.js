@@ -23,13 +23,42 @@ export const brandService = {
   },
 
   async create(payload) {
-    return Brand.create({
-      name: payload.name,
-      slug: payload.slug || payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: payload.description || '',
-      logo: payload.logo || '',
-      isActive: payload.isActive !== false,
-    });
+    const name = String(payload?.name || '').trim().replace(/\s+/g, ' ');
+    if (!name) {
+      const error = new Error('Brand name is required');
+      error.statusCode = 400;
+      throw error;
+    }
+    if (name.length > 60) {
+      const error = new Error('Brand name must be 60 characters or fewer');
+      error.statusCode = 400;
+      throw error;
+    }
+    const slug = (payload?.slug || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    // Case-insensitive duplicate guard: Nike / nike / " NIKE " share one slug.
+    const duplicate = await Brand.findOne({ slug });
+    if (duplicate) {
+      const error = new Error('Brand already exists');
+      error.statusCode = 409;
+      throw error;
+    }
+    try {
+      return await Brand.create({
+        name,
+        slug,
+        description: payload?.description || '',
+        logo: payload?.logo || '',
+        isActive: payload?.isActive !== false,
+      });
+    } catch (error) {
+      // Race safety: two concurrent creates for the same brand.
+      if (error?.code === 11000) {
+        const conflict = new Error('Brand already exists');
+        conflict.statusCode = 409;
+        throw conflict;
+      }
+      throw error;
+    }
   },
 
   async update(id, payload) {
