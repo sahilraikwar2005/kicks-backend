@@ -140,7 +140,7 @@ export default function ShopPage() {
           </div>
 
           {/* Compact sort — desktop right */}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-3">
             <label htmlFor="shop-sort" className="hidden text-[10.5px] uppercase tracking-[0.22em] text-[#8d8d8d] sm:block">
               Sort
             </label>
