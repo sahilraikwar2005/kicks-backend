@@ -70,8 +70,4 @@ export const env = {
   logLevel: process.env.LOG_LEVEL || 'info',
   uploadLimitMb: Number(process.env.UPLOAD_LIMIT_MB) || 5,
   maxRequestBodySize: process.env.MAX_REQUEST_BODY_SIZE || '10mb',
-  aiApiKey: process.env.AI_API_KEY || '',
-  aiModel: process.env.AI_MODEL || 'gpt-4o-mini',
-  aiEnableWebSearch: process.env.AI_ENABLE_WEB_SEARCH !== 'false',
-  aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS) || 60000,
 };

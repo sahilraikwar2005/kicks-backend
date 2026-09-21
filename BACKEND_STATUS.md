@@ -71,7 +71,7 @@ Intended consumers:
 | Reviews | ✅ Complete | Review creation, approval/rejection, and product association logic are implemented. |
 | Blog / CMS | ✅ Complete | Blog and CMS modules exist with admin and public/content routes. |
 | Notifications | ✅ Complete | User notification model/service/controller/routes exist. |
-| AI Product Generation | 🟡 Partial | AI draft generation exists and is admin-gated, but live provider verification is still required. |
+| AI Product Generation | ❌ Removed | AI product analysis/generation was removed from the codebase; no AI endpoint, UI, config, or tests remain. Products are entered manually. |
 | Admin Dashboard | ✅ Complete | Dashboard metrics exist via admin service. |
 | Admin Security / RBAC | ✅ Verified | Admin routes require auth + RBAC, role claims are validated against the stored user record, and privileged-role payloads are rejected. |
 | Authentication Security | ✅ Verified | JWT role mismatches are rejected, password-change invalidation revokes active sessions, and auth flows remain protected by validation and rate limiting. |
@@ -687,7 +687,7 @@ Key fixes:
 - enforced DB-backed authorization by comparing the token role to the actual user role during `protect`
 - kept admin endpoints behind `protect` + `isAdmin` without relying on client-supplied role data
 - rejected privileged-role registration payloads through `.unknown(false)` validation
-- preserved admin-only protections for refunds, shipments, AI generation, inventory adjusts, settings, notifications, and user status actions
+- preserved admin-only protections for refunds, shipments, inventory adjusts, settings, notifications, and user status actions
 
 Tests added/updated:
 
@@ -958,7 +958,6 @@ Production deployment requirements visible in the repo:
 - Cloudinary credentials for media uploads
 - Razorpay credentials and webhook secret for live payments
 - SMTP credentials for email delivery
-- AI provider credentials for AI generation
 - Shiprocket credentials for live shipping creation
 - proper CORS allowlist for frontend and admin origins
 - reverse proxy or load balancer recommended by the README
@@ -1024,7 +1023,6 @@ LIVE PROVIDER VERIFICATION
 - Real Razorpay gateway calls and webhook signatures with provider-side payloads
 - Real Cloudinary asset upload/delete/replacement against provider metadata
 - Real SMTP mail delivery and provider-side success/failure behavior
-- Real AI generation calls and response validation
 - Real Shiprocket shipment creation and tracking events
 
 ### Deployment Prerequisites
@@ -1039,7 +1037,6 @@ Required production environment variables and settings remain:
 - Cloudinary cloud name, API key, and API secret
 - Razorpay key ID, secret, and webhook secret
 - SMTP host/user/password and from address
-- AI provider API key
 - Shiprocket credentials and webhook secret
 - secure cookie settings behind HTTPS
 - upload size limits and a production-safe request-body cap
@@ -1047,7 +1044,7 @@ Required production environment variables and settings remain:
 ### Known External-Provider Limitations
 
 - live provider verification requires real credentials and provider-side testing
-- live payment, shipping, SMTP, AI, and Cloudinary actions were not executed as real transactions during this audit
+- live payment, shipping, SMTP, and Cloudinary actions were not executed as real transactions during this audit
 - deployment readiness is confirmed at the code level and environment pattern level, not by live provider operations
 
 ## 41. Final Status
@@ -1072,7 +1069,7 @@ Required production environment variables and settings remain:
 | Emails | 🟡 Partial / Needs External Verification |
 | Reviews | ✅ Complete |
 | CMS | ✅ Complete |
-| AI | 🟡 Partial / Needs External Verification |
+| AI | ❌ Removed |
 | Admin | ✅ Complete |
 | Security | ✅ Complete |
 | Tests | 🟡 Partial / Basic coverage exists |

@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import Product from './model.js';
+import Brand from '../brands/model.js';
+import { buildSku, isWellFormedSku, withUniqueSuffix } from './sku.js';
 
 const buildProductQuery = (filters = {}) => {
   const query = filters.includeAllStatuses ? {} : { status: 'PUBLISHED' };
@@ -49,6 +51,63 @@ const normalizeSku = (value) => {
   if (value === undefined || value === null) return '';
   return String(value).trim().toUpperCase();
 };
+
+const comboKey = (size, color) => `${String(size || '').trim().toLowerCase()}::${String(color || '').trim().toLowerCase()}`;
+
+const resolveBrandName = async (brandRef) => {
+  if (!brandRef) return '';
+  if (typeof brandRef === 'object' && brandRef.name) return String(brandRef.name);
+  if (!mongoose.isValidObjectId(brandRef)) return String(brandRef);
+  const brand = await Brand.findById(brandRef).select('name').lean();
+  return brand?.name || '';
+};
+
+const skuUsedElsewhere = async (sku, excludedProductId = null) => {
+  const conflict = await Product.findOne({
+    _id: excludedProductId ? { $ne: excludedProductId } : { $ne: null },
+    'variants.sku': sku,
+  }).select('_id').lean();
+  return Boolean(conflict);
+};
+
+// Assigns final SKUs: keeps a supplied SKU when it is well-formed and free,
+// otherwise generates the deterministic BRAND-MODEL-COLOR-SIZE SKU (with a
+// -2/-3 suffix on collision). Existing SKUs survive ordinary edits because the
+// frontend resends the stored SKU whenever size/color/name/brand are unchanged
+// and the deterministic base matches it.
+async function finalizeVariantSkus({ variants, brandName, modelName, excludedProductId = null, existingByCombo = new Map() }) {
+  const taken = new Set();
+  const finalized = [];
+  for (const variant of variants) {
+    const base = buildSku({ brand: brandName, model: modelName, color: variant?.color, size: variant?.size });
+    const incoming = normalizeSku(variant?.sku);
+    const existingSku = existingByCombo.get(comboKey(variant?.size, variant?.color)) || '';
+    let sku = '';
+    const supplied = incoming && isWellFormedSku(incoming) ? incoming : '';
+    if (supplied && supplied === existingSku && supplied === base) {
+      sku = supplied;
+    } else if (supplied) {
+      // An explicitly supplied SKU that collides is a conflict, never something
+      // to silently rewrite. Only system-generated SKUs take the suffix path.
+      if (taken.has(supplied) || (await skuUsedElsewhere(supplied, excludedProductId))) {
+        const conflict = new Error('SKU already exists');
+        conflict.statusCode = 409;
+        throw conflict;
+      }
+      sku = supplied;
+    } else {
+      let candidate = withUniqueSuffix(base, taken);
+      while (await skuUsedElsewhere(candidate, excludedProductId)) {
+        taken.add(candidate);
+        candidate = withUniqueSuffix(base, taken);
+      }
+      sku = candidate;
+    }
+    taken.add(sku);
+    finalized.push({ ...variant, sku });
+  }
+  return finalized;
+}
 
 const createSkuConflictError = () => {
   const error = new Error('SKU already exists');
@@ -138,15 +197,18 @@ export const productService = {
 
     const basePrice = Number(cleanPayload.price || 0);
     const slug = cleanPayload.slug || cleanPayload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const variants = Array.isArray(cleanPayload.variants)
-      ? cleanPayload.variants.map((variant) => ({ ...variant, sku: normalizeSku(variant?.sku) }))
+    const brandName = await resolveBrandName(cleanPayload.brand);
+    const modelName = cleanPayload.name;
+    const rawVariants = Array.isArray(cleanPayload.variants) && cleanPayload.variants.length > 0
+      ? cleanPayload.variants
       : [{
-          sku: normalizeSku(`${slug}-default`),
-          size: 'US 9',
-          color: 'Black',
-          price: basePrice,
-          stock: 10,
-        }];
+        sku: '',
+        size: 'US 9',
+        color: 'Black',
+        price: basePrice,
+        stock: 10,
+      }];
+    const variants = await finalizeVariantSkus({ variants: rawVariants, brandName, modelName });
 
     productService.validateVariantSkuUniqueness(variants);
     await productService.validateGlobalVariantSkuUniqueness(variants);
@@ -180,10 +242,27 @@ export const productService = {
     if (cleanPayload.salePrice !== undefined && cleanPayload.salePrice !== null && cleanPayload.price !== undefined && cleanPayload.salePrice > cleanPayload.price) { const error = new Error('Sale price cannot exceed price'); error.statusCode = 400; throw error; }
 
     if (cleanPayload.variants) {
-      const normalizedVariants = cleanPayload.variants.map((variant) => ({ ...variant, sku: normalizeSku(variant?.sku) }));
-      productService.validateVariantSkuUniqueness(normalizedVariants);
-      await productService.validateGlobalVariantSkuUniqueness(normalizedVariants, id);
-      cleanPayload.variants = normalizedVariants;
+      const existing = await Product.findById(id).select('name brand variants').lean();
+      if (!existing) {
+        const error = new Error('Product not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      const brandName = await resolveBrandName(cleanPayload.brand !== undefined ? cleanPayload.brand : existing.brand);
+      const modelName = cleanPayload.name !== undefined ? cleanPayload.name : existing.name;
+      const existingByCombo = new Map(
+        (existing.variants || []).map((variant) => [comboKey(variant?.size, variant?.color), normalizeSku(variant?.sku)]),
+      );
+      const finalizedVariants = await finalizeVariantSkus({
+        variants: cleanPayload.variants,
+        brandName,
+        modelName,
+        excludedProductId: id,
+        existingByCombo,
+      });
+      productService.validateVariantSkuUniqueness(finalizedVariants);
+      await productService.validateGlobalVariantSkuUniqueness(finalizedVariants, id);
+      cleanPayload.variants = finalizedVariants;
     }
 
     try {

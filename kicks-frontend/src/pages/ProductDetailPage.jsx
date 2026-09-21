@@ -586,7 +586,7 @@ export default function ProductDetailPage() {
               <form onSubmit={reviewForm.handleSubmit((values) => reviewMutation.mutate(values))} className="mt-6 space-y-4">
                 <div>
                   <label htmlFor="review-rating" className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#a8a8a8]">Rating</label>
-                  <select id="review-rating" {...reviewForm.register('rating')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none">
+                  <select id="review-rating" {...reviewForm.register('rating')} className="kicks-field">
                     <option value="5">5 stars</option>
                     <option value="4">4 stars</option>
                     <option value="3">3 stars</option>
@@ -596,12 +596,12 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <label htmlFor="review-title" className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#a8a8a8]">Title</label>
-                  <input id="review-title" {...reviewForm.register('title')} className="w-full rounded-full border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none" placeholder="A solid everyday trainer" />
+                  <input id="review-title" {...reviewForm.register('title')} className="kicks-field" placeholder="A solid everyday trainer" />
                   {reviewForm.formState.errors.title && <p className="mt-2 text-sm text-red-300">{reviewForm.formState.errors.title.message}</p>}
                 </div>
                 <div>
                   <label htmlFor="review-comment" className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#a8a8a8]">Comment</label>
-                  <textarea id="review-comment" rows={4} {...reviewForm.register('comment')} className="w-full rounded-[20px] border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none" placeholder="Share what you liked about this sneaker." />
+                  <textarea id="review-comment" rows={4} {...reviewForm.register('comment')} className="kicks-field" placeholder="Share what you liked about this sneaker." />
                   {reviewForm.formState.errors.comment && <p className="mt-2 text-sm text-red-300">{reviewForm.formState.errors.comment.message}</p>}
                 </div>
                 <button type="submit" disabled={reviewMutation.isPending} className="kicks-btn kicks-btn-primary kicks-btn-sm">

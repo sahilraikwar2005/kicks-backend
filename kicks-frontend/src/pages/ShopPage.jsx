@@ -139,15 +139,15 @@ export default function ShopPage() {
             </p>
           </div>
 
-          {/* Compact sort — desktop right; mobile gets its own row below */}
-          <div className="hidden shrink-0 items-center gap-3 sm:flex">
-            <label htmlFor="shop-sort" className="hidden text-[10.5px] uppercase tracking-[0.22em] text-[#8d8d8d] sm:block">
+          {/* Compact sort — large desktop right; toolbar owns it below lg */}
+          <div className="hidden shrink-0 items-center gap-3 lg:flex">
+            <label htmlFor="shop-sort-desktop" className="text-[10.5px] uppercase tracking-[0.22em] text-[#8d8d8d]">
               Sort
             </label>
             <div className="relative">
               <ArrowUpDown size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9a9a9a]" />
               <select
-                id="shop-sort"
+                id="shop-sort-desktop"
                 value={filters.sort}
                 onChange={(event) => setFilter('sort', event.target.value)}
                 aria-label="Sort products"
@@ -196,9 +196,9 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Toolbar — search + filters share one row; sort gets a compact mobile row */}
-        <div className="mt-4 flex items-center gap-2">
-          <div className="relative min-w-0 flex-1 sm:max-w-xs sm:flex-none">
+        {/* Toolbar — one responsive row: [ search ][ filter ][ sort ] */}
+        <div className="mt-4 flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <div className="relative min-w-0 flex-1 basis-[120px] sm:max-w-xs sm:flex-none sm:basis-64">
             <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#777]" />
             <input
               id="shop-search"
@@ -242,20 +242,15 @@ export default function ShopPage() {
               <RotateCcw size={13} />
             </button>
           )}
-        </div>
 
-        <div className="mt-2 flex items-center gap-2 sm:hidden">
-          <label htmlFor="shop-sort-mobile" className="shrink-0 text-[10.5px] uppercase tracking-[0.18em] text-[#8d8d8d]">
-            Sort
-          </label>
-          <div className="relative min-w-0 flex-1">
+          <div className="relative w-auto lg:hidden">
             <ArrowUpDown size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9a9a9a]" />
             <select
-              id="shop-sort-mobile"
+              id="shop-sort"
               value={filters.sort}
               onChange={(event) => setFilter('sort', event.target.value)}
               aria-label="Sort products"
-              className="kicks-field kicks-field-sm w-full cursor-pointer appearance-none pl-8 pr-7 text-xs"
+              className="kicks-field kicks-field-sm w-[190px] max-w-full cursor-pointer appearance-none pl-8 pr-7 text-xs min-[400px]:w-[128px] sm:w-[150px]"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
@@ -156,6 +156,50 @@ const SIZE_SYSTEMS = {
 const detectSizeSystem = (size) => {
   const prefix = String(size || '').trim().split(' ')[0]?.toUpperCase();
   return SIZE_SYSTEMS[prefix] ? prefix : 'UK';
+};
+
+// Deterministic SKU generation mirrored from src/modules/products/sku.js.
+// Format: BRAND-MODEL-COLOR-SIZE. The backend revalidates/regenerates, so the
+// admin never types a SKU and displayed values match persisted ones.
+const SKU_COLOR_CODES = {
+  WHITE: 'WHT', BLACK: 'BLK', RED: 'RED', BLUE: 'BLU', GREEN: 'GRN', GREY: 'GRY', GRAY: 'GRY',
+  YELLOW: 'YLW', ORANGE: 'ORG', PINK: 'PNK', PURPLE: 'PUR', BROWN: 'BRN', BEIGE: 'BGE',
+  NAVY: 'NVY', GOLD: 'GLD', SILVER: 'SLV', CREAM: 'CRM', IVORY: 'IVR', TAN: 'TAN',
+  MAROON: 'MRN', TEAL: 'TEA', CYAN: 'CYN', LIME: 'LIM', OLIVE: 'OLV', KHAKI: 'KHK',
+  CORAL: 'COR', SALMON: 'SAL', BURGUNDY: 'BUR', CHARCOAL: 'CHR', MINT: 'MNT', SKY: 'SKY',
+  ROYAL: 'RYL', CRIMSON: 'CRM', INDIGO: 'IND', VIOLET: 'VIO', MAGENTA: 'MAG',
+  TURQUOISE: 'TRQ', MUSTARD: 'MUS', RUST: 'RST', COBALT: 'CBL', DENIM: 'DNM',
+  MULTI: 'MLT', MULTICOLOR: 'MLT', MULTICOLOUR: 'MLT',
+};
+
+const sanitizeSkuSegment = (value) => String(value || '')
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .replace(/-{2,}/g, '-');
+
+const skuBrandToken = (brandName) => sanitizeSkuSegment(brandName).replace(/-/g, '').slice(0, 10);
+
+const skuModelToken = (productName, brandName) => {
+  const brand = sanitizeSkuSegment(brandName).replace(/-/g, '');
+  let compact = sanitizeSkuSegment(productName).replace(/-/g, '');
+  if (brand && compact.startsWith(brand)) compact = compact.slice(brand.length);
+  compact = compact.slice(0, 12);
+  return compact || 'ITEM';
+};
+
+const skuColorCode = (color) => {
+  const tokens = String(color || '').toUpperCase().split(/[^A-Z]+/).filter(Boolean).slice(0, 3);
+  if (tokens.length === 0) return '';
+  return tokens.map((token) => SKU_COLOR_CODES[token] || token.slice(0, 3)).join('').slice(0, 9);
+};
+
+const skuSizeCode = (size) => sanitizeSkuSegment(size).replace(/-/g, '');
+
+const buildVariantSku = ({ brand, model, color, size }) => {
+  const segments = [skuBrandToken(brand), skuModelToken(model, brand), skuColorCode(color), skuSizeCode(size)].filter(Boolean);
+  if (segments.length < 2) return `KICKS-${segments.join('-') || 'ITEM'}`;
+  return segments.join('-');
 };
 
 // Maps real upload API failures (POST /uploads/images) to user-friendly text.
@@ -347,7 +391,7 @@ function ContactPage() {
               <input className="kicks-field text-white outline-none" placeholder="Your email" />
             </div>
             <input className="w-full kicks-field text-white outline-none" placeholder="Subject" />
-            <textarea rows={6} className="w-full rounded-[24px] border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Your message" />
+            <textarea rows={6} className="kicks-field" placeholder="Your message" />
             <button type="submit" className="kicks-btn kicks-btn-primary">Send message</button>
           </form>
         </div>
@@ -759,7 +803,7 @@ function WishlistPage() {
                             cartMutation.isPending &&
                             cartMutation.variables?.productId === productId
                           }
-                          className="inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-white px-2 text-[11px] font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60 sm:h-auto sm:rounded-full sm:px-4 sm:py-3 sm:text-sm"
+                          className="kicks-btn kicks-btn-primary kicks-btn-sm min-w-0 flex-1"
                         >
                           {cartMutation.isPending &&
                           cartMutation.variables?.productId === productId
@@ -1489,7 +1533,7 @@ function OrderDetailPage() {
         <div className="flex flex-wrap gap-3">
           <Link to="/account/orders" className="kicks-btn kicks-btn-secondary kicks-btn-sm">Back to orders</Link>
           {trackingQuery.isLoading ? (
-            <button type="button" disabled className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-wait">
+            <button type="button" disabled className="kicks-btn kicks-btn-secondary kicks-btn-sm">
               <Loader2 size={15} className="animate-spin" /> Checking tracking...
             </button>
           ) : trackingUrl ? (
@@ -1497,12 +1541,12 @@ function OrderDetailPage() {
               Track Order <ExternalLink size={15} />
             </button>
           ) : (
-            <button type="button" disabled title={trackingQuery.isError ? 'Tracking is temporarily unavailable' : 'Tracking not available yet'} className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-not-allowed">
+            <button type="button" disabled title={trackingQuery.isError ? 'Tracking is temporarily unavailable' : 'Tracking not available yet'} className="kicks-btn kicks-btn-secondary kicks-btn-sm">
               {trackingQuery.isError ? 'Tracking unavailable' : 'Tracking not available yet'}
             </button>
           )}
           {invoiceUnavailable ? (
-            <button type="button" disabled title="Invoice is not available yet" className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-not-allowed">
+            <button type="button" disabled title="Invoice is not available yet" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
               Invoice unavailable
             </button>
           ) : (
@@ -2344,7 +2388,7 @@ function AccountPage({ initialTab }) {
 
   const initials = `${user?.firstName?.charAt(0) || ''}${user?.lastName?.charAt(0) || ''}`.toUpperCase() || 'K';
 
-  const navButtonClass = (isActive) => `flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] transition focus:outline-none focus:ring-2 focus:ring-white/60 ${
+  const navButtonClass = (isActive) => `flex shrink-0 items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.12em] transition focus:outline-none focus:ring-2 focus:ring-white/60 ${
     isActive ? 'bg-white text-black' : 'text-[#a0a0a0] hover:bg-white/5 hover:text-white'
   }`;
 
@@ -2443,7 +2487,7 @@ function AccountPage({ initialTab }) {
           <div className="flex flex-col gap-1.5">
             <Link
               to="/"
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[#a0a0a0] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+              className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[#a0a0a0] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
             >
               <ExternalLink size={16} />
               <span>Storefront</span>
@@ -2451,7 +2495,7 @@ function AccountPage({ initialTab }) {
             <button
               type="button"
               onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[#f0a8a8] transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[#f0a8a8] transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
             >
               <LogOut size={16} />
               <span>Log out</span>
@@ -3145,10 +3189,10 @@ function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-4 flex items-center justify-end gap-2">
-      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white disabled:opacity-40">Prev</button>
-      <span className="text-xs text-[#d5d5d5]">Page {page} / {totalPages}</span>
-      <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white disabled:opacity-40">Next</button>
+    <div className="mt-4 flex items-center justify-end gap-1.5">
+      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="inline-flex h-8 items-center rounded-[8px] border border-white/10 px-3 text-xs text-white disabled:opacity-40">Prev</button>
+      <span className="px-1 text-xs text-[#d5d5d5]">Page {page} / {totalPages}</span>
+      <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="inline-flex h-8 items-center rounded-[8px] border border-white/10 px-3 text-xs text-white disabled:opacity-40">Next</button>
     </div>
   );
 }
@@ -3384,8 +3428,8 @@ function ProductInventoryDetail({
 
 function SearchInput({ value, onChange, placeholder = 'Search...' }) {
   return (
-    <div className="rounded-full border border-white/10 bg-[#181818] px-4 py-2.5">
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm text-white placeholder:text-[#7d7d7d] outline-none" />
+    <div className="rounded-[10px] border border-white/10 bg-[#181818] px-3.5 py-2">
+      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full bg-transparent text-[13px] text-white placeholder:text-[#7d7d7d] outline-none" />
     </div>
   );
 }
@@ -3401,28 +3445,6 @@ function FormField({ label, children, hint }) {
       {children}
       {hint && <span className="mt-2 block text-xs text-[#8c8c8c]">{hint}</span>}
     </label>
-  );
-}
-
-const aiConfidenceTones = {
-  high: 'bg-[#10271d] text-[#8ff0a8]',
-  medium: 'bg-[#2d2a19] text-[#f3d87d]',
-  low: 'bg-[#2c1a1a] text-[#f5a0a0]',
-};
-
-function AiIdentificationRow({ label, value, level }) {
-  const normalized = String(level || 'low').toLowerCase();
-  const tone = aiConfidenceTones[normalized] || aiConfidenceTones.low;
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <dt className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">{label}</dt>
-      <dd className="flex min-w-0 items-center justify-end gap-2">
-        <span className="truncate font-medium text-white">{value || 'Unknown'}</span>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] ${tone}`}>
-          {normalized === 'high' ? 'High' : normalized === 'medium' ? 'Medium' : 'Low'}
-        </span>
-      </dd>
-    </div>
   );
 }
 
@@ -3608,7 +3630,7 @@ function AdminPage({ initialSection }) {
                     type="button"
                     onClick={() => setSection(item.id)}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.16em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                    className={`flex w-full items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
                       isActive ? 'bg-[#FFC800] text-black' : 'text-[#a8a8a8] hover:bg-white/5 hover:text-white'
                     }`}
                   >
@@ -3880,12 +3902,12 @@ function AdminPage({ initialSection }) {
       key: makeVariantKey(),
       size: '',
       color: 'Black',
-      sku: '',
       price: 0,
       salePrice: '',
       stock: 0,
       images: [],
       touched: {},
+      orig: null,
       ...overrides,
     });
 
@@ -3939,29 +3961,33 @@ function AdminPage({ initialSection }) {
       setBrandDialogOpen(false);
       setBrandName('');
       setBrandError('');
-      setAiStatus('idle');
-      setAiResult(null);
-      setAiError('');
-      setAiBaseline(null);
-      setAiApplied(false);
       setIsFormOpen(true);
     };
 
-    const hydrateVariant = (variant, fallbackPrice) => ({
+    const hydrateVariant = (variant, fallbackPrice, identity = null) => ({
       key: makeVariantKey(),
       size: variant?.size || '',
       color: variant?.color || 'Black',
-      sku: variant?.sku || '',
+      serverSku: variant?.sku || '',
       price: Number(variant?.price ?? fallbackPrice ?? 0),
       salePrice: variant?.salePrice ?? '',
       stock: Number(variant?.stock ?? 0),
       images: Array.isArray(variant?.images) ? variant.images.filter(Boolean) : [],
-      touched: { color: true, sku: true, price: true, salePrice: true, stock: true },
+      touched: { color: true, price: true, salePrice: true, stock: true },
+      orig: identity ? {
+        size: variant?.size || '',
+        color: variant?.color || 'Black',
+        name: identity.name || '',
+        brand: identity.brand || '',
+      } : null,
     });
 
     const openEdit = (product) => {
       setEditingProduct(product);
-      const hydrated = (product.variants || []).map((variant) => hydrateVariant(variant, product.price));
+      const hydrated = (product.variants || []).map((variant) => hydrateVariant(variant, product.price, {
+        name: product.name || '',
+        brand: product.brand?._id || product.brand || '',
+      }));
       setProductForm({
         name: product.name || '',
         slug: product.slug || '',
@@ -3989,11 +4015,6 @@ function AdminPage({ initialSection }) {
       setBrandDialogOpen(false);
       setBrandName('');
       setBrandError('');
-      setAiStatus('idle');
-      setAiResult(null);
-      setAiError('');
-      setAiBaseline(null);
-      setAiApplied(false);
       setIsFormOpen(true);
     };
 
@@ -4013,7 +4034,6 @@ function AdminPage({ initialSection }) {
     };
 
     const isRowConfigured = (row) => Number(row.stock || 0) > 0
-      || String(row.sku || '').trim() !== ''
       || Boolean(row.touched.price)
       || Boolean(row.touched.salePrice && (row.salePrice !== '' && row.salePrice !== null && row.salePrice !== undefined));
 
@@ -4032,7 +4052,7 @@ function AdminPage({ initialSection }) {
         return;
       }
       const configured = existing.filter(isRowConfigured);
-      if (configured.length > 0 && !window.confirm(`Remove ${size} (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/SKU/price data will be lost.`)) {
+      if (configured.length > 0 && !window.confirm(`Remove ${size} (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/price data will be lost.`)) {
         return;
       }
       const keys = new Set(existing.map((row) => row.key));
@@ -4042,7 +4062,7 @@ function AdminPage({ initialSection }) {
 
     const removeVariantRow = (key) => {
       const row = productForm.variants.find((entry) => entry.key === key);
-      if (row && isRowConfigured(row) && !window.confirm(`Remove ${row.size || 'this'} / ${row.color || ''} variant? Entered stock/SKU/price data will be lost.`)) {
+      if (row && isRowConfigured(row) && !window.confirm(`Remove ${row.size || 'this'} / ${row.color || ''} variant? Entered stock/price data will be lost.`)) {
         return;
       }
       setProductForm((current) => ({ ...current, variants: current.variants.filter((entry) => entry.key !== key) }));
@@ -4128,23 +4148,39 @@ function AdminPage({ initialSection }) {
       }
     };
 
-    const autoGenerateSkus = () => {      const slug = slugifyText(productForm.slug || productForm.name);
-      if (!slug) {
-        setFormError('Enter a product name or slug before generating SKUs.');
-        return;
+    // Fully automatic SKU generation (mirrors the backend builder). The SKU a row
+    // will be saved with: the stored SKU when size/color/name/brand are
+    // unchanged since the product was opened, otherwise a fresh deterministic
+    // BRAND-MODEL-COLOR-SIZE value (deduplicated within the form).
+    const formBrandName = (brands.find((item) => String(item?._id || item?.id) === String(productForm.brand))?.name) || '';
+
+    const skuByKey = useMemo(() => {
+      const assigned = {};
+      const taken = new Set();
+      for (const row of productForm.variants) {
+        const unchanged = Boolean(row.orig?.size)
+          && row.size === row.orig.size
+          && row.color === row.orig.color
+          && productForm.name === row.orig.name
+          && String(productForm.brand) === String(row.orig.brand)
+          && row.serverSku;
+        let sku;
+        if (unchanged) {
+          sku = String(row.serverSku).trim().toUpperCase();
+        } else {
+          const base = buildVariantSku({ brand: formBrandName, model: productForm.name, color: row.color, size: row.size });
+          sku = base;
+          let counter = 1;
+          while (taken.has(sku)) {
+            counter += 1;
+            sku = `${base}-${counter}`;
+          }
+        }
+        taken.add(sku);
+        assigned[row.key] = sku;
       }
-      setProductForm((current) => ({
-        ...current,
-        variants: current.variants.map((row) => {
-          if (row.touched.sku && String(row.sku || '').trim() !== '') return row;
-          const colorCode = slugifyText(row.color).slice(0, 3).toUpperCase() || 'NA';
-          const sizeCode = slugifyText(row.size).toUpperCase().replace(/-/g, '');
-          return { ...row, sku: `${slug.toUpperCase()}-${colorCode}-${sizeCode}`.slice(0, 40) };
-        }),
-      }));
-      setFormError('');
-      setToast('SKUs generated. Manually edited SKUs were preserved.');
-    };
+      return assigned;
+    }, [productForm.variants, productForm.name, productForm.brand, formBrandName]);
 
     const validateProductForm = () => {
       if (!productForm.name.trim()) return 'Product name is required.';
@@ -4157,16 +4193,11 @@ function AdminPage({ initialSection }) {
         if (sale > price) return 'Sale price cannot exceed price.';
       }
       if (productForm.variants.length === 0) return 'Select at least one available size to create a variant.';
-      const seenSkus = new Set();
       const seenCombos = new Set();
       for (const row of productForm.variants) {
         const label = `${row.size || 'size'} / ${row.color || 'color'}`;
         if (!String(row.size || '').trim()) return 'Every variant needs a size.';
         if (!String(row.color || '').trim()) return `Every variant needs a color (${label}).`;
-        const sku = String(row.sku || '').trim().toUpperCase();
-        if (!sku) return `SKU is required for ${label}.`;
-        if (seenSkus.has(sku)) return `Duplicate SKU "${sku}". SKUs must be unique.`;
-        seenSkus.add(sku);
         const combo = `${String(row.size).trim().toLowerCase()}::${String(row.color).trim().toLowerCase()}`;
         if (seenCombos.has(combo)) return `Duplicate size/color combination "${label}".`;
         seenCombos.add(combo);
@@ -4216,7 +4247,7 @@ function AdminPage({ initialSection }) {
           tags: productForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
           images: mediaItems.map((item) => item.url).filter(Boolean),
           variants: productForm.variants.map((row) => ({
-            sku: String(row.sku || '').trim().toUpperCase(),
+            sku: skuByKey[row.key] || buildVariantSku({ brand: formBrandName, model: productForm.name, color: row.color, size: row.size }),
             size: String(row.size || '').trim(),
             color: String(row.color || '').trim(),
             price: Number(row.price || 0),
@@ -4336,106 +4367,6 @@ function AdminPage({ initialSection }) {
         [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
         return reordered;
       });
-    };
-
-    const [aiStatus, setAiStatus] = useState('idle');
-    const [aiResult, setAiResult] = useState(null);
-    const [aiError, setAiError] = useState('');
-    const [aiBaseline, setAiBaseline] = useState(null);
-    const [aiApplied, setAiApplied] = useState(false);
-    const aiAbortRef = useRef(null);
-
-    const snapshotEditableForm = () => ({
-      name: productForm.name,
-      slug: productForm.slug,
-      brand: productForm.brand,
-      category: productForm.category,
-      gender: productForm.gender,
-      shortDescription: productForm.shortDescription,
-      description: productForm.description,
-      tags: productForm.tags,
-      defaultColor: productForm.defaultColor,
-    });
-
-    const analyzeImageWithAi = async () => {
-      if (aiStatus === 'analyzing' || uploading) return;
-      const target = mediaItems[0];
-      if (!target?.url || !/^https:\/\//i.test(target.url)) {
-        setAiError('Upload a product image first, then run AI analysis.');
-        setAiStatus('error');
-        return;
-      }
-      if (aiAbortRef.current) aiAbortRef.current.abort();
-      const controller = new AbortController();
-      aiAbortRef.current = controller;
-      setAiStatus('analyzing');
-      setAiError('');
-      setAiResult(null);
-      setAiApplied(false);
-      try {
-        const response = await apiClient.post('/admin/ai/product-analyze', { imageUrl: target.url }, { signal: controller.signal });
-        const result = unwrapPayload(response.data);
-        if (!result || typeof result !== 'object') throw new Error('AI analysis returned an empty result.');
-        setAiResult(result);
-        setAiBaseline(snapshotEditableForm());
-        setAiStatus('ready');
-      } catch (error) {
-        if (controller.signal.aborted || error?.code === 'ERR_CANCELED') {
-          setAiStatus('idle');
-          return;
-        }
-        setAiError(error?.message || 'AI analysis unavailable. Please try again.');
-        setAiStatus('error');
-      } finally {
-        if (aiAbortRef.current === controller) aiAbortRef.current = null;
-      }
-    };
-
-    const cancelAiAnalysis = () => {
-      if (aiAbortRef.current) aiAbortRef.current.abort();
-    };
-
-    const resolveCatalogId = (options, name) => {
-      const wanted = String(name || '').trim().toLowerCase();
-      if (!wanted) return '';
-      const match = (options || []).find((option) => String(option?.name || '').trim().toLowerCase() === wanted);
-      return match?._id || match?.id || '';
-    };
-
-    const applyAiSuggestions = () => {
-      if (!aiResult || aiApplied) return;
-      const baseline = aiBaseline || {};
-      const next = { ...productForm, variants: productForm.variants.map((variant) => ({ ...variant, touched: { ...variant.touched } })) };
-      const fillIfUntouched = (key, value) => {
-        if (value === undefined || value === null || value === '') return;
-        if (String(productForm[key] ?? '') === String(baseline[key] ?? '')) next[key] = value;
-      };
-
-      const brandId = resolveCatalogId(brands, aiResult.brand);
-      if (brandId && String(productForm.brand ?? '') === String(baseline.brand ?? '')) next.brand = brandId;
-      const categoryId = resolveCatalogId(categories, aiResult.category);
-      if (categoryId && String(productForm.category ?? '') === String(baseline.category ?? '')) next.category = categoryId;
-      if (['MEN', 'WOMEN', 'UNISEX', 'KIDS'].includes(aiResult.gender) && String(productForm.gender ?? '') === String(baseline.gender ?? '')) {
-        next.gender = aiResult.gender;
-      }
-      fillIfUntouched('name', aiResult.productName);
-      if (aiResult.slug && String(productForm.slug ?? '') === String(baseline.slug ?? '')) next.slug = aiResult.slug;
-      fillIfUntouched('shortDescription', aiResult.shortDescription);
-      fillIfUntouched('description', aiResult.description);
-      if (Array.isArray(aiResult.tags) && aiResult.tags.length > 0 && String(productForm.tags ?? '') === String(baseline.tags ?? '')) {
-        next.tags = aiResult.tags.join(', ');
-      }
-      // AI suggests the working color only: it fills the default color and any
-      // variant row whose color the admin has not touched. Sizes, stock, SKU
-      // and prices are never invented by AI.
-      if (aiResult.suggestedColor && String(productForm.defaultColor ?? '') === String(baseline.defaultColor ?? '')) {
-        next.defaultColor = aiResult.suggestedColor;
-        next.variants = next.variants.map((row) => (row.touched.color ? row : { ...row, color: aiResult.suggestedColor }));
-      }
-
-      setProductForm(next);
-      setAiApplied(true);
-      setToast('AI suggestions applied. Review every field before publishing.');
     };
 
     const deleteProduct = async (productId, productName) => {
@@ -4599,7 +4530,7 @@ function AdminPage({ initialSection }) {
 
                   {productForm.variants.length === 0 ? (
                     <p className="mt-4 rounded-[14px] border border-dashed border-white/15 bg-[#141414] p-4 text-center text-xs leading-relaxed text-[#8d8d8d]">
-                      Select sizes above to auto-generate variant rows. Stock, SKU and prices stay empty until you enter them.
+                      Select sizes above to auto-generate variant rows. Stock and prices stay empty until you enter them. SKUs generate automatically.
                     </p>
                   ) : (
                     <>
@@ -4610,13 +4541,6 @@ function AdminPage({ initialSection }) {
                           className="inline-flex h-[32px] items-center rounded-[8px] border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
                         >
                           Apply color to all
-                        </button>
-                        <button
-                          type="button"
-                          onClick={autoGenerateSkus}
-                          className="inline-flex h-[32px] items-center rounded-[8px] border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
-                        >
-                          Auto-generate SKUs
                         </button>
                         <span className="inline-flex items-center gap-1.5">
                           <input
@@ -4659,7 +4583,8 @@ function AdminPage({ initialSection }) {
                                   <input value={row.color} onChange={(event) => updateVariant(row.key, { color: event.target.value }, ['color'])} aria-label={`Color for ${row.size}`} className="kicks-field kicks-field-sm w-24" />
                                 </td>
                                 <td className="px-3 py-2">
-                                  <input value={row.sku} onChange={(event) => updateVariant(row.key, { sku: event.target.value }, ['sku'])} placeholder="SKU" aria-label={`SKU for ${row.size}`} className="kicks-field kicks-field-sm w-36 uppercase" />
+                                  <span className="block whitespace-nowrap font-mono text-xs text-white" title="Auto-generated SKU">{skuByKey[row.key] || '—'}</span>
+                                  <span className="mt-0.5 block text-[9px] uppercase tracking-[0.16em] text-[#767676]">Auto</span>
                                 </td>
                                 <td className="px-3 py-2">
                                   <input type="number" min="0" value={row.price} onChange={(event) => updateVariant(row.key, { price: Number(event.target.value) }, ['price'])} aria-label={`Price for ${row.size}`} className="kicks-field kicks-field-sm w-24" />
@@ -4695,10 +4620,10 @@ function AdminPage({ initialSection }) {
                                 <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Color</span>
                                 <input value={row.color} onChange={(event) => updateVariant(row.key, { color: event.target.value }, ['color'])} className="kicks-field kicks-field-sm w-full" />
                               </label>
-                              <label className="block">
-                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">SKU</span>
-                                <input value={row.sku} onChange={(event) => updateVariant(row.key, { sku: event.target.value }, ['sku'])} placeholder="SKU" className="kicks-field kicks-field-sm w-full uppercase" />
-                              </label>
+                              <div>
+                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">SKU • Auto</span>
+                                <span className="block break-all font-mono text-xs text-white">{skuByKey[row.key] || '—'}</span>
+                              </div>
                               <label className="block">
                                 <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Price (₹)</span>
                                 <input type="number" min="0" value={row.price} onChange={(event) => updateVariant(row.key, { price: Number(event.target.value) }, ['price'])} className="kicks-field kicks-field-sm w-full" />
@@ -4723,8 +4648,8 @@ function AdminPage({ initialSection }) {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Description</p>
                   <div className="mt-4 grid gap-4">
                     <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full kicks-field text-white" /></FormField>
-                    <FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
-                    <FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
+                    <FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="kicks-field" /></FormField>
+                    <FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="kicks-field" /></FormField>
                   </div>
                 </div>
 
@@ -4785,120 +4710,6 @@ function AdminPage({ initialSection }) {
                   {uploadError}
                 </p>
               )}
-
-              <div className="mt-3 rounded-[14px] border border-[#FFC800]/25 bg-[#141311] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d8c26a]">
-                    <Sparkles size={12} aria-hidden="true" /> AI product identification
-                  </p>
-                  {aiStatus === 'analyzing' ? (
-                    <button
-                      type="button"
-                      onClick={cancelAiAnalysis}
-                      className="inline-flex h-[32px] items-center rounded-[8px] border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
-                    >
-                      Cancel
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={analyzeImageWithAi}
-                      disabled={mediaItems.length === 0 || uploading}
-                      className="inline-flex h-[32px] items-center gap-1.5 rounded-[8px] bg-[#FFC800] px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition hover:bg-[#ffd233] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60"
-                    >
-                      <Sparkles size={12} aria-hidden="true" /> Analyze with AI
-                    </button>
-                  )}
-                </div>
-
-                {aiStatus === 'idle' && (
-                  <p className="mt-2 text-xs leading-relaxed text-[#8d8d8d]">Upload a product image above, then analyze it to pre-fill brand, model, category and descriptions.</p>
-                )}
-
-                {aiStatus === 'analyzing' && (
-                  <p className="mt-2.5 flex items-center gap-2 text-xs text-[#d8c26a]" role="status">
-                    <Loader2 size={13} className="animate-spin" aria-hidden="true" /> Analyzing product image…
-                  </p>
-                )}
-
-                {aiStatus === 'error' && (
-                  <div className="mt-2.5">
-                    <p role="alert" className="rounded-[10px] border border-red-500/30 bg-red-500/10 p-2.5 text-xs leading-relaxed text-red-200">{aiError}</p>
-                    <button
-                      type="button"
-                      onClick={analyzeImageWithAi}
-                      disabled={mediaItems.length === 0 || uploading}
-                      className="mt-2 inline-flex h-[32px] items-center rounded-[8px] border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-white/60"
-                    >
-                      Retry analysis
-                    </button>
-                  </div>
-                )}
-
-                {aiStatus === 'ready' && aiResult && (
-                  <div className="mt-2.5 space-y-2.5">
-                    {aiResult.needsReview && (
-                      <p role="alert" className="rounded-[10px] border border-[#FFC800]/40 bg-[#FFC800]/10 p-2.5 text-xs leading-relaxed text-[#f3d87d]">
-                        Identification uncertain — review before publishing.
-                      </p>
-                    )}
-                    <dl className="space-y-1.5 text-xs">
-                      <AiIdentificationRow label="Brand" value={aiResult.brand} level={aiResult.confidence?.brand} />
-                      <AiIdentificationRow label="Model" value={aiResult.model} level={aiResult.confidence?.model} />
-                      <AiIdentificationRow label="Category" value={aiResult.category} level={aiResult.confidence?.category} />
-                      <AiIdentificationRow
-                        label="Color"
-                        value={[aiResult.primaryColor, ...(Array.isArray(aiResult.secondaryColors) ? aiResult.secondaryColors : [])].filter(Boolean).join(' / ')}
-                        level={aiResult.primaryColor ? aiResult.confidence?.category : 'low'}
-                      />
-                    </dl>
-                    {aiResult.brand && !resolveCatalogId(brands, aiResult.brand) && (
-                      <p className="text-xs leading-relaxed text-[#a8a8a8]">Brand “{aiResult.brand}” is not in your catalog — select or create it manually.</p>
-                    )}
-                    {aiResult.category && !resolveCatalogId(categories, aiResult.category) && (
-                      <p className="text-xs leading-relaxed text-[#a8a8a8]">Category “{aiResult.category}” is not in your catalog — select it manually.</p>
-                    )}
-                    {Array.isArray(aiResult.alternateNames) && aiResult.alternateNames.length > 0 && (
-                      <p className="text-xs leading-relaxed text-[#a8a8a8]">Also known as: {aiResult.alternateNames.join(', ')}</p>
-                    )}
-                    {Array.isArray(aiResult.evidence) && aiResult.evidence.length > 0 && (
-                      <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-[#a8a8a8]">
-                        {aiResult.evidence.slice(0, 4).map((item) => <li key={item}>{item}</li>)}
-                      </ul>
-                    )}
-                    <p className="text-xs leading-relaxed text-[#767676]">
-                      {aiResult.webVerified ? 'Corroborated by web search.' : 'Web corroboration unavailable — vision analysis only.'}
-                      {aiResult.reasoningSummary ? ` ${aiResult.reasoningSummary}` : ''}
-                    </p>
-                    {Array.isArray(aiResult.sources) && aiResult.sources.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {aiResult.sources.map((source) => (
-                          <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 truncate rounded-[8px] border border-white/12 px-2.5 py-1.5 text-[11px] text-[#d5d5d5] transition hover:border-white/35 hover:text-white">
-                            <ExternalLink size={11} className="shrink-0" aria-hidden="true" />
-                            <span className="truncate">{source.title}</span>
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                    {aiResult.referencePrice?.amount ? (
-                      <p className="text-xs leading-relaxed text-[#a8a8a8]">
-                        Reference seen online: {aiResult.referencePrice.currency || ''} {Number(aiResult.referencePrice.amount).toLocaleString('en-IN')}
-                        {aiResult.referencePrice.source ? ` (${aiResult.referencePrice.source})` : ''} — selling price stays manual.
-                      </p>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={applyAiSuggestions}
-                      disabled={aiApplied}
-                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] bg-white px-4 text-xs font-semibold text-black transition hover:bg-white/90 disabled:cursor-default disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-white/60"
-                    >
-                      {aiApplied ? <Check size={13} aria-hidden="true" /> : <Sparkles size={13} aria-hidden="true" />}
-                      {aiApplied ? 'Suggestions applied' : 'Apply suggestions'}
-                    </button>
-                    <p className="text-[11px] leading-relaxed text-[#767676]">AI identification is advisory. Review before publishing. Your manual edits are never overwritten.</p>
-                  </div>
-                )}
-              </div>
 
               {mediaItems.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2">
@@ -6296,7 +6107,7 @@ function AdminPage({ initialSection }) {
                   type="button"
                   onClick={() => { setActiveGroup(entry.id); setFormStatus(null); }}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                  className={`flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] px-3 text-[11px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
                     isActive ? 'bg-[#FFC800] text-black' : 'border border-white/10 text-[#c4c4c4] hover:border-white/30 hover:text-white'
                   }`}
                 >
