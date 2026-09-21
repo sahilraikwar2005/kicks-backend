@@ -151,7 +151,7 @@ export default function ShopPage() {
                 value={filters.sort}
                 onChange={(event) => setFilter('sort', event.target.value)}
                 aria-label="Sort products"
-                className="kicks-field kicks-field-sm w-auto min-w-[168px] cursor-pointer appearance-none pl-9 pr-8"
+                className="kicks-field kicks-field-sm w-auto min-w-[168px] cursor-pointer appearance-none pl-10 pr-8"
               >
                 {sortOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -206,7 +206,7 @@ export default function ShopPage() {
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Search styles"
               aria-label="Search styles"
-              className="kicks-field kicks-field-sm pl-8 pr-8"
+              className="kicks-field kicks-field-sm pl-10 pr-8"
             />
             {searchInput && (
               <button
@@ -250,132 +250,132 @@ export default function ShopPage() {
               value={filters.sort}
               onChange={(event) => setFilter('sort', event.target.value)}
               aria-label="Sort products"
-              className="kicks-field kicks-field-sm w-[190px] max-w-full cursor-pointer appearance-none pl-8 pr-7 text-xs min-[400px]:w-[128px] sm:w-[150px]"
+              className="kicks-field kicks-field-sm w-[190px] max-w-full cursor-pointer appearance-none pl-10 pr-7 text-xs min-[400px]:w-[128px] sm:w-[150px]"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
-          </div>
         </div>
+      </div>
 
-        {/* Advanced filters — collapsible, preserves all behavior */}
-        {filtersOpen && (
-          <div id="shop-advanced-filters" className="mt-3 grid gap-3 rounded-2xl border border-white/10 bg-[#111111] p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-            <div>
-              <label htmlFor="shop-brand" className="kicks-meta">Brand</label>
-              <select id="shop-brand" value={filters.brand} onChange={(event) => setFilter('brand', event.target.value)} aria-label="Brand" className="kicks-field kicks-field-sm mt-2">
-                <option value="">All brands</option>
-                {brandOptions.map((option) => {
-                  const value = option?._id || option?.id || option?.slug || option?.name || option;
-                  return <option key={value} value={value}>{option?.name || option}</option>;
-                })}
-              </select>
-            </div>
-
-            <div>
-              <p className="kicks-meta">Gender</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {['', ...genderOptions].map((option) => (
-                  <button key={option || 'all'} type="button" onClick={() => setFilter('gender', option)} aria-pressed={filters.gender === option} className="kicks-pill min-h-[30px] px-3 text-[11px]">
-                    {option || 'All'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="kicks-meta">Size</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {['', ...sizeOptions].map((option) => (
-                  <button key={option || 'all'} type="button" onClick={() => setFilter('size', option)} aria-pressed={filters.size === option} className="kicks-pill min-h-[30px] px-3 text-[11px]">
-                    {option || 'All'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="kicks-meta">Color</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {['', ...colorOptions].map((option) => (
-                  <button key={option || 'all'} type="button" onClick={() => setFilter('color', option)} aria-pressed={filters.color === option} className="kicks-pill min-h-[30px] px-3 text-[11px]">
-                    {option || 'All'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="kicks-meta">Price range</p>
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                <input type="number" min="0" value={minPriceInput} onChange={(event) => setMinPriceInput(event.target.value)} placeholder="Min" aria-label="Minimum price" className="kicks-field kicks-field-sm" />
-                <input type="number" min="0" value={maxPriceInput} onChange={(event) => setMaxPriceInput(event.target.value)} placeholder="Max" aria-label="Maximum price" className="kicks-field kicks-field-sm" />
-              </div>
-              <button type="button" onClick={applyPrice} className="kicks-btn kicks-btn-dark kicks-btn-sm mt-2 w-full">Apply price</button>
-            </div>
+      {/* Advanced filters — collapsible, preserves all behavior */}
+      {filtersOpen && (
+        <div id="shop-advanced-filters" className="mt-3 grid gap-3 rounded-2xl border border-white/10 bg-[#111111] p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+          <div>
+            <label htmlFor="shop-brand" className="kicks-meta">Brand</label>
+            <select id="shop-brand" value={filters.brand} onChange={(event) => setFilter('brand', event.target.value)} aria-label="Brand" className="kicks-field kicks-field-sm mt-2">
+              <option value="">All brands</option>
+              {brandOptions.map((option) => {
+                const value = option?._id || option?.id || option?.slug || option?.name || option;
+                return <option key={value} value={value}>{option?.name || option}</option>;
+              })}
+            </select>
           </div>
-        )}
 
-        {/* Product grid */}
-        <section className="mt-7" aria-live="polite" aria-label="Products">
-          {query.isError ? (
-            <div className="rounded-2xl border border-red-500/25 bg-[#151111] p-10 text-center">
-              <h2 className="text-lg font-bold uppercase tracking-tight text-white">Unable to load products</h2>
-              <p className="mt-2 text-[13px] text-red-100/80">Please try again.</p>
-              <button type="button" onClick={() => query.refetch()} className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5">Retry</button>
-            </div>
-          ) : query.isLoading ? (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
-              {[...Array(8)].map((_, index) => (
-                <div key={index}>
-                  <div className="aspect-square animate-pulse rounded-[14px] bg-[#151515]" />
-                  <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-[#1b1b1b]" />
-                  <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-[#1b1b1b]" />
-                </div>
+          <div>
+            <p className="kicks-meta">Gender</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {['', ...genderOptions].map((option) => (
+                <button key={option || 'all'} type="button" onClick={() => setFilter('gender', option)} aria-pressed={filters.gender === option} className="kicks-pill min-h-[30px] px-3 text-[11px]">
+                  {option || 'All'}
+                </button>
               ))}
             </div>
-          ) : products.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/15 bg-[#111111] p-12 text-center">
-              <h2 className="text-lg font-bold uppercase tracking-tight text-white">No sneakers found</h2>
-              <p className="kicks-body mt-2">Try changing your search or filters.</p>
-              <button type="button" onClick={clearFilters} className="kicks-btn kicks-btn-primary kicks-btn-sm mt-5">
-                <RotateCcw size={13} /> Clear filters
-              </button>
+          </div>
+
+          <div>
+            <p className="kicks-meta">Size</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {['', ...sizeOptions].map((option) => (
+                <button key={option || 'all'} type="button" onClick={() => setFilter('size', option)} aria-pressed={filters.size === option} className="kicks-pill min-h-[30px] px-3 text-[11px]">
+                  {option || 'All'}
+                </button>
+              ))}
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
-                {products.map((product) => <ProductCard key={product?._id || product?.slug} product={product} />)}
+          </div>
+
+          <div>
+            <p className="kicks-meta">Color</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {['', ...colorOptions].map((option) => (
+                <button key={option || 'all'} type="button" onClick={() => setFilter('color', option)} aria-pressed={filters.color === option} className="kicks-pill min-h-[30px] px-3 text-[11px]">
+                  {option || 'All'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="kicks-meta">Price range</p>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <input type="number" min="0" value={minPriceInput} onChange={(event) => setMinPriceInput(event.target.value)} placeholder="Min" aria-label="Minimum price" className="kicks-field kicks-field-sm" />
+              <input type="number" min="0" value={maxPriceInput} onChange={(event) => setMaxPriceInput(event.target.value)} placeholder="Max" aria-label="Maximum price" className="kicks-field kicks-field-sm" />
+            </div>
+            <button type="button" onClick={applyPrice} className="kicks-btn kicks-btn-dark kicks-btn-sm mt-2 w-full">Apply price</button>
+          </div>
+        </div>
+      )}
+
+      {/* Product grid */}
+      <section className="mt-7" aria-live="polite" aria-label="Products">
+        {query.isError ? (
+          <div className="rounded-2xl border border-red-500/25 bg-[#151111] p-10 text-center">
+            <h2 className="text-lg font-bold uppercase tracking-tight text-white">Unable to load products</h2>
+            <p className="mt-2 text-[13px] text-red-100/80">Please try again.</p>
+            <button type="button" onClick={() => query.refetch()} className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5">Retry</button>
+          </div>
+        ) : query.isLoading ? (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
+            {[...Array(8)].map((_, index) => (
+              <div key={index}>
+                <div className="aspect-square animate-pulse rounded-[14px] bg-[#151515]" />
+                <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-[#1b1b1b]" />
+                <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-[#1b1b1b]" />
               </div>
-              {totalPages > 1 && (
-                <nav aria-label="Product pages" className="flex items-center justify-center gap-3 pt-10">
-                  <button
-                    type="button"
-                    onClick={() => setFilter('page', String(filters.page - 1))}
-                    disabled={filters.page <= 1}
-                    aria-label="Previous page"
-                    className="kicks-icon-btn disabled:cursor-not-allowed disabled:opacity-35"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="min-w-24 text-center text-xs text-[#a8a8a8]">Page {filters.page} of {totalPages}</span>
-                  <button
-                    type="button"
-                    onClick={() => setFilter('page', String(filters.page + 1))}
-                    disabled={filters.page >= totalPages}
-                    aria-label="Next page"
-                    className="kicks-icon-btn disabled:cursor-not-allowed disabled:opacity-35"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </nav>
-              )}
-            </>
-          )}
-        </section>
-      </div>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/15 bg-[#111111] p-12 text-center">
+            <h2 className="text-lg font-bold uppercase tracking-tight text-white">No sneakers found</h2>
+            <p className="kicks-body mt-2">Try changing your search or filters.</p>
+            <button type="button" onClick={clearFilters} className="kicks-btn kicks-btn-primary kicks-btn-sm mt-5">
+              <RotateCcw size={13} /> Clear filters
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
+              {products.map((product) => <ProductCard key={product?._id || product?.slug} product={product} />)}
+            </div>
+            {totalPages > 1 && (
+              <nav aria-label="Product pages" className="flex items-center justify-center gap-3 pt-10">
+                <button
+                  type="button"
+                  onClick={() => setFilter('page', String(filters.page - 1))}
+                  disabled={filters.page <= 1}
+                  aria-label="Previous page"
+                  className="kicks-icon-btn disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="min-w-24 text-center text-xs text-[#a8a8a8]">Page {filters.page} of {totalPages}</span>
+                <button
+                  type="button"
+                  onClick={() => setFilter('page', String(filters.page + 1))}
+                  disabled={filters.page >= totalPages}
+                  aria-label="Next page"
+                  className="kicks-icon-btn disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </nav>
+            )}
+          </>
+        )}
+      </section>
     </div>
+    </div >
   );
 }
 

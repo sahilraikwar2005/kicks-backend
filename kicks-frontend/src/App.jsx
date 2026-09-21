@@ -2435,11 +2435,9 @@ function AccountPage({ initialTab }) {
                 type="button"
                 onClick={() => setTab(tab.id)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-white/60 ${
-                  isActive ? 'bg-white text-black' : 'border border-white/10 text-[#c4c4c4] hover:border-white/30 hover:text-white'
-                }`}
+                className="kicks-tab"
               >
-                <Icon size={14} />
+                <Icon size={13} />
                 <span>{tab.label}</span>
               </button>
             );
