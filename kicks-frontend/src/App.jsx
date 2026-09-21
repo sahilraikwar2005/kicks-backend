@@ -703,11 +703,11 @@ function WishlistPage() {
                     {isOutOfStock ? 'Out of stock' : 'In stock'}
                   </p>
 
-                  <div className="mt-4 flex gap-2 sm:mt-5 sm:gap-3">
+                  <div className="mt-3 flex items-center gap-1.5 sm:mt-5 sm:gap-3">
                     {isOutOfStock ? (
                       <Link
                         to={`/products/${product?.slug || productId}`}
-                        className="flex-1 rounded-full border border-white/15 px-3 py-2.5 text-center text-xs font-medium text-white transition hover:border-white/35 sm:px-4 sm:py-3 sm:text-sm"
+                        className="inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-white/15 px-2 text-center text-[11px] font-medium text-white transition hover:border-white/35 sm:h-auto sm:rounded-full sm:px-4 sm:py-3 sm:text-sm"
                       >
                         View details
                       </Link>
@@ -732,7 +732,7 @@ function WishlistPage() {
                             cartMutation.isPending &&
                             cartMutation.variables?.productId === productId
                           }
-                          className="min-w-0 flex-1 rounded-full bg-white px-3 py-2.5 text-xs font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm"
+                          className="inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-white px-2 text-[11px] font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60 sm:h-auto sm:rounded-full sm:px-4 sm:py-3 sm:text-sm"
                         >
                           {cartMutation.isPending &&
                           cartMutation.variables?.productId === productId
@@ -744,7 +744,7 @@ function WishlistPage() {
                           to={`/products/${product?.slug || productId}`}
                           aria-label={`View ${product?.name || 'product'}`}
                           title="View product"
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/35 sm:h-11 sm:w-11"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 text-white transition hover:border-white/35 sm:h-11 sm:w-11 sm:rounded-full"
                         >
                           <ShoppingBag size={16} />
                         </Link>

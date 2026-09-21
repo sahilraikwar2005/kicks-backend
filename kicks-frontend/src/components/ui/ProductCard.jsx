@@ -145,7 +145,7 @@ export default function ProductCard({ product }) {
           </Link>
         ) : (
           <>
-            <button type="button" onClick={handleQuickAdd} disabled={cartMutation.isPending} className="h-9 min-w-0 flex-1 rounded-xl border border-white/15 px-3 text-[11px] font-semibold text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60 sm:h-auto sm:rounded-full sm:px-4 sm:py-3 sm:text-sm sm:font-medium">
+            <button type="button" onClick={handleQuickAdd} disabled={cartMutation.isPending} className="inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-white/15 px-2 text-[11px] font-semibold text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-wait disabled:opacity-60 sm:h-auto sm:rounded-full sm:px-4 sm:py-3 sm:text-sm sm:font-medium">
               {cartMutation.isPending ? 'Adding...' : 'Quick add'}
             </button>
             <button
