@@ -274,11 +274,11 @@ function PasswordField({ label, name, register, error, placeholder = 'Enter pass
         <button
           type="button"
           onClick={() => setShowPassword((current) => !current)}
-          className="absolute right-1 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-[#d9d9d9] transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="absolute right-1 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#d9d9d9] transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
           title={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+          {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
         </button>
       </div>
       {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
@@ -348,7 +348,7 @@ function ContactPage() {
             </div>
             <input className="w-full kicks-field text-white outline-none" placeholder="Subject" />
             <textarea rows={6} className="w-full rounded-[24px] border border-white/10 bg-[#1b1b1b] px-4 py-3 text-white outline-none" placeholder="Your message" />
-            <button type="submit" className="kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Send message</button>
+            <button type="submit" className="kicks-btn kicks-btn-primary">Send message</button>
           </form>
         </div>
       </div>
@@ -441,7 +441,7 @@ function AuthenticityPage() {
 //         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
 //           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your wishlist is empty</h2>
 //           <p className="mt-4 text-[#c3c3c3]">Save the pairs you love to revisit them later.</p>
-//           <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Shop now</Link>
+//           <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Shop now</Link>
 //         </div>
 //       ) : (
 //         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -536,7 +536,7 @@ function WishlistPage() {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="mt-7 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-white/90"
+            className="mt-7 kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-white/90"
           >
             Log in
           </button>
@@ -571,7 +571,7 @@ function WishlistPage() {
         {items.length > 0 && (
           <Link
             to="/shop"
-            className="inline-flex w-fit kicks-btn kicks-btn-secondary kicks-btn-sm text-sm transition hover:border-white/30"
+            className="inline-flex w-fit kicks-btn kicks-btn-secondary kicks-btn-sm transition hover:border-white/30"
           >
             Browse styles
           </Link>
@@ -600,7 +600,7 @@ function WishlistPage() {
           <button
             type="button"
             onClick={() => wishlistQuery.refetch()}
-            className="mt-5 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold"
+            className="mt-5 kicks-btn kicks-btn-primary kicks-btn-sm"
           >
             Retry
           </button>
@@ -617,7 +617,7 @@ function WishlistPage() {
 
           <Link
             to="/shop"
-            className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-white/90"
+            className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-white/90"
           >
             Shop now
           </Link>
@@ -690,7 +690,7 @@ function WishlistPage() {
                     }
                     aria-label={`Remove ${product?.name || 'product'} from wishlist`}
                     title="Remove from wishlist"
-                    className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition hover:border-white/40 disabled:cursor-wait disabled:opacity-50 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition hover:border-white/40 disabled:cursor-wait disabled:opacity-50 sm:right-3 sm:top-3 sm:h-9 sm:w-9"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -834,7 +834,7 @@ function CartPage() {
         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your cart is empty</h2>
           <p className="mt-4 text-sm text-[#c3c3c3] sm:text-base">Add a few premium pairs and continue to checkout.</p>
-          <Link to="/shop" className="mt-6 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium sm:mt-8">Continue shopping</Link>
+          <Link to="/shop" className="mt-6 inline-flex kicks-btn kicks-btn-primary sm:mt-8">Continue shopping</Link>
         </div>
       ) : (
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.1fr_0.9fr]">
@@ -857,14 +857,14 @@ function CartPage() {
                     <p className="mt-1 truncate text-xs text-[#9d9d9d] sm:text-sm">{product?.brand?.name || 'KICKS'} • Size {size} • Color {color}</p>
                     <p className="mt-1 text-xs font-medium text-white sm:mt-2 sm:text-sm">{formatMoney(price)} each</p>
                     <div className="mt-2 flex items-center gap-2 sm:gap-3">
-                      <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => updateMutation.mutate({ variantId, quantity: Math.max(1, quantity - 1) })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-10 sm:w-10">−</button>
+                      <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => updateMutation.mutate({ variantId, quantity: Math.max(1, quantity - 1) })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-9 sm:w-9">−</button>
                       <span className="min-w-6 text-center text-sm font-medium text-white sm:min-w-8">{quantity}</span>
-                      <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => updateMutation.mutate({ variantId, quantity: quantity + 1 })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-10 sm:w-10">+</button>
+                      <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => updateMutation.mutate({ variantId, quantity: quantity + 1 })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-9 sm:w-9">+</button>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end justify-between gap-2">
                     <div className="text-sm font-semibold text-white sm:text-lg">{formatMoney(subtotal)}</div>
-                    <button type="button" onClick={() => removeMutation.mutate(variantId)} disabled={removeMutation.isPending && removeMutation.variables === variantId} aria-label="Remove item" title="Remove item" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-wait disabled:opacity-60">
+                    <button type="button" onClick={() => removeMutation.mutate(variantId)} disabled={removeMutation.isPending && removeMutation.variables === variantId} aria-label="Remove item" title="Remove item" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-wait disabled:opacity-60">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -881,8 +881,8 @@ function CartPage() {
               <div className="flex justify-between"><span>Discount</span><span>{formatMoney(0)}</span></div>
               <div className="flex justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(subtotal)}</span></div>
             </div>
-            <button type="button" onClick={() => navigate('/checkout')} className="mt-6 block w-full kicks-btn kicks-btn-primary text-sm font-semibold sm:py-3 sm:font-medium">Proceed to checkout</button>
-            <button type="button" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()} className="mt-3 w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white disabled:cursor-wait disabled:opacity-60 sm:mt-4">{clearMutation.isPending ? 'Clearing...' : 'Clear cart'}</button>
+            <button type="button" onClick={() => navigate('/checkout')} className="mt-6 block w-full kicks-btn kicks-btn-primary">Proceed to checkout</button>
+            <button type="button" disabled={clearMutation.isPending} onClick={() => clearMutation.mutate()} className="kicks-btn kicks-btn-secondary mt-3 w-full sm:mt-4">{clearMutation.isPending ? 'Clearing...' : 'Clear cart'}</button>
           </aside>
         </div>
       )}
@@ -1085,7 +1085,7 @@ function CheckoutPage() {
         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your cart is empty</h2>
           <p className="mt-4 text-[#c3c3c3]">Add a few premium pairs and continue to checkout.</p>
-          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1104,7 +1104,7 @@ function CheckoutPage() {
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-white sm:text-2xl">Delivery Address</h2>
-              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="shrink-0 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm transition hover:border-white/30">
+              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="shrink-0 kicks-btn kicks-btn-secondary kicks-btn-sm transition hover:border-white/30">
                 {showAddressForm ? 'Close form' : 'Add new address'}
               </button>
             </div>
@@ -1163,7 +1163,7 @@ function CheckoutPage() {
                 <input value={addressForm.postalCode} onChange={(event) => setAddressForm((current) => ({ ...current, postalCode: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Postal code" />
                 <input value={addressForm.country} onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Country" />
                 <div className="md:col-span-2 flex justify-end">
-                  <button type="submit" disabled={addressCreateMutation.isPending} className="kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium disabled:cursor-wait disabled:opacity-60">
+                  <button type="submit" disabled={addressCreateMutation.isPending} className="kicks-btn kicks-btn-primary disabled:cursor-wait disabled:opacity-60">
                     {addressCreateMutation.isPending ? 'Saving...' : 'Save address'}
                   </button>
                 </div>
@@ -1208,7 +1208,7 @@ function CheckoutPage() {
             disabled={!activeAddressId || isProcessingPayment}
             onClick={payNow}
             title={!activeAddressId ? 'Select a delivery address above to enable payment' : 'Pay securely with Razorpay'}
-            className="mt-6 flex w-full items-center justify-center gap-2 kicks-btn kicks-btn-primary text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:py-3 sm:font-medium"
+            className="mt-6 w-full kicks-btn kicks-btn-primary transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isProcessingPayment && <Loader2 size={15} className="animate-spin" />}
             {isProcessingPayment ? 'Preparing payment...' : `Pay now • ${formatMoney(total)}`}
@@ -1247,7 +1247,7 @@ function OrderSuccessPage() {
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
           <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load your order details.</p>
-          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1268,7 +1268,7 @@ function OrderSuccessPage() {
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
           <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now. Please try again.</p>
-          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1283,7 +1283,7 @@ function OrderSuccessPage() {
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
           <h1 className="kicks-section-title">Payment pending</h1>
           <p className="mt-4 text-[#d3d3d3]">Your payment is still being confirmed. Please check again shortly.</p>
-          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
+          <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Continue shopping</Link>
         </div>
       </div>
     );
@@ -1344,8 +1344,8 @@ function OrderSuccessPage() {
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link to={`/account/orders/${id}`} className="inline-flex flex-1 items-center justify-center kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">View order</Link>
-          <Link to="/shop" className="inline-flex flex-1 items-center justify-center rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white">Continue shopping</Link>
+          <Link to={`/account/orders/${id}`} className="inline-flex flex-1 items-center justify-center kicks-btn kicks-btn-primary">View order</Link>
+          <Link to="/shop" className="kicks-btn kicks-btn-secondary flex-1">Continue shopping</Link>
         </div>
       </div>
     </div>
@@ -1445,7 +1445,7 @@ function OrderDetailPage() {
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
           <h1 className="kicks-section-title">Order not found</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not find this order.</p>
-          <Link to="/account/orders" className="mt-6 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Back to orders</Link>
+          <Link to="/account/orders" className="mt-6 inline-flex kicks-btn kicks-btn-primary">Back to orders</Link>
         </div>
       </div>
     );
@@ -1467,8 +1467,8 @@ function OrderDetailPage() {
           <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now.</p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/account/orders" className="inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Back to orders</Link>
-            <Link to="/shop" className="inline-flex rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white">Continue shopping</Link>
+            <Link to="/account/orders" className="inline-flex kicks-btn kicks-btn-primary">Back to orders</Link>
+            <Link to="/shop" className="kicks-btn kicks-btn-secondary">Continue shopping</Link>
           </div>
         </div>
       </div>
@@ -1487,13 +1487,13 @@ function OrderDetailPage() {
           <h1 className="mt-3 kicks-section-title">{order.orderNumber || order._id || id}</h1>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link to="/account/orders" className="inline-flex kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Back to orders</Link>
+          <Link to="/account/orders" className="kicks-btn kicks-btn-secondary kicks-btn-sm">Back to orders</Link>
           {trackingQuery.isLoading ? (
             <button type="button" disabled className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-[#8d8d8d] disabled:cursor-wait">
               <Loader2 size={15} className="animate-spin" /> Checking tracking...
             </button>
           ) : trackingUrl ? (
-            <button type="button" onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">
+            <button type="button" onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary">
               Track Order <ExternalLink size={15} />
             </button>
           ) : (
@@ -1506,12 +1506,12 @@ function OrderDetailPage() {
               Invoice unavailable
             </button>
           ) : (
-            <button type="button" onClick={() => invoiceMutation.mutate(order._id || id)} disabled={invoiceMutation.isPending} className="inline-flex items-center gap-2 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={() => invoiceMutation.mutate(order._id || id)} disabled={invoiceMutation.isPending} className="inline-flex items-center gap-2 kicks-btn kicks-btn-secondary kicks-btn-sm disabled:cursor-wait disabled:opacity-60">
               {invoiceMutation.isPending && <Loader2 size={15} className="animate-spin" />}
               {invoiceMutation.isPending ? 'Downloading...' : 'Download Invoice'}
             </button>
           )}
-          <Link to="/shop" className="inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Continue shopping</Link>
+          <Link to="/shop" className="inline-flex kicks-btn kicks-btn-primary">Continue shopping</Link>
         </div>
       </div>
 
@@ -1673,7 +1673,7 @@ function AccountOverviewSection({ user, onNavigate }) {
           <button
             type="button"
             onClick={() => onNavigate('profile')}
-            className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/35 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/60"
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm w-fit shrink-0"
           >
             View profile <ChevronRight size={14} />
           </button>
@@ -1888,7 +1888,7 @@ function AccountAddressesSection() {
           <button
             type="button"
             onClick={() => { resetForm(); setIsAdding(true); }}
-            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-[#e4e4e4]"
+            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-[#e4e4e4]"
           >
             <Plus size={15} /> Add New Address
           </button>
@@ -1981,7 +1981,7 @@ function AccountAddressesSection() {
               <button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-[#e4e4e4] disabled:opacity-60"
+                className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-[#e4e4e4] disabled:opacity-60"
               >
                 {(isSubmitting || createMutation.isPending || updateMutation.isPending) && <Loader2 size={16} className="animate-spin" />}
                 {editingAddressId ? 'Update Address' : 'Save Address'}
@@ -1989,7 +1989,7 @@ function AccountAddressesSection() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-white hover:bg-white/5"
+                className="kicks-btn kicks-btn-secondary"
               >
                 Cancel
               </button>
@@ -2016,7 +2016,7 @@ function AccountAddressesSection() {
           <button
             type="button"
             onClick={() => { resetForm(); setIsAdding(true); }}
-            className="mt-5 inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-xs font-semibold uppercase tracking-[0.16em]"
+            className="mt-5 inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm"
           >
             <Plus size={14} /> Add Address
           </button>
@@ -2054,7 +2054,7 @@ function AccountAddressesSection() {
                   <button
                     type="button"
                     onClick={() => handleEdit(address)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#181818] px-3 py-1.5 text-xs text-white transition hover:bg-white/10"
+                    className="kicks-btn kicks-btn-dark kicks-btn-sm"
                   >
                     <Edit3 size={12} /> Edit
                   </button>
@@ -2063,7 +2063,7 @@ function AccountAddressesSection() {
                       type="button"
                       onClick={() => setDefaultMutation.mutate(addressId)}
                       disabled={setDefaultMutation.isPending}
-                      className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-[#b8b8b8] transition hover:bg-white/10 hover:text-white disabled:opacity-50"
+                      className="kicks-btn kicks-btn-secondary kicks-btn-sm"
                     >
                       Set Default
                     </button>
@@ -2076,7 +2076,7 @@ function AccountAddressesSection() {
                       }
                     }}
                     disabled={removeMutation.isPending}
-                    className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-red-500/20 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
+                    className="kicks-btn kicks-btn-danger kicks-btn-sm ml-auto"
                   >
                     <Trash2 size={12} /> Delete
                   </button>
@@ -2124,7 +2124,7 @@ function AccountOrdersSection() {
           <p className="mt-1 text-sm text-[#a0a0a0]">Explore our catalog and find your next favorite pair.</p>
           <Link
             to="/shop"
-            className="mt-5 inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-xs font-semibold uppercase tracking-[0.16em]"
+            className="mt-5 inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm"
           >
             Start Shopping
           </Link>
@@ -2163,9 +2163,9 @@ function AccountOrdersSection() {
                     </span>
                     <Link
                       to={`/account/orders/${orderId}`}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#181818] px-4 py-2 text-xs font-medium text-white transition hover:bg-white/10"
+                      className="kicks-btn kicks-btn-dark kicks-btn-sm"
                     >
-                      View Order <ChevronRight size={14} />
+                      View Order <ChevronRight size={13} />
                     </Link>
                   </div>
                 </div>
@@ -2276,7 +2276,7 @@ function AccountPasswordSection() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting && <Loader2 size={16} className="animate-spin" />}
             {isSubmitting ? 'Updating...' : 'Update Password'}
@@ -2292,7 +2292,7 @@ function AccountPasswordSection() {
         <button
           type="button"
           onClick={signOutEverywhere}
-          className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-[10px] border border-red-500/30 px-4 h-9 text-xs font-semibold text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
         >
           <LogOut size={14} /> Sign out everywhere
         </button>
@@ -2475,7 +2475,7 @@ function AccountPage({ initialTab }) {
           type="button"
           onClick={() => setShowLogoutConfirm(true)}
           aria-label="Log out of your account"
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-red-500/30 bg-red-500/5 px-6 py-3.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+          className="kicks-btn kicks-btn-danger w-full lg:hidden"
         >
           <LogOut size={16} /> Log out
         </button>
@@ -2495,12 +2495,12 @@ function AccountPage({ initialTab }) {
             </div>
             <h2 id="logout-dialog-title" className="mt-4 text-center text-xl font-bold text-white">Log out?</h2>
             <p className="mt-2 text-center text-sm text-[#a8a8a8]">Are you sure you want to log out?</p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-6 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setShowLogoutConfirm(false)}
                 disabled={loggingOut}
-                className="rounded-full border border-white/15 px-4 py-3 text-sm font-medium text-white transition hover:border-white/35 disabled:opacity-50"
+                className="kicks-btn kicks-btn-secondary"
               >
                 Cancel
               </button>
@@ -2509,7 +2509,7 @@ function AccountPage({ initialTab }) {
                 onClick={confirmLogout}
                 disabled={loggingOut}
                 aria-label="Confirm log out"
-                className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+                className="kicks-btn kicks-btn-primary"
               >
                 {loggingOut ? 'Logging out...' : 'Log out'}
               </button>
@@ -2566,7 +2566,7 @@ function LoginPage() {
             placeholder="Your password"
           />
 
-          <button disabled={isSubmitting} type="submit" className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
+          <button disabled={isSubmitting} type="submit" className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
             {isSubmitting ? 'Signing in...' : 'Login'}
           </button>
 
@@ -2647,7 +2647,7 @@ function RegisterPage() {
             placeholder="Create a password"
           />
 
-          <button type="submit" className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={isSubmitting}>
+          <button type="submit" className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={isSubmitting}>
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
 
@@ -2693,7 +2693,7 @@ function ForgotPasswordPage() {
               <input {...register('email')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
               {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
           </form>
         )}
       </div>
@@ -2738,7 +2738,7 @@ function ResetPasswordPage() {
               error={errors.password?.message}
               placeholder="Choose a new password"
             />
-            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Reset password'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Reset password'}</button>
           </form>
         )}
       </div>
@@ -2820,7 +2820,7 @@ function ChangePasswordPage() {
               error={errors.newPassword?.message}
               placeholder="New password"
             />
-            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Update password'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Updating...' : 'Update password'}</button>
           </form>
         )}
       </div>
@@ -2908,7 +2908,7 @@ function AddressBookPage() {
               <input {...register('country')} placeholder="Country" className="w-full kicks-field text-white" />
             </div>
             <label className="flex items-center gap-3 text-sm text-[#d3d3d3]"><input type="checkbox" {...register('isDefault')} className="h-4 w-4" /> Set as default</label>
-            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">{isSubmitting ? 'Saving...' : 'Save address'}</button>
+            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary">{isSubmitting ? 'Saving...' : 'Save address'}</button>
           </form>
         </div>
 
@@ -2924,9 +2924,9 @@ function AddressBookPage() {
                   <p className="mt-2 text-sm text-[#a1a1a1]">{address.phone}</p>
                   {address.isDefault && <span className="mt-3 inline-flex rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[#d4d4d4]">Default</span>}
                 </div>
-                <div className="flex gap-2">
-                  {!address.isDefault && <button type="button" onClick={() => setDefaultMutation.mutate(address._id || address.id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Set default</button>}
-                  <button type="button" onClick={() => removeMutation.mutate(address._id || address.id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white"><Trash2 size={14} /></button>
+                <div className="flex gap-1.5">
+                  {!address.isDefault && <button type="button" onClick={() => setDefaultMutation.mutate(address._id || address.id)} className="kicks-btn kicks-btn-secondary kicks-btn-sm">Set default</button>}
+                  <button type="button" onClick={() => removeMutation.mutate(address._id || address.id)} aria-label="Delete address" title="Delete address" className="kicks-icon-btn h-8 w-8"><Trash2 size={13} /></button>
                 </div>
               </div>
             </div>
@@ -2973,7 +2973,7 @@ function NotificationsPage() {
         ) : isError ? (
           <div className="mt-6 rounded-[20px] border border-white/10 bg-[#181818] p-6 text-center">
             <p className="text-[#d2d2d2]">Unable to load notifications.</p>
-            <button type="button" onClick={() => notificationsQuery.refetch()} className="mt-4 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black">Retry</button>
+            <button type="button" onClick={() => notificationsQuery.refetch()} className="kicks-btn kicks-btn-primary kicks-btn-sm mt-4">Retry</button>
           </div>
         ) : notifications.length === 0 ? (
           <div className="mt-6 rounded-[18px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">You are all caught up.</div>
@@ -3017,7 +3017,7 @@ function NotificationsPage() {
                           markNotificationRead(notification);
                         }}
                         disabled={markReadMutation.isPending && markReadMutation.variables === notificationId}
-                        className="w-fit shrink-0 rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white disabled:cursor-wait disabled:opacity-60"
+                        className="kicks-btn kicks-btn-secondary kicks-btn-sm w-fit shrink-0"
                       >
                         {markReadMutation.isPending && markReadMutation.variables === notificationId ? 'Marking...' : 'Mark as read'}
                       </button>
@@ -3636,7 +3636,7 @@ function AdminPage({ initialSection }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d5d5d5] transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+            className="mt-3 flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] border border-white/10 px-4 text-[11px] font-semibold text-[#d5d5d5] transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
           >
             <LogOut size={13} /> Logout
           </button>
@@ -3704,7 +3704,7 @@ function AdminPage({ initialSection }) {
               <button
                 type="button"
                 onClick={() => setSection('inventory')}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30"
+                className="kicks-btn kicks-btn-secondary kicks-btn-sm"
               >
                 Manage <ChevronRight size={13} />
               </button>
@@ -3742,7 +3742,7 @@ function AdminPage({ initialSection }) {
               <button
                 type="button"
                 onClick={() => setSection('orders')}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30"
+                className="kicks-btn kicks-btn-secondary kicks-btn-sm"
               >
                 View all <ChevronRight size={13} />
               </button>
@@ -3796,7 +3796,7 @@ function AdminPage({ initialSection }) {
               <button
                 type="button"
                 onClick={() => setSection('products')}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30"
+                className="kicks-btn kicks-btn-secondary kicks-btn-sm"
               >
                 Manage <ChevronRight size={13} />
               </button>
@@ -4458,14 +4458,14 @@ function AdminPage({ initialSection }) {
             title={editingProduct ? 'Edit product' : 'Add product'}
             actions={(
               <>
-                <button type="button" onClick={closeEditor} aria-label="Back to products" className="inline-flex h-[34px] items-center gap-1.5 rounded-[10px] border border-white/10 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60">
+                <button type="button" onClick={closeEditor} aria-label="Back to products" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
                   <ArrowLeft size={13} /> Back to Products
                 </button>
                 <button
                   type="button"
                   onClick={saveProduct}
                   disabled={savingProduct || uploading}
-                  className="inline-flex h-[36px] items-center gap-1.5 rounded-[10px] bg-[#FFC800] px-4 text-xs font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60"
+                  className="kicks-btn kicks-btn-accent"
                 >
                   {(savingProduct || uploading) && <Loader2 size={13} className="animate-spin" />}
                   {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
@@ -4955,7 +4955,7 @@ function AdminPage({ initialSection }) {
               type="button"
               onClick={saveProduct}
               disabled={savingProduct || uploading}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[10px] bg-[#FFC800] px-5 text-[13px] font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60"
+              className="kicks-btn kicks-btn-accent"
             >
               {(savingProduct || uploading) && <Loader2 size={14} className="animate-spin" />}
               {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
@@ -4971,7 +4971,7 @@ function AdminPage({ initialSection }) {
           title="Products"
           meta={`${unwrapPayload(data)?.total ?? filteredProducts.length} products in catalog`}
           actions={(
-            <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-[#FFC800] px-4 py-2.5 text-[13px] font-semibold text-black transition hover:bg-[#ffd233] focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60">
+            <button type="button" onClick={openCreate} className="kicks-btn kicks-btn-accent">
               <Plus size={14} /> Add product
             </button>
           )}
@@ -5302,7 +5302,7 @@ function AdminPage({ initialSection }) {
             {isLoading ? <Skeleton lines={5} /> : isError ? (
               <div>
                 <ErrorState message="Unable to load inventory." />
-                <button type="button" onClick={() => refetch()} className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-3 text-sm">Retry</button>
+                <button type="button" onClick={() => refetch()} className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-3">Retry</button>
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="rounded-[18px] border border-dashed border-white/15 bg-[#141414] p-8 text-center text-sm text-[#d5d5d5]">
@@ -5369,7 +5369,7 @@ function AdminPage({ initialSection }) {
                   type="button"
                   onClick={confirmOfflineSale}
                   disabled={Boolean(saleBusy)}
-                  className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[#FFC800] px-4 text-xs font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+                  className="kicks-btn kicks-btn-accent kicks-btn-sm flex-1"
                 >
                   {saleBusy && <Loader2 size={13} className="animate-spin" />}
                   Confirm sale
@@ -5432,7 +5432,7 @@ function AdminPage({ initialSection }) {
                     type="button"
                     onClick={saveAdjustment}
                     disabled={adjustBusy}
-                    className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[#FFC800] px-4 text-xs font-semibold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+                    className="kicks-btn kicks-btn-accent kicks-btn-sm flex-1"
                   >
                     {adjustBusy && <Loader2 size={13} className="animate-spin" />}
                     Save adjustment
@@ -5547,7 +5547,7 @@ function AdminPage({ initialSection }) {
             eyebrow="Order detail"
             title={expandedOrder.orderNumber || 'Order'}
             action={(
-              <button type="button" onClick={() => setExpandedOrderId(null)} className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">
+              <button type="button" onClick={() => setExpandedOrderId(null)} className="kicks-btn kicks-btn-secondary kicks-btn-sm">
                 Close
               </button>
             )}
@@ -5600,7 +5600,7 @@ function AdminPage({ initialSection }) {
               </div>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => downloadInvoice(expandedOrder._id)} className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Download invoice</button>
+              <button type="button" onClick={() => downloadInvoice(expandedOrder._id)} className="kicks-btn kicks-btn-secondary kicks-btn-sm">Download invoice</button>
             </div>
           </AdminCard>
         )}
@@ -5697,7 +5697,7 @@ function AdminPage({ initialSection }) {
                   { key: 'verified', label: 'Verified', render: (row) => <span className={row.emailVerified ? 'text-emerald-300' : 'text-[#8d8d8d]'}>{row.emailVerified ? 'Yes' : 'No'}</span> },
                   { key: 'joined', label: 'Joined', render: (row) => <span className="text-xs">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span> },
                   { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.isActive ? 'ACTIVE' : 'INACTIVE'} /> },
-                  { key: 'actions', label: 'Action', render: (row) => <button type="button" onClick={() => toggleStatus(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">{row.isActive ? 'Disable' : 'Enable'}</button> },
+                  { key: 'actions', label: 'Action', render: (row) => <button type="button" onClick={() => toggleStatus(row)} className="kicks-btn kicks-btn-secondary kicks-btn-sm">{row.isActive ? 'Disable' : 'Enable'}</button> },
                 ]}
                 rows={filteredUsers}
                 emptyMessage="No users found."
@@ -5721,7 +5721,7 @@ function AdminPage({ initialSection }) {
                     <span>•</span>
                     <span>Joined {row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
                   </div>
-                  <button type="button" onClick={() => toggleStatus(row)} className="mt-3 w-full rounded-full border border-white/10 px-3 py-2.5 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">{row.isActive ? 'Disable' : 'Enable'}</button>
+                  <button type="button" onClick={() => toggleStatus(row)} className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-3 w-full">{row.isActive ? 'Disable' : 'Enable'}</button>
                 </div>
               ))}
             </div>
@@ -5803,8 +5803,8 @@ function AdminPage({ initialSection }) {
           title="Shipping"
           meta={`${total} shipment${total !== 1 ? 's' : ''} tracked`}
           actions={(
-            <button type="button" onClick={() => refetch()} className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60">
-              <RefreshCw size={14} /> Refresh
+            <button type="button" onClick={() => refetch()} className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+              <RefreshCw size={13} /> Refresh
             </button>
           )}
         />
@@ -5839,7 +5839,7 @@ function AdminPage({ initialSection }) {
               type="button"
               onClick={handleCreateShipment}
               disabled={createBusy || !createOrderId.trim()}
-              className="flex items-center justify-center gap-2 rounded-full bg-[#FFC800] px-5 py-2.5 text-[13px] font-semibold text-black transition disabled:opacity-40"
+              className="kicks-btn kicks-btn-accent"
             >
               {createBusy ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
               Create shipment
@@ -5852,7 +5852,7 @@ function AdminPage({ initialSection }) {
         {isLoading ? <Skeleton lines={8} /> : isError ? (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
             <ErrorState message="Unable to load shipments." />
-            <button type="button" onClick={() => refetch()} className="mt-4 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Retry</button>
+            <button type="button" onClick={() => refetch()} className="mt-4 kicks-btn kicks-btn-secondary kicks-btn-sm">Retry</button>
           </div>
         ) : shipments.length === 0 ? (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
@@ -5877,10 +5877,10 @@ function AdminPage({ initialSection }) {
                   { key: 'created', label: 'Created', render: (row) => <span className="text-xs text-[#a5a5a5]">{fmtDate(row.createdAt)}</span> },
                   { key: 'actions', label: 'Actions', render: (row) => (
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => openDetail(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Details</button>
+                      <button type="button" onClick={() => openDetail(row._id)} className="kicks-btn kicks-btn-secondary kicks-btn-sm">Details</button>
                       {getTrackingUrl(row) && (
-                        <a href={getTrackingUrl(row)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">
-                          Track <ExternalLink size={10} />
+                        <a href={getTrackingUrl(row)} target="_blank" rel="noopener noreferrer" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+                          Track <ExternalLink size={11} />
                         </a>
                       )}
                     </div>
@@ -5909,10 +5909,10 @@ function AdminPage({ initialSection }) {
                     <div><span className="text-[#8c8c8c]">Created:</span> <span className="text-white">{fmtDate(s.createdAt)}</span></div>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => openDetail(s._id)} className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white">Details</button>
+                    <button type="button" onClick={() => openDetail(s._id)} className="kicks-btn kicks-btn-secondary kicks-btn-sm">Details</button>
                     {getTrackingUrl(s) && (
-                      <a href={getTrackingUrl(s)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white">
-                        Track <ExternalLink size={10} />
+                      <a href={getTrackingUrl(s)} target="_blank" rel="noopener noreferrer" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+                        Track <ExternalLink size={11} />
                       </a>
                     )}
                   </div>
@@ -5932,8 +5932,8 @@ function AdminPage({ initialSection }) {
             <div className="h-full w-full max-w-[560px] overflow-y-auto bg-[#0a0a0a] p-5 shadow-2xl md:p-6" onClick={(e) => e.stopPropagation()}>
               <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-xl font-black uppercase tracking-[-0.04em] text-white">Shipment details</h3>
-                <button type="button" onClick={closeDetail} className="rounded-full border border-white/10 p-2 text-white transition-colors hover:bg-white/10">
-                  <X size={18} />
+                <button type="button" onClick={closeDetail} aria-label="Close details" className="kicks-icon-btn h-9 w-9">
+                  <X size={15} />
                 </button>
               </div>
 
@@ -6313,7 +6313,7 @@ function AdminPage({ initialSection }) {
         ) : settingsQuery.isError ? (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
             <ErrorState message="Unable to load settings." />
-            <button type="button" onClick={() => settingsQuery.refetch()} className="mt-4 kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Retry</button>
+            <button type="button" onClick={() => settingsQuery.refetch()} className="mt-4 kicks-btn kicks-btn-secondary kicks-btn-sm">Retry</button>
           </div>
         ) : group.custom ? (
           <div className="grid gap-6 lg:grid-cols-2">
@@ -6351,7 +6351,7 @@ function AdminPage({ initialSection }) {
                 <button
                   type="submit"
                   disabled={pwSaving || pwForm.formState.isSubmitting}
-                  className="w-full kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-semibold transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+                  className="w-full kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
                 >
                   {pwSaving ? 'Updating...' : 'Update password'}
                 </button>
@@ -6366,7 +6366,7 @@ function AdminPage({ initialSection }) {
               <button
                 type="button"
                 onClick={signOutEverywhere}
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-[10px] border border-red-500/30 px-4 h-9 text-xs font-semibold text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
               >
                 <LogOut size={14} /> Sign out everywhere
               </button>
@@ -6390,7 +6390,7 @@ function AdminPage({ initialSection }) {
                 type="button"
                 onClick={saveSection}
                 disabled={saving || dirtyKeys.length === 0}
-                className="rounded-full bg-white px-5 py-2.5 text-[13px] font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="kicks-btn kicks-btn-primary kicks-btn-sm"
               >
                 {saving ? 'Saving...' : dirtyKeys.length > 0 ? `Save ${dirtyKeys.length} change${dirtyKeys.length === 1 ? '' : 's'}` : 'Saved'}
               </button>
@@ -6433,9 +6433,9 @@ function AdminPage({ initialSection }) {
                   type="button"
                   onClick={() => setDrawerOpen(false)}
                   aria-label="Close admin menu"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white"
+                  className="kicks-icon-btn"
                 >
-                  <X size={17} />
+                  <X size={15} />
                 </button>
               </div>
               {renderSidebarBody()}
@@ -6449,9 +6449,9 @@ function AdminPage({ initialSection }) {
               type="button"
               onClick={() => setDrawerOpen(true)}
               aria-label="Open admin menu"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-white xl:hidden"
+              className="kicks-icon-btn shrink-0 xl:hidden"
             >
-              <Menu size={17} />
+              <Menu size={15} />
             </button>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] uppercase tracking-[0.24em] text-[#8d8d8d]">{todayLabel}</p>
@@ -6464,13 +6464,13 @@ function AdminPage({ initialSection }) {
                 to="/faq"
                 aria-label="Help and FAQs"
                 title="Help and FAQs"
-                className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 sm:inline-flex"
+                className="kicks-icon-btn hidden sm:inline-flex"
               >
-                <Info size={16} />
+                <Info size={15} />
               </Link>
               <Link
                 to="/"
-                className="hidden items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30 sm:inline-flex"
+                className="hidden h-8 items-center gap-1.5 rounded-[10px] border border-white/10 px-3 text-[11px] font-semibold text-white transition hover:border-white/30 sm:inline-flex"
               >
                 <ExternalLink size={12} /> Storefront
               </Link>
@@ -6497,7 +6497,7 @@ function AdminPage({ initialSection }) {
                         type="button"
                         role="menuitem"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#f0a8a8] transition hover:bg-red-500/10"
+                        className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2.5 text-left text-xs font-semibold text-[#f0a8a8] transition hover:bg-red-500/10"
                       >
                         <LogOut size={14} /> Logout
                       </button>
@@ -6521,7 +6521,7 @@ function NotFoundPage() {
       <PageMeta title="Page not found | KICKS" description="The page you requested does not exist" />
       <h1 className="text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">404</h1>
       <p className="mt-5 text-[#c7c7c7]">This page does not exist yet.</p>
-      <Link to="/" className="mt-8 inline-flex kicks-btn kicks-btn-primary kicks-btn-sm text-sm font-medium">Back home</Link>
+      <Link to="/" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Back home</Link>
     </div>
   );
 }

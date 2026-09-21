@@ -292,11 +292,11 @@ export default function ProductDetailPage() {
             {isNotFound ? 'This sneaker isn’t available in the catalog right now.' : 'Please check your connection and try again.'}
           </p>
           <div className="mt-8 flex justify-center gap-3">
-            <Link to="/shop" className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black">
+            <Link to="/shop" className="kicks-btn kicks-btn-primary">
               Back to Shop
             </Link>
             {!isNotFound && (
-              <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: ['product-detail', slug] })} className="rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white">
+              <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: ['product-detail', slug] })} className="kicks-btn kicks-btn-secondary">
                 Retry
               </button>
             )}
@@ -325,11 +325,11 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#111111] p-3">
               <div className="pointer-events-none absolute inset-x-3 inset-y-0 z-10 flex items-center justify-between">
-                <button type="button" aria-label="Previous image" onClick={() => setActiveImageIndex((index) => (index === 0 ? galleryImages.length - 1 : index - 1))} className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm">
-                  <ChevronLeft size={18} />
+                <button type="button" aria-label="Previous image" onClick={() => setActiveImageIndex((index) => (index === 0 ? galleryImages.length - 1 : index - 1))} className="pointer-events-auto kicks-icon-btn h-9 w-9">
+                  <ChevronLeft size={16} />
                 </button>
-                <button type="button" aria-label="Next image" onClick={() => setActiveImageIndex((index) => (index === galleryImages.length - 1 ? 0 : index + 1))} className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm">
-                  <ChevronRight size={18} />
+                <button type="button" aria-label="Next image" onClick={() => setActiveImageIndex((index) => (index === galleryImages.length - 1 ? 0 : index + 1))} className="pointer-events-auto kicks-icon-btn h-9 w-9">
+                  <ChevronRight size={16} />
                 </button>
               </div>
               <img
@@ -481,19 +481,19 @@ export default function ProductDetailPage() {
             {isAdmin ? (
               <div className="mt-6 flex flex-col gap-3 rounded-[20px] border border-white/10 bg-[#141414] p-4 text-sm text-[#c4c4c4] sm:mt-8 sm:flex-row sm:items-center sm:justify-between">
                 <span>You are signed in with an admin account. Shopping actions are disabled.</span>
-                <Link to="/admin" className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/35">
+                <Link to="/admin" className="kicks-btn kicks-btn-dark kicks-btn-sm w-fit shrink-0">
                   Admin Panel
                 </Link>
               </div>
             ) : (
             <>
             <div className="mt-6 flex items-center gap-2 sm:mt-8">
-              <div className="inline-flex h-11 shrink-0 items-center rounded-[10px] border border-white/10 bg-[#171717]">
-                <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-11 w-10 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
+              <div className="inline-flex h-10 shrink-0 items-center rounded-[10px] border border-white/10 bg-[#171717]">
+                <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => handleQuantityChange(-1)} disabled={isOutOfStock || quantity <= 1} className="flex h-10 w-9 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
                   <Minus size={15} />
                 </button>
                 <span className="min-w-8 text-center text-[13px] font-medium text-white">{quantity}</span>
-                <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => handleQuantityChange(1)} disabled={isOutOfStock || quantity >= Math.max(currentStock || 1, 1)} className="flex h-11 w-10 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <button type="button" aria-label="Increase quantity" title="Increase quantity" onClick={() => handleQuantityChange(1)} disabled={isOutOfStock || quantity >= Math.max(currentStock || 1, 1)} className="flex h-10 w-9 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40">
                   <Plus size={15} />
                 </button>
               </div>
@@ -502,7 +502,7 @@ export default function ProductDetailPage() {
                 {cartMutation.isPending ? 'Adding...' : 'Add to cart'}
               </button>
 
-              <button type="button" onClick={handleWishlistToggle} disabled={wishlistMutation.isPending} aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`} aria-pressed={isWishlisted} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'} className="kicks-icon-btn h-11 w-11 shrink-0">
+              <button type="button" onClick={handleWishlistToggle} disabled={wishlistMutation.isPending} aria-label={isWishlisted ? `Remove ${product?.name || 'product'} from wishlist` : `Add ${product?.name || 'product'} to wishlist`} aria-pressed={isWishlisted} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'} className="kicks-icon-btn h-10 w-10 shrink-0">
                 <Heart size={16} className={isWishlisted ? 'fill-white' : ''} />
               </button>
             </div>

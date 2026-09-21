@@ -88,9 +88,9 @@ export default function HomePage() {
               href="#best-sellers"
               aria-label="Scroll to best sellers"
               title="Scroll to best sellers"
-              className="kicks-icon-btn h-11 w-11"
+              className="kicks-icon-btn h-10 w-10"
             >
-              <ArrowDown size={17} />
+              <ArrowDown size={16} />
             </a>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function HomePage() {
             <p className="text-sm text-[#d2d2d2] sm:text-base">Categories are unavailable right now. Browse the full collection instead.</p>
             <Link
               to="/shop"
-              className="mt-5 inline-flex rounded-full border border-white/15 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white/40"
+              className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5"
             >
               Shop all
             </Link>
@@ -158,8 +158,8 @@ export default function HomePage() {
                     <h3 className="truncate text-xl font-black uppercase tracking-[-0.02em] text-white sm:text-2xl lg:text-3xl">{tile.title}</h3>
                     <p className="mt-1 truncate text-xs text-[#d5d5d5] sm:text-sm">{tile.subtitle}</p>
                   </div>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-sm transition group-hover:border-white/60 group-hover:bg-white/10" aria-hidden="true">
-                    <ArrowUpRight size={16} />
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-sm transition group-hover:border-white/60 group-hover:bg-white/10" aria-hidden="true">
+                    <ArrowUpRight size={14} />
                   </span>
                 </div>
               </Link>
@@ -276,7 +276,7 @@ export default function HomePage() {
           <Link
             to="/about"
             aria-label="Meet KICKS"
-            className="mt-9 inline-flex items-center gap-2 rounded-full bg-black px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-black/85 focus:outline-none focus:ring-2 focus:ring-black/50 focus:ring-offset-2 focus:ring-offset-[#FFC800]"
+            className="kicks-btn mt-9 bg-black text-white hover:bg-black/85 focus:outline-none focus:ring-2 focus:ring-black/50 focus:ring-offset-2 focus:ring-offset-[#FFC800]"
           >
             Meet Kicks <ArrowRight size={16} />
           </Link>

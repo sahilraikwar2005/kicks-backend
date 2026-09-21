@@ -139,8 +139,8 @@ export default function ShopPage() {
             </p>
           </div>
 
-          {/* Compact sort — desktop right */}
-          <div className="flex shrink-0 items-center gap-3">
+          {/* Compact sort — desktop right; mobile gets its own row below */}
+          <div className="hidden shrink-0 items-center gap-3 sm:flex">
             <label htmlFor="shop-sort" className="hidden text-[10.5px] uppercase tracking-[0.22em] text-[#8d8d8d] sm:block">
               Sort
             </label>
@@ -196,26 +196,26 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Toolbar — search + filters trigger */}
-        <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          <div className="relative min-w-0 flex-1 basis-48 sm:max-w-xs sm:flex-none sm:basis-64">
-            <Search size={14} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#777]" />
+        {/* Toolbar — search + filters share one row; sort gets a compact mobile row */}
+        <div className="mt-4 flex items-center gap-2">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs sm:flex-none">
+            <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#777]" />
             <input
               id="shop-search"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Search styles"
               aria-label="Search styles"
-              className="kicks-field kicks-field-sm pl-9 pr-9"
+              className="kicks-field kicks-field-sm pl-8 pr-8"
             />
             {searchInput && (
               <button
                 type="button"
                 onClick={() => setSearchInput('')}
                 aria-label="Clear search"
-                className="absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[#aaa] hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60"
+                className="absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#aaa] hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60"
               >
-                <X size={13} />
+                <X size={12} />
               </button>
             )}
           </div>
@@ -225,7 +225,7 @@ export default function ShopPage() {
             onClick={() => setFiltersOpen((current) => !current)}
             aria-expanded={filtersOpen}
             aria-controls="shop-advanced-filters"
-            className={`kicks-btn kicks-btn-sm ${filtersOpen || activeFilterCount > 0 ? 'kicks-btn-primary' : 'kicks-btn-secondary'}`}
+            className={`kicks-btn kicks-btn-sm shrink-0 ${filtersOpen || activeFilterCount > 0 ? 'kicks-btn-primary' : 'kicks-btn-secondary'}`}
           >
             <SlidersHorizontal size={13} />
             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
@@ -235,13 +235,33 @@ export default function ShopPage() {
             <button
               type="button"
               onClick={clearFilters}
-              className="inline-flex min-h-[34px] items-center gap-1.5 whitespace-nowrap px-2 text-xs text-[#b5b5b5] underline decoration-white/25 underline-offset-4 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+              aria-label="Clear all filters"
+              title="Clear all"
+              className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] border border-white/10 text-[#b5b5b5] transition hover:border-white/35 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
             >
-              <RotateCcw size={12} /> Clear all
+              <RotateCcw size={13} />
             </button>
           )}
+        </div>
 
-          <p className="ml-auto hidden text-xs text-[#6d6d6d] lg:block">Image-first grid · real catalog data only</p>
+        <div className="mt-2 flex items-center gap-2 sm:hidden">
+          <label htmlFor="shop-sort-mobile" className="shrink-0 text-[10.5px] uppercase tracking-[0.18em] text-[#8d8d8d]">
+            Sort
+          </label>
+          <div className="relative min-w-0 flex-1">
+            <ArrowUpDown size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9a9a9a]" />
+            <select
+              id="shop-sort-mobile"
+              value={filters.sort}
+              onChange={(event) => setFilter('sort', event.target.value)}
+              aria-label="Sort products"
+              className="kicks-field kicks-field-sm w-full cursor-pointer appearance-none pl-8 pr-7 text-xs"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Advanced filters — collapsible, preserves all behavior */}
