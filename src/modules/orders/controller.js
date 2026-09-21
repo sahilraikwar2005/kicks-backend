@@ -24,8 +24,8 @@ export const orderController = {
   },
 
   listAdmin: async (req, res) => {
-    const orders = await orderService.listAdmin();
-    return res.status(200).json(apiSuccess('All orders fetched successfully', { orders }));
+    const orders = await orderService.listAdmin(req.query);
+    return res.status(200).json(apiSuccess('All orders fetched successfully', orders));
   },
 
   updateStatus: async (req, res) => {

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Product from './model.js';
 
 const buildProductQuery = (filters = {}) => {
-  const query = { status: 'PUBLISHED' };
+  const query = filters.includeAllStatuses ? {} : { status: 'PUBLISHED' };
 
   if (filters.status === 'PUBLISHED' || filters.status === 'DRAFT' || filters.status === 'ARCHIVED') query.status = filters.status;
   if (filters.featured === true || filters.featured === 'true') query.featured = true;

@@ -141,8 +141,25 @@ export const orderService = {
     return order;
   },
 
-  async listAdmin() {
-    return Order.find().sort({ createdAt: -1 });
+  async listAdmin(filters = {}) {
+    const page = Math.max(Number(filters.page || 1), 1);
+    const limit = Math.min(Math.max(Number(filters.limit || 20), 1), 100);
+    const skip = (page - 1) * limit;
+    const query = {};
+    const validStatuses = ['PENDING', 'CONFIRMED', 'PROCESSING', 'PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
+    if (filters.status && validStatuses.includes(String(filters.status).toUpperCase())) {
+      query.status = String(filters.status).toUpperCase();
+    }
+    if (filters.search && String(filters.search).trim()) {
+      const term = String(filters.search).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = { $regex: term, $options: 'i' };
+      query.$or = [{ orderNumber: pattern }, { 'customerSnapshot.email': pattern }, { 'customerSnapshot.phone': pattern }];
+    }
+    const [orders, total] = await Promise.all([
+      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Order.countDocuments(query),
+    ]);
+    return { orders, page, limit, total, totalPages: Math.ceil(total / limit) || 1 };
   },
 
   async updateStatus(orderId, status) {

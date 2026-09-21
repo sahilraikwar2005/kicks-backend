@@ -2949,6 +2949,7 @@ function AdminPage({ initialSection }) {
   };
 
   const ProductsSection = () => {
+    const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
@@ -2981,7 +2982,7 @@ function AdminPage({ initialSection }) {
     const { data: brandsData } = useQuery({ queryKey: ['admin-brands'], queryFn: () => apiClient.get('/brands').then((response) => response.data) });
     const { data, isLoading, isError } = useQuery({
       queryKey: ['admin-products', page, status, category, brand],
-      queryFn: () => apiClient.get('/products', {
+      queryFn: () => apiClient.get('/admin/products', {
         params: { page, limit: 10, status: status || undefined, category: category || undefined, brand: brand || undefined },
       }).then((response) => response.data),
     });
@@ -3057,53 +3058,64 @@ function AdminPage({ initialSection }) {
     };
 
     const saveProduct = async () => {
-      const payload = {
-        name: productForm.name,
-        slug: productForm.slug || productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        brand: productForm.brand,
-        category: productForm.category,
-        gender: productForm.gender,
-        price: Number(productForm.price || 0),
-        salePrice: productForm.salePrice === '' ? null : Number(productForm.salePrice || 0),
-        status: productForm.status,
-        featured: Boolean(productForm.featured),
-        newArrival: Boolean(productForm.newArrival),
-        bestSeller: Boolean(productForm.bestSeller),
-        shortDescription: productForm.shortDescription,
-        description: productForm.description,
-        tags: productForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-        seo: {
-          title: productForm.seo.title,
-          description: productForm.seo.description,
-          keywords: productForm.seo.keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean),
-        },
-        images: productForm.images.split(',').map((image) => image.trim()).filter(Boolean),
-        variants: productForm.variants.map((variant) => ({
-          sku: variant.sku,
-          size: variant.size,
-          color: variant.color,
-          price: Number(variant.price || productForm.price || 0),
-          salePrice: variant.salePrice === '' ? null : Number(variant.salePrice || 0),
-          stock: Number(variant.stock || 0),
-          images: variant.images.split(',').map((image) => image.trim()).filter(Boolean),
-        })),
-      };
+      try {
+        const payload = {
+          name: productForm.name,
+          slug: productForm.slug || productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          brand: productForm.brand,
+          category: productForm.category,
+          gender: productForm.gender,
+          price: Number(productForm.price || 0),
+          salePrice: productForm.salePrice === '' ? null : Number(productForm.salePrice || 0),
+          status: productForm.status,
+          featured: Boolean(productForm.featured),
+          newArrival: Boolean(productForm.newArrival),
+          bestSeller: Boolean(productForm.bestSeller),
+          shortDescription: productForm.shortDescription,
+          description: productForm.description,
+          tags: productForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+          seo: {
+            title: productForm.seo.title,
+            description: productForm.seo.description,
+            keywords: productForm.seo.keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean),
+          },
+          images: productForm.images.split(',').map((image) => image.trim()).filter(Boolean),
+          variants: productForm.variants.map((variant) => ({
+            sku: variant.sku,
+            size: variant.size,
+            color: variant.color,
+            price: Number(variant.price || productForm.price || 0),
+            salePrice: variant.salePrice === '' ? null : Number(variant.salePrice || 0),
+            stock: Number(variant.stock || 0),
+            images: variant.images.split(',').map((image) => image.trim()).filter(Boolean),
+          })),
+        };
 
-      if (editingProduct) {
-        await apiClient.patch(`/products/${editingProduct._id}`, payload);
-        setToast('Product updated successfully.');
-      } else {
-        await apiClient.post('/products', payload);
-        setToast('Product created successfully.');
+        if (editingProduct) {
+          await apiClient.patch(`/products/${editingProduct._id}`, payload);
+          setToast('Product updated successfully.');
+        } else {
+          await apiClient.post('/products', payload);
+          setToast('Product created successfully.');
+        }
+        setIsFormOpen(false);
+        setPage(1);
+        await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      } catch (error) {
+        setToast(error?.message || 'Unable to save product.');
       }
-      setIsFormOpen(false);
-      setPage(1);
     };
 
-    const deleteProduct = async (productId) => {
-      await apiClient.delete(`/products/${productId}`);
-      setToast('Product archived successfully.');
-      setPage(1);
+    const deleteProduct = async (productId, productName) => {
+      if (!window.confirm(`Archive "${productName || 'this product'}"? It will be hidden from the storefront.`)) return;
+      try {
+        await apiClient.delete(`/products/${productId}`);
+        setToast('Product archived successfully.');
+        setPage(1);
+        await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      } catch (error) {
+        setToast(error?.message || 'Unable to archive product.');
+      }
     };
 
     return (
@@ -3151,7 +3163,7 @@ function AdminPage({ initialSection }) {
                 { key: 'actions', label: 'Actions', render: (row) => (
                   <div className="flex gap-2">
                     <button type="button" onClick={() => openEdit(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Edit</button>
-                    <button type="button" onClick={() => deleteProduct(row._id)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Delete</button>
+                    <button type="button" onClick={() => deleteProduct(row._id, row.name)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Delete</button>
                   </div>
                 ) },
               ]}
@@ -3213,12 +3225,15 @@ function AdminPage({ initialSection }) {
   };
 
   const InventorySection = () => {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const [page, setPage] = useState(1);
     const [lowStockOnly, setLowStockOnly] = useState(false);
     const [adjustingVariant, setAdjustingVariant] = useState(null);
     const [delta, setDelta] = useState(0);
     const [reason, setReason] = useState('admin_adjustment');
     const [referenceId, setReferenceId] = useState('');
+    const [adjustError, setAdjustError] = useState('');
     const { data, isLoading, isError } = useQuery({ queryKey: ['admin-inventory', page, lowStockOnly], queryFn: () => apiClient.get('/admin/inventory', { params: { page, limit: 10, lowStock: lowStockOnly || undefined } }).then((response) => response.data) });
     const { data: lowStockData } = useQuery({ queryKey: ['admin-low-stock'], queryFn: () => apiClient.get('/admin/inventory/low-stock').then((response) => response.data) });
     const items = unwrapPayload(data)?.items ?? [];
@@ -3226,11 +3241,27 @@ function AdminPage({ initialSection }) {
     const lowStockItems = unwrapPayload(lowStockData)?.items ?? [];
 
     const adjustInventory = async () => {
-      await apiClient.post(`/admin/inventory/${adjustingVariant}/adjust`, { delta: Number(delta), reason, referenceId });
-      setAdjustingVariant(null);
-      setDelta(0);
-      setReason('admin_adjustment');
-      setReferenceId('');
+      setAdjustError('');
+      const parsedDelta = Number(delta);
+      if (!Number.isInteger(parsedDelta) || parsedDelta === 0) {
+        setAdjustError('Delta must be a non-zero whole number (e.g. 5 or -3).');
+        return;
+      }
+      try {
+        await apiClient.post(`/admin/inventory/${adjustingVariant}/adjust`, { delta: parsedDelta, reason, referenceId });
+        setAdjustingVariant(null);
+        setDelta(0);
+        setReason('admin_adjustment');
+        setReferenceId('');
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['admin-inventory'] }),
+          queryClient.invalidateQueries({ queryKey: ['admin-low-stock'] }),
+          queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] }),
+        ]);
+        showToast('Inventory adjusted.', 'success');
+      } catch (error) {
+        setAdjustError(error?.message || 'Unable to adjust inventory.');
+      }
     };
 
     return (
@@ -3261,7 +3292,7 @@ function AdminPage({ initialSection }) {
                 { key: 'availableStock', label: 'Stock', render: (row) => <span>{row.availableStock}</span> },
                 { key: 'reservedStock', label: 'Reserved', render: (row) => <span>{row.reservedStock}</span> },
                 { key: 'lowStockThreshold', label: 'Threshold', render: (row) => <span>{row.lowStockThreshold}</span> },
-                { key: 'actions', label: 'Adjust', render: (row) => <button type="button" onClick={() => setAdjustingVariant(row.variant)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Adjust</button> },
+                { key: 'actions', label: 'Adjust', render: (row) => <button type="button" onClick={() => { setAdjustError(''); setAdjustingVariant(row.variant); }} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Adjust</button> },
               ]}
               rows={items}
               emptyMessage="No inventory records found."
@@ -3275,8 +3306,9 @@ function AdminPage({ initialSection }) {
             <div className="w-full max-w-xl rounded-[28px] border border-white/10 bg-[#0d0d0d] p-6">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-2xl font-black uppercase tracking-[-0.05em] text-white">Adjust inventory</h3>
-                <button type="button" onClick={() => setAdjustingVariant(null)} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
+                <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); }} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
               </div>
+              {adjustError && <div className="mb-4 rounded-[16px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{adjustError}</div>}
               <div className="space-y-4">
                 <input type="number" value={delta} onChange={(event) => setDelta(event.target.value)} placeholder="Delta (+/-)" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
                 <input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
@@ -3291,28 +3323,52 @@ function AdminPage({ initialSection }) {
   };
 
   const OrdersSection = () => {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
-    const { data, isLoading, isError } = useQuery({ queryKey: ['admin-orders', page, statusFilter], queryFn: () => apiClient.get('/orders', { params: { page, limit: 10 } }).then((response) => response.data) });
+    const [actionError, setActionError] = useState('');
+    const { data, isLoading, isError } = useQuery({ queryKey: ['admin-orders', page, statusFilter, search], queryFn: () => apiClient.get('/orders', { params: { page, limit: 10, status: statusFilter || undefined, search: search.trim() || undefined } }).then((response) => response.data) });
     const orders = unwrapPayload(data)?.orders ?? [];
     const totalPages = unwrapPayload(data)?.totalPages || 1;
-    const filteredOrders = orders.filter((order) => {
-      const haystack = `${order.orderNumber || ''} ${order.customerSnapshot?.email || ''} ${order.customerSnapshot?.phone || ''}`.toLowerCase();
-      return haystack.includes(search.toLowerCase()) && (!statusFilter || order.status === statusFilter);
-    });
 
-    const updateStatus = async (id, status) => { await apiClient.patch(`/orders/${id}/status`, { status }); };
-    const createShipment = async (id) => { const result = await apiClient.post(`/admin/orders/${id}/ship`); return unwrapPayload(result.data)?.shipment ?? result.data; };
+    const updateStatus = async (id, status) => {
+      setActionError('');
+      try {
+        await apiClient.patch(`/orders/${id}/status`, { status });
+        await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+        showToast('Order status updated.', 'success');
+      } catch (error) {
+        setActionError(error?.message || 'Unable to update order status.');
+      }
+    };
+    const createShipment = async (id) => {
+      setActionError('');
+      try {
+        const result = await apiClient.post(`/admin/orders/${id}/ship`);
+        await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+        showToast('Shipment created.', 'success');
+        return unwrapPayload(result.data)?.shipment ?? result.data;
+      } catch (error) {
+        setActionError(error?.message || 'Unable to create shipment.');
+        return null;
+      }
+    };
     const downloadInvoice = async (id) => {
-      const response = await apiClient.get(`/admin/orders/${id}/invoice`, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `invoice-${id}.pdf`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      setActionError('');
+      try {
+        const response = await apiClient.get(`/admin/orders/${id}/invoice`, { responseType: 'blob' });
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `invoice-${id}.pdf`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        setActionError(error?.message || 'Unable to download invoice.');
+      }
     };
 
     return (
@@ -3324,8 +3380,8 @@ function AdminPage({ initialSection }) {
               <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-white">Orders</h3>
             </div>
             <div className="flex flex-wrap gap-3">
-              <SearchInput value={search} onChange={setSearch} placeholder="Search orders" />
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search orders" />
+              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
                 <option value="">All statuses</option>
                 <option value="PENDING">PENDING</option>
                 <option value="CONFIRMED">CONFIRMED</option>
@@ -3337,6 +3393,8 @@ function AdminPage({ initialSection }) {
             </div>
           </div>
         </div>
+
+        {actionError && <div className="rounded-[20px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{actionError}</div>}
 
         {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load orders." /> : (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
@@ -3357,7 +3415,7 @@ function AdminPage({ initialSection }) {
                   </div>
                 ) },
               ]}
-              rows={filteredOrders}
+              rows={orders}
               emptyMessage="No orders match the current filter."
             />
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
@@ -3368,14 +3426,28 @@ function AdminPage({ initialSection }) {
   };
 
   const CustomersSection = () => {
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
+    const [actionError, setActionError] = useState('');
     const { data, isLoading, isError } = useQuery({ queryKey: ['admin-customers', page], queryFn: () => apiClient.get('/admin/users', { params: { page, limit: 10 } }).then((response) => response.data) });
     const users = unwrapPayload(data)?.items ?? [];
     const totalPages = unwrapPayload(data)?.totalPages || 1;
     const filteredUsers = users.filter((user) => `${user.firstName || ''} ${user.lastName || ''} ${user.email || ''}`.toLowerCase().includes(search.toLowerCase()));
 
-    const toggleStatus = async (id, isActive) => { await adminApi.updateUserStatus(id, isActive); };
+    const toggleStatus = async (row) => {
+      setActionError('');
+      const nextActive = !row.isActive;
+      if (!nextActive && !window.confirm(`Disable ${row.firstName || ''} ${row.lastName || ''} (${row.email || 'account'})? They will be signed out and blocked from logging in.`)) return;
+      try {
+        await adminApi.updateUserStatus(row._id, nextActive);
+        await queryClient.invalidateQueries({ queryKey: ['admin-customers'] });
+        showToast(nextActive ? 'Account enabled.' : 'Account disabled.', 'success');
+      } catch (error) {
+        setActionError(error?.message || 'Unable to update account status.');
+      }
+    };
 
     return (
       <div className="space-y-6">
@@ -3389,6 +3461,8 @@ function AdminPage({ initialSection }) {
           </div>
         </div>
 
+        {actionError && <div className="rounded-[20px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{actionError}</div>}
+
         {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load user accounts." /> : (
           <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
             <DataTable
@@ -3397,7 +3471,7 @@ function AdminPage({ initialSection }) {
                 { key: 'email', label: 'Email', render: (row) => <span>{row.email}</span> },
                 { key: 'role', label: 'Role', render: (row) => <StatusBadge status={row.role} /> },
                 { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.isActive ? 'ACTIVE' : 'INACTIVE'} /> },
-                { key: 'actions', label: 'Action', render: (row) => <button type="button" onClick={() => toggleStatus(row._id, !row.isActive)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">{row.isActive ? 'Disable' : 'Enable'}</button> },
+                { key: 'actions', label: 'Action', render: (row) => <button type="button" onClick={() => toggleStatus(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">{row.isActive ? 'Disable' : 'Enable'}</button> },
               ]}
               rows={filteredUsers}
               emptyMessage="No users found."

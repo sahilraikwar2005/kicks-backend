@@ -1497,10 +1497,22 @@ Fetches a PDF invoice for the customer.
 ## GET /api/v1/orders
 
 **Purpose**
-Lists all orders as admin.
+Lists all orders as admin with server-side pagination and filters.
 
 **Authentication**
 - Admin / Super Admin
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---:|---|
+| page | number | No | default 1 |
+| limit | number | No | default 20, max 100 |
+| status | string | No | order status filter |
+| search | string | No | matches order number, customer email, or phone |
+
+**Response**
+- Returns `{ orders, page, limit, total, totalPages }`.
 
 ## PATCH /api/v1/orders/:id/status
 

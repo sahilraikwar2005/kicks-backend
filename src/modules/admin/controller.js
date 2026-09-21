@@ -2,6 +2,7 @@ import { apiSuccess } from '../../utils/apiResponse.js';
 import { adminService } from './service.js';
 import { productService } from '../products/service.js';
 import { auditService } from '../audit/service.js';
+import { inventoryService } from '../inventory/service.js';
 import User from '../users/model.js';
 import Inventory from '../inventory/model.js';
 import AuditLog from '../audit/model.js';
@@ -9,7 +10,9 @@ import { adminSettingsService } from './settings.service.js';
 
 export const adminController = {
   listProducts: async (req, res) => {
-    const result = await productService.listProducts(req.query);
+    const filters = { ...req.query };
+    if (!filters.status) filters.includeAllStatuses = true;
+    const result = await productService.listProducts(filters);
     return res.status(200).json(apiSuccess('Admin products fetched successfully', result));
   },
 
@@ -44,12 +47,33 @@ export const adminController = {
 
   updateUserStatus: async (req, res) => {
     const { isActive } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, { isActive: Boolean(isActive) }, { new: true }).select('firstName lastName email role isActive emailVerified');
-    if (!user) {
+    const target = await User.findById(req.params.id).select('firstName lastName email role isActive emailVerified');
+    if (!target) {
       const error = new Error('User not found');
       error.statusCode = 404;
       throw error;
     }
+    if (String(target._id) === String(req.user._id) && !isActive) {
+      const error = new Error('You cannot deactivate your own account');
+      error.statusCode = 403;
+      throw error;
+    }
+    if (target.role !== 'CUSTOMER' && req.user.role !== 'SUPER_ADMIN') {
+      const error = new Error('Only Super Admins can change the status of admin accounts');
+      error.statusCode = 403;
+      throw error;
+    }
+    if (!isActive && target.role === 'SUPER_ADMIN') {
+      const remaining = await User.countDocuments({ role: 'SUPER_ADMIN', isActive: true, _id: { $ne: target._id } });
+      if (remaining === 0) {
+        const error = new Error('Cannot deactivate the last active Super Admin');
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+    target.isActive = Boolean(isActive);
+    await target.save();
+    const user = target.toObject();
     await auditService.record({ actor: req.user._id, action: 'USER_STATUS_UPDATED', resource: 'user', resourceId: user._id, metadata: { isActive: user.isActive }, ip: req.ip });
     res.status(200).json(apiSuccess('User status updated', { user }));
   },
@@ -85,20 +109,17 @@ export const adminController = {
 
   adjustInventory: async (req, res) => {
     const delta = Number(req.body.delta);
-    const item = await Inventory.findOne({ variant: req.params.variantId });
-    if (!item) {
+    const existing = await Inventory.findOne({ variant: req.params.variantId }).select('_id product variant');
+    if (!existing) {
       const error = new Error('Inventory not found');
       error.statusCode = 404;
       throw error;
     }
-    const next = Number(item.availableStock) + delta;
-    if (next < 0) {
-      const error = new Error('Inventory adjustment would create negative stock');
-      error.statusCode = 409;
-      throw error;
-    }
-    item.availableStock = next;
-    await item.save();
+    const item = await inventoryService.adjustStock(existing.product, req.params.variantId, delta, {
+      reason: req.body.reason || 'admin_adjust',
+      referenceId: req.body.referenceId || '',
+      metadata: { actor: String(req.user._id), source: 'admin' },
+    });
     await auditService.record({ actor: req.user._id, action: 'INVENTORY_ADJUSTED', resource: 'inventory', resourceId: item._id, metadata: { delta, reason: req.body.reason || 'admin_adjust' }, ip: req.ip });
     res.status(200).json(apiSuccess('Inventory adjusted', { item }));
   },
