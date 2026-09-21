@@ -111,7 +111,7 @@ export function AuthProvider({ children }) {
       verifyEmail,
       resendVerification,
       isAuthenticated: Boolean(user),
-      isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
+      isAdmin: user?.role === 'ADMIN',
     }),
     [user, loading],
   );

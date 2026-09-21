@@ -58,18 +58,10 @@ export const adminController = {
       error.statusCode = 403;
       throw error;
     }
-    if (target.role !== 'CUSTOMER' && req.user.role !== 'SUPER_ADMIN') {
-      const error = new Error('Only Super Admins can change the status of admin accounts');
+    if (target.role === 'ADMIN' && !isActive) {
+      const error = new Error('Admin accounts cannot be deactivated from this panel');
       error.statusCode = 403;
       throw error;
-    }
-    if (!isActive && target.role === 'SUPER_ADMIN') {
-      const remaining = await User.countDocuments({ role: 'SUPER_ADMIN', isActive: true, _id: { $ne: target._id } });
-      if (remaining === 0) {
-        const error = new Error('Cannot deactivate the last active Super Admin');
-        error.statusCode = 403;
-        throw error;
-      }
     }
     target.isActive = Boolean(isActive);
     await target.save();

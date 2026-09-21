@@ -3,6 +3,7 @@ import Cart from '../cart/model.js';
 import Product from '../products/model.js';
 import Address from '../addresses/model.js';
 import User from '../users/model.js';
+import { adminSettingsService } from '../admin/settings.service.js';
 import {
   sendOrderConfirmationEmail,
   sendOrderCancelledEmail,
@@ -115,7 +116,7 @@ export const orderService = {
 
     try {
       const recipient = customer?.email ? customer : await User.findById(userId).select('firstName lastName email');
-      if (recipient?.email) {
+      if (recipient?.email && (await adminSettingsService.isEmailEnabled('order'))) {
         await sendOrderConfirmationEmail(recipient, order);
       }
     } catch (error) {
@@ -200,13 +201,13 @@ export const orderService = {
     try {
       const customer = order.customerSnapshot?.email ? order.customerSnapshot : await User.findById(order.user).select('firstName lastName email');
       if (customer?.email) {
-        if (status === 'CANCELLED') {
+        if (status === 'CANCELLED' && (await adminSettingsService.isEmailEnabled('order'))) {
           await sendOrderCancelledEmail(customer, order);
-        } else if (status === 'SHIPPED') {
+        } else if (status === 'SHIPPED' && (await adminSettingsService.isEmailEnabled('shipping'))) {
           await sendShippedEmail(customer, order);
-        } else if (status === 'OUT_FOR_DELIVERY') {
+        } else if (status === 'OUT_FOR_DELIVERY' && (await adminSettingsService.isEmailEnabled('shipping'))) {
           await sendOutForDeliveryEmail(customer, order);
-        } else if (status === 'DELIVERED') {
+        } else if (status === 'DELIVERED' && (await adminSettingsService.isEmailEnabled('delivery'))) {
           await sendDeliveryEmail(customer, order);
         }
       }
@@ -228,7 +229,7 @@ export const orderService = {
 
     try {
       const customer = order.customerSnapshot?.email ? order.customerSnapshot : await User.findById(userId).select('firstName lastName email');
-      if (customer?.email) {
+      if (customer?.email && (await adminSettingsService.isEmailEnabled('order'))) {
         await sendOrderCancelledEmail(customer, order);
       }
     } catch (error) {

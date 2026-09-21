@@ -80,7 +80,6 @@ const productBlueprints = [
 ];
 
 const demoUsers = [
-  { email: 'demo.superadmin@kicks.local', firstName: 'Super', lastName: 'Admin', role: 'SUPER_ADMIN' },
   { email: 'demo.admin@kicks.local', firstName: 'Demo', lastName: 'Admin', role: 'ADMIN' },
   { email: 'demo.customer1@kicks.local', firstName: 'Aisha', lastName: 'Patel', role: 'CUSTOMER' },
   { email: 'demo.customer2@kicks.local', firstName: 'Rohan', lastName: 'Sharma', role: 'CUSTOMER' },
@@ -527,7 +526,6 @@ async function seedReviews() {
 
 async function verifyDatabase() {
   const checks = [
-    ['SUPER_ADMIN', await User.exists({ role: 'SUPER_ADMIN', email: 'demo.superadmin@kicks.local' })],
     ['ADMIN', await User.exists({ role: 'ADMIN', email: 'demo.admin@kicks.local' })],
     ['CUSTOMER_USERS', await User.countDocuments({ role: 'CUSTOMER' })],
     ['PRODUCTS', await Product.countDocuments({ status: 'PUBLISHED' })],
@@ -582,7 +580,6 @@ async function main() {
     console.log('=====================================');
     console.log('KICKS DEMO SEED COMPLETE');
     console.log('=====================================');
-    console.log(`SUPER_ADMIN: ${stats.created + stats.updated > 0 ? '1 verified' : 'not created'}`);
     console.log(`ADMIN: ${await User.exists({ role: 'ADMIN', email: 'demo.admin@kicks.local' }) ? '1 verified' : 'missing'}`);
     console.log(`CUSTOMERS: ${await User.countDocuments({ role: 'CUSTOMER' })}`);
     console.log(`BRANDS: ${await Brand.countDocuments()}`);
@@ -601,10 +598,6 @@ async function main() {
     console.log('=====================================');
     console.log('DEMO LOGIN CREDENTIALS');
     console.log('=====================================');
-    console.log('SUPER_ADMIN');
-    console.log(`Email: demo.superadmin@kicks.local`);
-    console.log(`Password: ${DEMO_PASSWORD}`);
-    console.log('');
     console.log('ADMIN');
     console.log(`Email: demo.admin@kicks.local`);
     console.log(`Password: ${DEMO_PASSWORD}`);

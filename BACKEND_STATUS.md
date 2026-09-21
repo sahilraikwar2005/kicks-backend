@@ -114,7 +114,7 @@ Implementation details:
 - Password reset tokens are hashed and expire in time.
 - Email verification tokens are hashed and checked against the user record.
 - Auth middleware `protect` and `optionalAuth` use JWT verification and reject invalid/expired tokens.
-- Admin authorization is done via the role middleware (`isAdmin`, `isSuperAdmin`).
+- Admin authorization is done via the role middleware (`isAdmin`).
 - Privilege escalation prevention is enforced by role-based checks and not trusting frontend role values.
 - Rate limiting is applied to auth endpoints.
 - Query/body validation uses Joi in route handlers.
@@ -132,7 +132,7 @@ Fields include:
 - lastName
 - email
 - password (select: false)
-- role (CUSTOMER / ADMIN / SUPER_ADMIN)
+- role (CUSTOMER / ADMIN)
 - phone
 - isActive
 - emailVerified
@@ -668,7 +668,7 @@ Admin security is implemented with `protect` and `isAdmin` middleware.
 Observed protections:
 
 - `protect` verifies the access token and checks active user state
-- `isAdmin` only allows ADMIN and SUPER_ADMIN roles
+- `isAdmin` only allows the ADMIN role
 - admin routes are protected at the route layer
 - validation is used on admin endpoints where appropriate
 - audit logs are used for sensitive actions in the admin controller and service patterns

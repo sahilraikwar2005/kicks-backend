@@ -2102,7 +2102,7 @@ Lists users.
 |---|---|---:|---|
 | page | number | No | default 1 |
 | limit | number | No | default 20 |
-| role | string | No | `CUSTOMER`, `ADMIN`, `SUPER_ADMIN` |
+| role | string | No | `CUSTOMER`, `ADMIN` |
 | isActive | boolean | No | filter active users |
 
 ### GET /api/v1/admin/users/:id
@@ -2155,12 +2155,12 @@ Shows stock movements for a variant.
 ### GET /api/v1/admin/settings
 
 **Purpose**
-Lists admin settings.
+Lists admin settings, merged with built-in defaults for unset keys. Each entry carries a `persisted` flag.
 
 ### PATCH /api/v1/admin/settings/:key
 
 **Purpose**
-Updates an admin setting.
+Updates an admin setting. Only allowlisted keys are accepted (`store.*`, `contact.*`, `checkout.reviewsEnabled`, `notifications.*Emails`); unknown keys and invalid values return `400`. Secrets and provider credentials are never editable here.
 
 **Request Body**
 

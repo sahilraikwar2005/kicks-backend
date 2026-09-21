@@ -12,5 +12,4 @@ export const authorize = (...roles) => (req, res, next) => {
   return next();
 };
 
-export const isAdmin = authorize('ADMIN', 'SUPER_ADMIN');
-export const isSuperAdmin = authorize('SUPER_ADMIN');
+export const isAdmin = authorize('ADMIN');

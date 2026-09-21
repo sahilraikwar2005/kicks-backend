@@ -7,6 +7,7 @@ import Payment from './model.js';
 import PaymentWebhookEvent from './webhook.model.js';
 import { refundService } from './refund.service.js';
 import { auditService } from '../audit/service.js';
+import { adminSettingsService } from '../admin/settings.service.js';
 import { inventoryService } from '../inventory/service.js';
 import User from '../users/model.js';
 import { sendPaymentConfirmationEmail } from '../../services/email.service.js';
@@ -147,7 +148,7 @@ export const paymentService = {
     try {
       if (order && !(payment.metadata && payment.metadata.paymentConfirmationEmailSent)) {
         const customer = order.customerSnapshot?.email ? order.customerSnapshot : await User.findById(order.user).select('firstName lastName email');
-        if (customer?.email) {
+        if (customer?.email && (await adminSettingsService.isEmailEnabled('payment'))) {
           await sendPaymentConfirmationEmail(customer, order);
           await Payment.updateOne(
             { _id: payment._id },

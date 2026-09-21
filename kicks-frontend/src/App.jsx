@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import {
   AlertCircle,
+  Archive,
   ArrowRight,
+  Bell,
   Check,
   ChevronRight,
   Edit3,
@@ -12,18 +14,23 @@ import {
   EyeOff,
   ExternalLink,
   Heart,
+  Info,
   KeyRound,
   LayoutDashboard,
   Loader2,
   LogOut,
   MapPin,
+  Menu,
   Package,
   Plus,
+  Settings,
   ShoppingBag,
   Sparkles,
   Trash2,
+  TrendingUp,
   Truck,
   RefreshCw,
+  Users,
   X,
   User2,
 } from 'lucide-react';
@@ -99,7 +106,7 @@ function AdminRoute() {
   return <Outlet />;
 }
 
-const isAdminRole = (role) => role === 'ADMIN' || role === 'SUPER_ADMIN';
+const isAdminRole = (role) => role === 'ADMIN';
 
 function CustomerRoute() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -3089,7 +3096,7 @@ function DataTable({ columns = [], rows = [], emptyMessage = 'No records found.'
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={row.id || row._id || rowIndex} className="border-t border-white/10">
+            <tr key={row.id || row._id || rowIndex} className="border-t border-white/10 transition hover:bg-white/[0.02]">
               {columns.map((column) => (
                 <td key={`${rowIndex}-${column.key}`} className="px-4 py-3 align-top">
                   {column.render ? column.render(row) : row[column.key] ?? '—'}
@@ -3195,104 +3202,349 @@ function Toast({ message, type = 'info' }) {
   );
 }
 
+function AdminPageHeader({ eyebrow, title, meta, actions }) {
+  return (
+    <div className="mb-6 flex flex-col gap-4 sm:mb-8 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#8d8d8d]">{eyebrow}</p>}
+        <h2 className="mt-2 text-3xl font-black uppercase leading-[0.95] tracking-[-0.03em] text-white sm:text-4xl">{title}</h2>
+        {meta && <p className="mt-2 text-sm text-[#a0a0a0]">{meta}</p>}
+      </div>
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>}
+    </div>
+  );
+}
+
+function AdminKpi({ icon: Icon, label, value, sub }) {
+  return (
+    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5 transition hover:border-white/20">
+      <div className="flex items-center justify-between gap-3">
+        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{label}</p>
+        {Icon && (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/30 bg-[#FFC800]/10 text-[#FFC800]" aria-hidden="true">
+            <Icon size={15} />
+          </span>
+        )}
+      </div>
+      <p className="mt-3 truncate text-3xl font-black tracking-[-0.04em] text-white">{value}</p>
+      {sub && <p className="mt-1.5 truncate text-xs text-[#a0a0a0]">{sub}</p>}
+    </div>
+  );
+}
+
+function AdminCard({ eyebrow, title, action, children, className = '' }) {
+  return (
+    <section className={`rounded-[20px] border border-white/10 bg-[#111111] p-5 sm:p-6 ${className}`}>
+      {(eyebrow || title || action) && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{eyebrow}</p>}
+            {title && <h3 className="mt-1.5 text-xl font-bold text-white">{title}</h3>}
+          </div>
+          {action}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
 function AdminPage({ initialSection }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [searchParams] = useSearchParams();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const sectionFromQuery = searchParams.get('section');
   const section = sectionFromQuery || initialSection || 'dashboard';
-  const sections = [
-    'dashboard',
-    'products',
-    'inventory',
-    'orders',
-    'customers',
-    'shipping',
-    'settings',
+
+  const setSection = (nextSection) => {
+    setDrawerOpen(false);
+    setMenuOpen(false);
+    navigate(nextSection === 'dashboard' ? '/admin' : `/admin/${nextSection}`);
+  };
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    setDrawerOpen(false);
+    await logout().catch(() => {});
+    navigate('/', { replace: true });
+  };
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
+
+  const navGroups = [
+    {
+      label: 'Workspace',
+      items: [
+        { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+        { id: 'orders', label: 'Orders', icon: Package },
+        { id: 'products', label: 'Products', icon: ShoppingBag },
+        { id: 'inventory', label: 'Inventory', icon: Archive },
+        { id: 'customers', label: 'Customers', icon: Users },
+      ],
+    },
+    {
+      label: 'Manage',
+      items: [
+        { id: 'shipping', label: 'Shipping', icon: Truck },
+        { id: 'settings', label: 'Settings', icon: Settings },
+      ],
+    },
   ];
 
-  const setSection = (nextSection) => navigate(nextSection === 'dashboard' ? '/admin' : `/admin/${nextSection}`);
+  const adminName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Store Admin';
+  const adminInitials = `${user?.firstName?.charAt(0) || ''}${user?.lastName?.charAt(0) || ''}`.toUpperCase() || 'A';
+  const todayLabel = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const renderSidebarBody = () => (
+    <>
+      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 px-2 py-2" aria-label="KICKS admin home">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFC800] text-sm font-black text-black">K</span>
+        <span className="leading-tight">
+          <span className="block text-sm font-black uppercase tracking-[0.28em] text-white">Kicks</span>
+          <span className="block text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">Control Center</span>
+        </span>
+      </Link>
+
+      <div className="mt-6 space-y-6">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{group.label}</p>
+            <nav aria-label={group.label} className="space-y-1.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = section === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSection(item.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                      isActive ? 'bg-[#FFC800] text-black' : 'text-[#a8a8a8] hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-auto pt-6">
+        <div className="rounded-[18px] border border-white/10 bg-[#101010] p-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-sm font-black text-[#FFC800]" aria-hidden="true">
+              {adminInitials}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-white">{adminName}</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#8d8d8d]">Store admin</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#d5d5d5] transition hover:border-red-500/40 hover:text-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+          >
+            <LogOut size={14} /> Logout
+          </button>
+        </div>
+      </div>
+    </>
+  );
 
   const DashboardSection = () => {
     const { data, isLoading, isError } = useQuery({ queryKey: ['admin-dashboard'], queryFn: () => adminApi.dashboard() });
     const metrics = unwrapPayload(data)?.metrics ?? {};
-    const cards = [
-      { title: 'Revenue', value: metrics.totalRevenue ? formatMoney(metrics.totalRevenue) : '—', detail: 'Gross sales' },
-      { title: 'Orders', value: metrics.totalOrders ?? '—', detail: 'Processed' },
-      { title: 'Users', value: metrics.totalUsers ?? '—', detail: 'Accounts' },
-      { title: 'Products', value: metrics.totalProducts ?? '—', detail: 'Catalog' },
+    const totalOrders = Number(metrics.totalOrders || 0);
+    const statusPipeline = [
+      { label: 'Pending', value: Number(metrics.pendingOrders || 0) },
+      { label: 'Confirmed', value: Number(metrics.confirmedOrders || 0) },
+      { label: 'Shipped', value: Number(metrics.shippedOrders || 0) },
+      { label: 'Delivered', value: Number(metrics.deliveredOrders || 0) },
+      { label: 'Cancelled', value: Number(metrics.cancelledOrders || 0) },
     ];
     const recentOrders = Array.isArray(metrics.recentOrders) ? metrics.recentOrders : [];
     const lowStockProducts = Array.isArray(metrics.lowStockProducts) ? metrics.lowStockProducts : [];
     const topSellingProducts = Array.isArray(metrics.topSellingProducts) ? metrics.topSellingProducts : [];
+    const maxTopQuantity = Math.max(1, ...topSellingProducts.map((product) => Number(product.quantity || 0)));
 
     if (isLoading) return <Skeleton lines={6} />;
     if (isError) return <ErrorState message="Unable to load the admin dashboard." />;
 
     return (
-      <div className="space-y-8">
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {cards.map((card) => (
-            <div key={card.title} className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">{card.title}</div>
-              <div className="mt-5 text-4xl font-black tracking-[-0.06em] text-white">{card.value}</div>
-              <div className="mt-3 text-sm text-[#c9c9c9]">{card.detail}</div>
-            </div>
-          ))}
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminKpi icon={TrendingUp} label="Revenue" value={metrics.totalRevenue ? formatMoney(metrics.totalRevenue) : '—'} sub="Gross sales" />
+          <AdminKpi icon={Package} label="Orders" value={metrics.totalOrders ?? '—'} sub={`${metrics.pendingOrders || 0} pending`} />
+          <AdminKpi icon={Users} label="Customers" value={metrics.totalUsers ?? '—'} sub="Accounts" />
+          <AdminKpi icon={ShoppingBag} label="Products" value={metrics.totalProducts ?? '—'} sub="Catalog" />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-            <h3 className="text-lg font-bold text-white">Recent orders</h3>
-            {recentOrders.length === 0 ? <div className="mt-4 text-[#d3d3d3]">No recent orders available.</div> : (
-              <div className="mt-5 space-y-3">
-                {recentOrders.map((order) => (
-                  <div key={order._id || order.id} className="flex items-center justify-between rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3">
-                    <div>
-                      <div className="font-semibold text-white">{order.orderNumber || order._id}</div>
-                      <div className="text-xs text-[#a5a5a5]">{new Date(order.createdAt).toLocaleDateString()}</div>
+          <AdminCard eyebrow="Order pipeline" title="Live status distribution">
+            {totalOrders === 0 ? (
+              <p className="text-sm text-[#a0a0a0]">No orders in the pipeline yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {statusPipeline.map((entry) => (
+                  <div key={entry.label}>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-[#d2d2d2]">{entry.label}</span>
+                      <span className="font-semibold text-white">{entry.value}</span>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-white">{formatMoney(order.grandTotal || 0)}</div>
-                      <StatusBadge status={order.status || 'PENDING'} />
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-[#FFC800]"
+                        style={{ width: `${Math.min(100, Math.round((entry.value / totalOrders) * 100))}%` }}
+                      />
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </AdminCard>
 
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-            <h3 className="text-lg font-bold text-white">Low stock</h3>
-            {lowStockProducts.length === 0 ? <div className="mt-4 text-[#d3d3d3]">No low-stock items right now.</div> : (
-              <div className="mt-5 space-y-3">
-                {lowStockProducts.map((product) => {
+          <AdminCard
+            eyebrow="Inventory health"
+            title="Low stock alerts"
+            action={(
+              <button
+                type="button"
+                onClick={() => setSection('inventory')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30"
+              >
+                Manage <ChevronRight size={13} />
+              </button>
+            )}
+          >
+            {lowStockProducts.length === 0 ? (
+              <p className="text-sm text-[#a0a0a0]">No low-stock items right now.</p>
+            ) : (
+              <div className="space-y-3">
+                {lowStockProducts.slice(0, 5).map((product) => {
                   const variant = product.variants?.[0] || {};
+                  const stock = Number(variant.stock ?? 0);
                   return (
-                    <div key={product._id} className="rounded-[18px] border border-white/10 bg-[#181818] p-4">
-                      <div className="font-semibold text-white">{product.name}</div>
-                      <div className="mt-1 text-sm text-[#bcbcbc]">SKU {variant.sku || '—'} • Stock {variant.stock ?? 0}</div>
+                    <div key={product._id} className="flex items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-[#141414] px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-white">{product.name}</div>
+                        <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">SKU {variant.sku || '—'}</div>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${stock <= 0 ? 'bg-red-500/10 text-red-200' : 'bg-[#FFC800]/10 text-[#FFC800]'}`}>
+                        {stock <= 0 ? 'Out' : `${stock} left`}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
+          </AdminCard>
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-lg font-bold text-white">Top sellers</h3>
-          {topSellingProducts.length === 0 ? <div className="mt-4 text-[#d3d3d3]">No sales data yet.</div> : (
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {topSellingProducts.map((product, index) => (
-                <div key={product._id || index} className="rounded-[18px] border border-white/10 bg-[#181818] p-4">
-                  <div className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">#{index + 1}</div>
-                  <div className="mt-2 font-semibold text-white">{product.name || 'Unknown product'}</div>
-                  <div className="mt-2 text-sm text-[#d2d2d2]">Quantity: {product.quantity || 0}</div>
-                  <div className="mt-1 text-sm text-[#d2d2d2]">Revenue: {formatMoney(product.revenue || 0)}</div>
+        <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+          <AdminCard
+            eyebrow="Latest activity"
+            title="Recent orders"
+            action={(
+              <button
+                type="button"
+                onClick={() => setSection('orders')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30"
+              >
+                View all <ChevronRight size={13} />
+              </button>
+            )}
+          >
+            {recentOrders.length === 0 ? (
+              <p className="text-sm text-[#a0a0a0]">No recent orders available.</p>
+            ) : (
+              <>
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="min-w-full text-left text-sm text-[#d8d8d8]">
+                    <thead>
+                      <tr className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">
+                        <th className="py-2 pr-4 font-medium">Order</th>
+                        <th className="py-2 pr-4 font-medium">Amount</th>
+                        <th className="py-2 pr-4 font-medium">Status</th>
+                        <th className="py-2 font-medium">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.slice(0, 6).map((order) => (
+                        <tr key={order._id || order.id} className="border-t border-white/10">
+                          <td className="py-3 pr-4 font-semibold text-white">{order.orderNumber || order._id}</td>
+                          <td className="py-3 pr-4 text-white">{formatMoney(order.grandTotal || 0)}</td>
+                          <td className="py-3 pr-4"><StatusBadge status={order.status || 'PENDING'} /></td>
+                          <td className="py-3 text-xs text-[#a0a0a0]">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="space-y-3 md:hidden">
+                  {recentOrders.slice(0, 6).map((order) => (
+                    <div key={order._id || order.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-[#141414] px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-white">{order.orderNumber || order._id}</div>
+                        <div className="mt-0.5 text-xs text-[#a0a0a0]">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'} • {formatMoney(order.grandTotal || 0)}</div>
+                      </div>
+                      <StatusBadge status={order.status || 'PENDING'} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </AdminCard>
+
+          <AdminCard
+            eyebrow="Top movers"
+            title="Best sellers"
+            action={(
+              <button
+                type="button"
+                onClick={() => setSection('products')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30"
+              >
+                Manage <ChevronRight size={13} />
+              </button>
+            )}
+          >
+            {topSellingProducts.length === 0 ? (
+              <p className="text-sm text-[#a0a0a0]">No sales data yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {topSellingProducts.slice(0, 5).map((product, index) => (
+                  <div key={product._id || index}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="min-w-0 truncate text-sm font-semibold text-white">
+                        <span className="mr-2 text-[#FFC800]">#{index + 1}</span>
+                        {product.name || 'Unknown product'}
+                      </p>
+                      <p className="shrink-0 text-xs text-[#a0a0a0]">{product.quantity || 0} sold</p>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-[#FFC800]"
+                        style={{ width: `${Math.min(100, Math.round((Number(product.quantity || 0) / maxTopQuantity) * 100))}%` }}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-[#a0a0a0]">{formatMoney(product.revenue || 0)} revenue</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </AdminCard>
         </div>
       </div>
     );
@@ -3472,16 +3724,19 @@ function AdminPage({ initialSection }) {
 
     return (
       <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8b8b8b]">Catalog</div>
-              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Products</h3>
-            </div>
-            <button type="button" onClick={openCreate} className="rounded-full bg-white px-5 py-3 text-sm font-medium text-black">Add product</button>
-          </div>
+        <AdminPageHeader
+          eyebrow="Catalog"
+          title="Products"
+          meta={`${unwrapPayload(data)?.total ?? filteredProducts.length} products in catalog`}
+          actions={(
+            <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-[#FFC800] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#ffd233] focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60">
+              <Plus size={15} /> Add product
+            </button>
+          )}
+        />
 
-          <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center">
+        <AdminCard>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex-1"><SearchInput value={search} onChange={setSearch} placeholder="Search products" /></div>
             <FilterBar>
               <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
@@ -3500,31 +3755,62 @@ function AdminPage({ initialSection }) {
               </select>
             </FilterBar>
           </div>
-        </div>
+        </AdminCard>
 
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
+        <AdminCard>
           {toast && <div className="mb-4"><Toast message={toast} /></div>}
           {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load products." /> : (
-            <DataTable
-              columns={[
-                { key: 'name', label: 'Name', render: (row) => <div><div className="font-semibold text-white">{row.name}</div><div className="text-[11px] uppercase tracking-[0.2em] text-[#8d8d8d]">{row.slug}</div></div> },
-                { key: 'brand', label: 'Brand', render: (row) => <span>{row.brand?.name || row.brand || '—'}</span> },
-                { key: 'category', label: 'Category', render: (row) => <span>{row.category?.name || row.category || '—'}</span> },
-                { key: 'price', label: 'Price', render: (row) => <span>{formatMoney(row.price || 0)}</span> },
-                { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-                { key: 'actions', label: 'Actions', render: (row) => (
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => openEdit(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Edit</button>
-                    <button type="button" onClick={() => deleteProduct(row._id, row.name)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200">Delete</button>
+            <>
+              <div className="hidden lg:block">
+                <DataTable
+                  columns={[
+                    { key: 'image', label: '', render: (row) => (row.images?.[0] ? <img src={row.images[0]} alt={row.name || 'Product'} className="h-11 w-11 rounded-xl object-cover" loading="lazy" /> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#181818] text-xs text-[#666]">—</span>) },
+                    { key: 'name', label: 'Name', render: (row) => <div><div className="font-semibold text-white">{row.name}</div><div className="text-[11px] uppercase tracking-[0.2em] text-[#8d8d8d]">{row.slug}</div></div> },
+                    { key: 'brand', label: 'Brand', render: (row) => <span>{row.brand?.name || row.brand || '—'}</span> },
+                    { key: 'category', label: 'Category', render: (row) => <span>{row.category?.name || row.category || '—'}</span> },
+                    { key: 'price', label: 'Price', render: (row) => <span>{formatMoney(row.price || 0)}</span> },
+                    { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
+                    { key: 'actions', label: 'Actions', render: (row) => (
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => openEdit(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Edit</button>
+                        <button type="button" onClick={() => deleteProduct(row._id, row.name)} className="rounded-full border border-red-500/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-red-200 transition hover:bg-red-500/10">Delete</button>
+                      </div>
+                    ) },
+                  ]}
+                  rows={filteredProducts}
+                  emptyMessage="No products match the current filters."
+                />
+              </div>
+              <div className="space-y-3 lg:hidden">
+                {filteredProducts.length === 0 ? (
+                  <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No products match the current filters.</div>
+                ) : filteredProducts.map((row) => (
+                  <div key={row._id} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#141414] p-3">
+                    {row.images?.[0] ? (
+                      <img src={row.images[0]} alt={row.name || 'Product'} className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
+                    ) : (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#181818] text-xs text-[#666]">—</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold text-white">{row.name}</div>
+                      <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{row.brand?.name || row.brand || ''} • {formatMoney(row.price || 0)}</div>
+                      <div className="mt-1.5"><StatusBadge status={row.status} /></div>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-2">
+                      <button type="button" onClick={() => openEdit(row)} aria-label={`Edit ${row.name}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white">
+                        <Edit3 size={14} />
+                      </button>
+                      <button type="button" onClick={() => deleteProduct(row._id, row.name)} aria-label={`Delete ${row.name}`} title="Archive product" className="flex h-9 w-9 items-center justify-center rounded-full border border-red-500/30 text-red-200">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                ) },
-              ]}
-              rows={filteredProducts}
-              emptyMessage="No products match the current filters."
-            />
+                ))}
+              </div>
+            </>
           )}
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+          <div className="mt-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>
+        </AdminCard>
 
         {isFormOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
@@ -3535,6 +3821,7 @@ function AdminPage({ initialSection }) {
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
+                <div className="md:col-span-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Basics</div>
                 <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                 <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                 <FormField label="Brand"><select value={productForm.brand} onChange={(event) => setProductForm({ ...productForm, brand: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white"><option value="">Select brand</option>{brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
@@ -3546,14 +3833,15 @@ function AdminPage({ initialSection }) {
                 <FormField label="Featured"><input type="checkbox" checked={productForm.featured} onChange={(event) => setProductForm({ ...productForm, featured: event.target.checked })} className="h-4 w-4" /></FormField>
                 <FormField label="New arrival"><input type="checkbox" checked={productForm.newArrival} onChange={(event) => setProductForm({ ...productForm, newArrival: event.target.checked })} className="h-4 w-4" /></FormField>
                 <FormField label="Bestseller"><input type="checkbox" checked={productForm.bestSeller} onChange={(event) => setProductForm({ ...productForm, bestSeller: event.target.checked })} className="h-4 w-4" /></FormField>
+                <div className="md:col-span-2 mt-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Content & media</div>
                 <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                 <FormField label="Image URLs"><input value={productForm.images} onChange={(event) => setProductForm({ ...productForm, images: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                 <FormField label="SEO title"><input value={productForm.seo.title} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, title: event.target.value } })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                 <FormField label="SEO description"><input value={productForm.seo.description} onChange={(event) => setProductForm({ ...productForm, seo: { ...productForm.seo, description: event.target.value } })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField>
                 <div className="md:col-span-2"><FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField></div>
                 <div className="md:col-span-2"><FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="w-full rounded-[20px] border border-white/10 bg-[#181818] px-4 py-3 text-white" /></FormField></div>
-                <div className="md:col-span-2 rounded-[20px] border border-white/10 bg-[#181818] p-4">
-                  <div className="mb-3 text-sm font-medium text-white">Variant</div>
+                <div className="md:col-span-2 mt-2 rounded-[20px] border border-white/10 bg-[#181818] p-4">
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Variant</div>
                   <div className="grid gap-4 md:grid-cols-3">
                     <input value={productForm.variants[0]?.sku || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], sku: event.target.value }] })} placeholder="SKU" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
                     <input value={productForm.variants[0]?.size || ''} onChange={(event) => setProductForm({ ...productForm, variants: [{ ...productForm.variants[0], size: event.target.value }] })} placeholder="Size" className="rounded-full border border-white/10 bg-[#111111] px-4 py-3 text-white" />
@@ -3586,11 +3874,35 @@ function AdminPage({ initialSection }) {
     const [reason, setReason] = useState('admin_adjustment');
     const [referenceId, setReferenceId] = useState('');
     const [adjustError, setAdjustError] = useState('');
+    const [showMovements, setShowMovements] = useState(false);
     const { data, isLoading, isError } = useQuery({ queryKey: ['admin-inventory', page, lowStockOnly], queryFn: () => apiClient.get('/admin/inventory', { params: { page, limit: 10, lowStock: lowStockOnly || undefined } }).then((response) => response.data) });
     const { data: lowStockData } = useQuery({ queryKey: ['admin-low-stock'], queryFn: () => apiClient.get('/admin/inventory/low-stock').then((response) => response.data) });
     const items = unwrapPayload(data)?.items ?? [];
     const totalPages = unwrapPayload(data)?.totalPages || 1;
+    const totalItems = unwrapPayload(data)?.total ?? null;
     const lowStockItems = unwrapPayload(lowStockData)?.items ?? [];
+    const movementsQuery = useQuery({
+      queryKey: ['admin-inventory-movements', adjustingVariant],
+      queryFn: () => adminApi.inventoryMovements(adjustingVariant, { page: 1, limit: 5 }),
+      enabled: Boolean(adjustingVariant) && showMovements,
+    });
+    const movements = unwrapPayload(movementsQuery.data)?.items ?? [];
+
+    const stockState = (row) => {
+      const available = Number(row.availableStock ?? 0);
+      const threshold = Number(row.lowStockThreshold ?? 5);
+      if (available <= 0) return 'out';
+      if (available <= threshold) return 'low';
+      return 'healthy';
+    };
+
+    const stockPill = (state) => (
+      <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+        state === 'out' ? 'bg-red-500/10 text-red-200' : state === 'low' ? 'bg-[#FFC800]/10 text-[#FFC800]' : 'bg-emerald-500/10 text-emerald-300'
+      }`}>
+        {state === 'out' ? 'Out' : state === 'low' ? 'Low' : 'Healthy'}
+      </span>
+    );
 
     const adjustInventory = async () => {
       setAdjustError('');
@@ -3602,6 +3914,7 @@ function AdminPage({ initialSection }) {
       try {
         await apiClient.post(`/admin/inventory/${adjustingVariant}/adjust`, { delta: parsedDelta, reason, referenceId });
         setAdjustingVariant(null);
+        setShowMovements(false);
         setDelta(0);
         setReason('admin_adjustment');
         setReferenceId('');
@@ -3618,54 +3931,108 @@ function AdminPage({ initialSection }) {
 
     return (
       <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Inventory</div>
-              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Stock control</h3>
-            </div>
-            <label className="flex items-center gap-3 text-sm text-[#d8d8d8]"><input type="checkbox" checked={lowStockOnly} onChange={(event) => setLowStockOnly(event.target.checked)} className="h-4 w-4" /> Low stock only</label>
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <h3 className="text-lg font-bold text-white">Low-stock summary</h3>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {lowStockItems.length === 0 ? <span className="text-[#d3d3d3]">No stock alerts.</span> : lowStockItems.slice(0, 6).map((item) => <span key={item._id} className="rounded-full border border-white/10 bg-[#181818] px-3 py-2 text-xs text-white">{item.product?.name || 'Item'}: {item.availableStock}</span>)}
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
-          {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load inventory." /> : (
-            <DataTable
-              columns={[
-                { key: 'product', label: 'Product', render: (row) => <div className="font-semibold text-white">{row.product?.name || 'Product'}</div> },
-                { key: 'variant', label: 'Variant', render: (row) => <span>{row.variant || '—'}</span> },
-                { key: 'availableStock', label: 'Stock', render: (row) => <span>{row.availableStock}</span> },
-                { key: 'reservedStock', label: 'Reserved', render: (row) => <span>{row.reservedStock}</span> },
-                { key: 'lowStockThreshold', label: 'Threshold', render: (row) => <span>{row.lowStockThreshold}</span> },
-                { key: 'actions', label: 'Adjust', render: (row) => <button type="button" onClick={() => { setAdjustError(''); setAdjustingVariant(row.variant); }} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Adjust</button> },
-              ]}
-              rows={items}
-              emptyMessage="No inventory records found."
-            />
+        <AdminPageHeader
+          eyebrow="Stock control"
+          title="Inventory"
+          meta={`${totalItems ?? items.length} items tracked • ${lowStockItems.length} low-stock alerts`}
+          actions={(
+            <label className="flex cursor-pointer items-center gap-3 rounded-full border border-white/10 px-4 py-2.5 text-sm text-[#d8d8d8] transition hover:border-white/25">
+              <input type="checkbox" checked={lowStockOnly} onChange={(event) => setLowStockOnly(event.target.checked)} className="h-4 w-4 accent-[#FFC800]" />
+              Low stock only
+            </label>
           )}
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+        />
+
+        <AdminCard eyebrow="Alerts" title="Low-stock summary">
+          <div className="flex flex-wrap gap-2.5">
+            {lowStockItems.length === 0 ? <span className="text-sm text-[#a0a0a0]">No stock alerts.</span> : lowStockItems.slice(0, 8).map((item) => (
+              <span key={item._id} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#141414] px-3 py-1.5 text-xs text-white">
+                <span className={`h-1.5 w-1.5 rounded-full ${Number(item.availableStock ?? 0) <= 0 ? 'bg-red-400' : 'bg-[#FFC800]'}`} />
+                {item.product?.name || 'Item'}: {item.availableStock}
+              </span>
+            ))}
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load inventory." /> : (
+            <>
+              <div className="hidden lg:block">
+                <DataTable
+                  columns={[
+                    { key: 'product', label: 'Product', render: (row) => <div className="font-semibold text-white">{row.product?.name || 'Product'}</div> },
+                    { key: 'variant', label: 'Variant', render: (row) => <span className="font-mono text-xs text-[#c4c4c4]">{String(row.variant || '—').slice(-8) || '—'}</span> },
+                    { key: 'availableStock', label: 'Stock', render: (row) => <span className="font-semibold text-white">{row.availableStock}</span> },
+                    { key: 'state', label: 'State', render: (row) => stockPill(stockState(row)) },
+                    { key: 'reservedStock', label: 'Reserved', render: (row) => <span>{row.reservedStock}</span> },
+                    { key: 'lowStockThreshold', label: 'Threshold', render: (row) => <span>{row.lowStockThreshold}</span> },
+                    { key: 'actions', label: 'Adjust', render: (row) => <button type="button" onClick={() => { setAdjustError(''); setShowMovements(false); setAdjustingVariant(row.variant); }} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Adjust</button> },
+                  ]}
+                  rows={items}
+                  emptyMessage="No inventory records found."
+                />
+              </div>
+              <div className="space-y-3 lg:hidden">
+                {items.length === 0 ? (
+                  <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No inventory records found.</div>
+                ) : items.map((row) => (
+                  <div key={row._id} className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-white">{row.product?.name || 'Product'}</div>
+                        <div className="mt-0.5 truncate font-mono text-xs text-[#8d8d8d]">{String(row.variant || '')}</div>
+                      </div>
+                      {stockPill(stockState(row))}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                      <span className="text-[#a0a0a0]">Stock <strong className="text-white">{row.availableStock}</strong> • Reserved {row.reservedStock} • Threshold {row.lowStockThreshold}</span>
+                      <button type="button" onClick={() => { setAdjustError(''); setShowMovements(false); setAdjustingVariant(row.variant); }} className="shrink-0 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white">Adjust</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <div className="mt-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>
+        </AdminCard>
 
         {adjustingVariant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-xl rounded-[28px] border border-white/10 bg-[#0d0d0d] p-6">
+            <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[24px] border border-white/10 bg-[#0d0d0d] p-6">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Adjust inventory</h3>
-                <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); }} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
+                <button type="button" onClick={() => { setAdjustingVariant(null); setAdjustError(''); setShowMovements(false); }} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Close</button>
               </div>
               {adjustError && <div className="mb-4 rounded-[16px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{adjustError}</div>}
               <div className="space-y-4">
-                <input type="number" value={delta} onChange={(event) => setDelta(event.target.value)} placeholder="Delta (+/-)" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-                <input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-                <input value={referenceId} onChange={(event) => setReferenceId(event.target.value)} placeholder="Reference ID" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
-                <button type="button" onClick={adjustInventory} className="w-full rounded-full bg-white px-6 py-3 text-sm font-medium text-black">Apply adjustment</button>
+                <input type="number" value={delta} onChange={(event) => setDelta(event.target.value)} placeholder="Delta (+/-)" aria-label="Stock delta" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
+                <input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason" aria-label="Reason" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
+                <input value={referenceId} onChange={(event) => setReferenceId(event.target.value)} placeholder="Reference ID" aria-label="Reference ID" className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
+                <button type="button" onClick={adjustInventory} className="w-full rounded-full bg-[#FFC800] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#ffd233]">Apply adjustment</button>
+                <button type="button" onClick={() => setShowMovements((current) => !current)} className="w-full rounded-full border border-white/10 px-6 py-3 text-sm text-white transition hover:border-white/30">
+                  {showMovements ? 'Hide movement history' : 'View movement history'}
+                </button>
+                {showMovements && (
+                  <div className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
+                    {movementsQuery.isLoading ? (
+                      <Skeleton lines={3} />
+                    ) : movementsQuery.isError ? (
+                      <p className="text-sm text-red-300">Unable to load movement history.</p>
+                    ) : movements.length === 0 ? (
+                      <p className="text-sm text-[#a0a0a0]">No movements recorded for this variant.</p>
+                    ) : (
+                      <ul className="space-y-2.5">
+                        {movements.map((movement) => (
+                          <li key={movement._id} className="flex items-center justify-between gap-3 text-sm">
+                            <span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-[#d2d2d2]">{movement.type}</span>
+                            <span className="font-semibold text-white">{movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}</span>
+                            <span className="truncate text-xs text-[#8d8d8d]">{movement.reason || ''}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -3681,9 +4048,25 @@ function AdminPage({ initialSection }) {
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
     const [actionError, setActionError] = useState('');
+    const [expandedOrderId, setExpandedOrderId] = useState(null);
     const { data, isLoading, isError } = useQuery({ queryKey: ['admin-orders', page, statusFilter, search], queryFn: () => apiClient.get('/orders', { params: { page, limit: 10, status: statusFilter || undefined, search: search.trim() || undefined } }).then((response) => response.data) });
     const orders = unwrapPayload(data)?.orders ?? [];
     const totalPages = unwrapPayload(data)?.totalPages || 1;
+    const totalOrders = unwrapPayload(data)?.total ?? orders.length;
+    const expandedOrder = orders.find((order) => String(order._id) === String(expandedOrderId)) || null;
+
+    const orderActions = (row) => (
+      <div className="flex flex-wrap gap-2">
+        <select value={row.status} onChange={(event) => updateStatus(row._id, event.target.value)} aria-label={`Update status for ${row.orderNumber || 'order'}`} className="rounded-full border border-white/10 bg-[#181818] px-3 py-2 text-xs text-white">
+          {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((statusItem) => <option key={statusItem} value={statusItem}>{statusItem}</option>)}
+        </select>
+        <button type="button" onClick={() => createShipment(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Ship</button>
+        <button type="button" onClick={() => downloadInvoice(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Invoice</button>
+        <button type="button" onClick={() => setExpandedOrderId((current) => (String(current) === String(row._id) ? null : row._id))} aria-expanded={String(expandedOrderId) === String(row._id)} className="rounded-full border border-[#FFC800]/40 px-3 py-2 text-xs uppercase tracking-[0.2em] text-[#FFC800] transition hover:bg-[#FFC800]/10">
+          {String(expandedOrderId) === String(row._id) ? 'Hide' : 'Details'}
+        </button>
+      </div>
+    );
 
     const updateStatus = async (id, status) => {
       setActionError('');
@@ -3725,15 +4108,14 @@ function AdminPage({ initialSection }) {
 
     return (
       <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Operations</div>
-              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Orders</h3>
-            </div>
+        <AdminPageHeader
+          eyebrow="Order management"
+          title="Orders"
+          meta={`${totalOrders} order${totalOrders === 1 ? '' : 's'} in view`}
+          actions={(
             <div className="flex flex-wrap gap-3">
               <SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder="Search orders" />
-              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter by status" className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
                 <option value="">All statuses</option>
                 <option value="PENDING">PENDING</option>
                 <option value="CONFIRMED">CONFIRMED</option>
@@ -3743,35 +4125,113 @@ function AdminPage({ initialSection }) {
                 <option value="CANCELLED">CANCELLED</option>
               </select>
             </div>
-          </div>
-        </div>
+          )}
+        />
 
         {actionError && <div className="rounded-[20px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{actionError}</div>}
 
-        {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load orders." /> : (
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
-            <DataTable
-              columns={[
-                { key: 'orderNumber', label: 'Order', render: (row) => <div><div className="font-semibold text-white">{row.orderNumber}</div><div className="text-[11px] uppercase tracking-[0.18em] text-[#8d8d8d]">{row.customerSnapshot?.email || 'Customer'}</div></div> },
-                { key: 'items', label: 'Items', render: (row) => <span>{row.items?.length || 0}</span> },
-                { key: 'grandTotal', label: 'Total', render: (row) => <span>{formatMoney(row.grandTotal || 0)}</span> },
-                { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-                { key: 'paymentStatus', label: 'Payment', render: (row) => <StatusBadge status={row.paymentStatus} /> },
-                { key: 'actions', label: 'Actions', render: (row) => (
-                  <div className="flex flex-wrap gap-2">
-                    <select defaultValue={row.status} onChange={(event) => updateStatus(row._id, event.target.value)} className="rounded-full border border-white/10 bg-[#181818] px-3 py-2 text-xs text-white">
-                      {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((statusItem) => <option key={statusItem} value={statusItem}>{statusItem}</option>)}
-                    </select>
-                    <button type="button" onClick={() => createShipment(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Ship</button>
-                    <button type="button" onClick={() => downloadInvoice(row._id)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">Invoice</button>
+        {expandedOrder && (
+          <AdminCard
+            eyebrow="Order detail"
+            title={expandedOrder.orderNumber || 'Order'}
+            action={(
+              <button type="button" onClick={() => setExpandedOrderId(null)} className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">
+                Close
+              </button>
+            )}
+          >
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Status</p>
+                <div className="mt-2"><StatusBadge status={expandedOrder.status} /></div>
+                <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Payment</p>
+                <div className="mt-2"><StatusBadge status={expandedOrder.paymentStatus} /></div>
+                <p className="mt-3 text-xs text-[#8d8d8d]">Placed {expandedOrder.createdAt ? new Date(expandedOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</p>
+              </div>
+              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Customer</p>
+                <p className="mt-2 truncate text-sm font-semibold text-white">{`${expandedOrder.customerSnapshot?.firstName || ''} ${expandedOrder.customerSnapshot?.lastName || ''}`.trim() || '—'}</p>
+                <p className="mt-1 truncate text-xs text-[#a0a0a0]">{expandedOrder.customerSnapshot?.email || '—'}</p>
+                {expandedOrder.customerSnapshot?.phone && <p className="mt-1 text-xs text-[#a0a0a0]">{expandedOrder.customerSnapshot.phone}</p>}
+              </div>
+              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Ship to</p>
+                <p className="mt-2 text-xs leading-relaxed text-[#d2d2d2]">
+                  {[expandedOrder.shippingAddress?.firstName, expandedOrder.shippingAddress?.lastName].filter(Boolean).join(' ') || '—'}<br />
+                  {expandedOrder.shippingAddress?.line1 || ''}{expandedOrder.shippingAddress?.line2 ? `, ${expandedOrder.shippingAddress.line2}` : ''}<br />
+                  {[expandedOrder.shippingAddress?.city, expandedOrder.shippingAddress?.state, expandedOrder.shippingAddress?.postalCode].filter(Boolean).join(', ') || ''}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Amounts</p>
+                <div className="mt-2 space-y-1.5 text-xs text-[#d2d2d2]">
+                  <div className="flex justify-between gap-3"><span>Subtotal</span><span className="text-white">{formatMoney(expandedOrder.subtotal || 0)}</span></div>
+                  <div className="flex justify-between gap-3"><span>Shipping</span><span className="text-white">{formatMoney(expandedOrder.shippingCharge || 0)}</span></div>
+                  <div className="flex justify-between gap-3"><span>Tax</span><span className="text-white">{formatMoney(expandedOrder.tax || 0)}</span></div>
+                  <div className="flex justify-between gap-3 border-t border-white/10 pt-1.5 text-sm font-semibold text-white"><span>Total</span><span>{formatMoney(expandedOrder.grandTotal || 0)}</span></div>
+                  {expandedOrder.paymentId && <div className="truncate text-[#8d8d8d]">Payment ID: {expandedOrder.paymentId}</div>}
+                </div>
+              </div>
+            </div>
+            {Array.isArray(expandedOrder.items) && expandedOrder.items.length > 0 && (
+              <div className="mt-4 space-y-2.5">
+                {expandedOrder.items.map((item, index) => (
+                  <div key={item._id || item.variantId || index} className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-[#141414] p-3">
+                    {item.image && <img src={item.image} alt={item.name || item.productName || 'Product'} className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-white">{item.name || item.productName || 'Product'}</div>
+                      <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{[item.size, item.color].filter(Boolean).join(' • ') || ''} × {item.quantity || 1}</div>
+                    </div>
+                    <div className="shrink-0 text-sm font-semibold text-white">{formatMoney(Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1))}</div>
                   </div>
-                ) },
-              ]}
-              rows={orders}
-              emptyMessage="No orders match the current filter."
-            />
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => downloadInvoice(expandedOrder._id)} className="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">Download invoice</button>
+            </div>
+          </AdminCard>
+        )}
+
+        {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load orders." /> : (
+          <AdminCard>
+            <div className="hidden lg:block">
+              <DataTable
+                columns={[
+                  { key: 'orderNumber', label: 'Order', render: (row) => <div><div className="font-semibold text-white">{row.orderNumber}</div><div className="mt-0.5 text-[11px] text-[#8d8d8d]">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</div></div> },
+                  { key: 'customer', label: 'Customer', render: (row) => <div><div className="text-white">{`${row.customerSnapshot?.firstName || ''} ${row.customerSnapshot?.lastName || ''}`.trim() || '—'}</div><div className="text-[11px] text-[#8d8d8d]">{row.customerSnapshot?.email || ''}</div></div> },
+                  { key: 'items', label: 'Items', render: (row) => <span>{row.items?.length || 0}</span> },
+                  { key: 'grandTotal', label: 'Amount', render: (row) => <span className="font-semibold text-white">{formatMoney(row.grandTotal || 0)}</span> },
+                  { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
+                  { key: 'paymentStatus', label: 'Payment', render: (row) => <StatusBadge status={row.paymentStatus} /> },
+                  { key: 'actions', label: 'Actions', render: (row) => orderActions(row) },
+                ]}
+                rows={orders}
+                emptyMessage="No orders match the current filter."
+              />
+            </div>
+            <div className="space-y-3 lg:hidden">
+              {orders.length === 0 ? (
+                <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No orders match the current filter.</div>
+              ) : orders.map((row) => (
+                <div key={row._id} className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-white">{row.orderNumber}</div>
+                      <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{row.customerSnapshot?.email || 'Customer'} • {row.items?.length || 0} items</div>
+                    </div>
+                    <span className="shrink-0 font-semibold text-white">{formatMoney(row.grandTotal || 0)}</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <StatusBadge status={row.status} />
+                    <StatusBadge status={row.paymentStatus} />
+                  </div>
+                  <div className="mt-3 border-t border-white/10 pt-3">{orderActions(row)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>
+          </AdminCard>
         )}
       </div>
     );
@@ -3803,33 +4263,58 @@ function AdminPage({ initialSection }) {
 
     return (
       <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">People</div>
-              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Customers</h3>
-            </div>
+        <AdminPageHeader
+          eyebrow="Customer management"
+          title="Customers"
+          meta={`${unwrapPayload(data)?.total ?? users.length} accounts`}
+          actions={(
             <div className="w-full max-w-md"><SearchInput value={search} onChange={setSearch} placeholder="Search customers" /></div>
-          </div>
-        </div>
+          )}
+        />
 
         {actionError && <div className="rounded-[20px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{actionError}</div>}
 
         {isLoading ? <Skeleton lines={6} /> : isError ? <ErrorState message="Unable to load user accounts." /> : (
-          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-4">
-            <DataTable
-              columns={[
-                { key: 'name', label: 'Name', render: (row) => <span className="font-semibold text-white">{row.firstName} {row.lastName}</span> },
-                { key: 'email', label: 'Email', render: (row) => <span>{row.email}</span> },
-                { key: 'role', label: 'Role', render: (row) => <StatusBadge status={row.role} /> },
-                { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.isActive ? 'ACTIVE' : 'INACTIVE'} /> },
-                { key: 'actions', label: 'Action', render: (row) => <button type="button" onClick={() => toggleStatus(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white">{row.isActive ? 'Disable' : 'Enable'}</button> },
-              ]}
-              rows={filteredUsers}
-              emptyMessage="No users found."
-            />
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
+          <AdminCard>
+            <div className="hidden lg:block">
+              <DataTable
+                columns={[
+                  { key: 'name', label: 'Name', render: (row) => <span className="font-semibold text-white">{row.firstName} {row.lastName}</span> },
+                  { key: 'email', label: 'Email', render: (row) => <span>{row.email}</span> },
+                  { key: 'role', label: 'Role', render: (row) => <StatusBadge status={row.role} /> },
+                  { key: 'verified', label: 'Verified', render: (row) => <span className={row.emailVerified ? 'text-emerald-300' : 'text-[#8d8d8d]'}>{row.emailVerified ? 'Yes' : 'No'}</span> },
+                  { key: 'joined', label: 'Joined', render: (row) => <span className="text-xs">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span> },
+                  { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.isActive ? 'ACTIVE' : 'INACTIVE'} /> },
+                  { key: 'actions', label: 'Action', render: (row) => <button type="button" onClick={() => toggleStatus(row)} className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">{row.isActive ? 'Disable' : 'Enable'}</button> },
+                ]}
+                rows={filteredUsers}
+                emptyMessage="No users found."
+              />
+            </div>
+            <div className="space-y-3 lg:hidden">
+              {filteredUsers.length === 0 ? (
+                <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No users found.</div>
+              ) : filteredUsers.map((row) => (
+                <div key={row._id} className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-white">{row.firstName} {row.lastName}</div>
+                      <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{row.email}</div>
+                    </div>
+                    <StatusBadge status={row.isActive ? 'ACTIVE' : 'INACTIVE'} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#8d8d8d]">
+                    <StatusBadge status={row.role} />
+                    <span>{row.emailVerified ? 'Verified' : 'Unverified'}</span>
+                    <span>•</span>
+                    <span>Joined {row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+                  </div>
+                  <button type="button" onClick={() => toggleStatus(row)} className="mt-3 w-full rounded-full border border-white/10 px-3 py-2.5 text-xs uppercase tracking-[0.2em] text-white transition hover:border-white/30">{row.isActive ? 'Disable' : 'Enable'}</button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>
+          </AdminCard>
         )}
       </div>
     );
@@ -3845,6 +4330,7 @@ function AdminPage({ initialSection }) {
     const [detailOpen, setDetailOpen] = useState(false);
     const [createOrderId, setCreateOrderId] = useState('');
     const [createBusy, setCreateBusy] = useState(false);
+    const [createError, setCreateError] = useState('');
 
     const { data, isLoading, isError, refetch } = useQuery({
       queryKey: ['admin-shipments', page, statusFilter, providerFilter, search],
@@ -3875,13 +4361,14 @@ function AdminPage({ initialSection }) {
     const handleCreateShipment = async () => {
       if (!createOrderId.trim()) return;
       setCreateBusy(true);
+      setCreateError('');
       try {
         await adminApi.createShipment(createOrderId.trim());
         setCreateOrderId('');
         refetch();
         queryClientRef.invalidateQueries({ queryKey: ['admin-orders'] });
       } catch (err) {
-        window.alert(err?.response?.data?.message || err?.message || 'Failed to create shipment');
+        setCreateError(err?.response?.data?.message || err?.message || 'Failed to create shipment');
       } finally {
         setCreateBusy(false);
       }
@@ -3899,53 +4386,55 @@ function AdminPage({ initialSection }) {
 
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Logistics</div>
-              <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Shipping</h3>
-              <p className="mt-1 text-sm text-[#a0a0a0]">{total} shipment{total !== 1 ? 's' : ''} total</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search orders, AWB, customer…" />
-              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+        <AdminPageHeader
+          eyebrow="Fulfillment"
+          title="Shipping"
+          meta={`${total} shipment${total !== 1 ? 's' : ''} tracked`}
+          actions={(
+            <button type="button" onClick={() => refetch()} className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-sm text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60">
+              <RefreshCw size={14} /> Refresh
+            </button>
+          )}
+        />
+
+        <AdminCard>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex-1"><SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search orders, AWB, customer…" /></div>
+            <div className="flex flex-wrap gap-3">
+              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} aria-label="Filter by status" className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
                 <option value="">All statuses</option>
                 {shipmentStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <select value={providerFilter} onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }} className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
+              <select value={providerFilter} onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }} aria-label="Filter by provider" className="rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white">
                 <option value="">All providers</option>
                 <option value="shiprocket">Shiprocket</option>
                 <option value="manual">Manual</option>
               </select>
-              <button type="button" onClick={() => refetch()} className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-3 text-sm text-white transition-colors hover:bg-white/5">
-                <RefreshCw size={14} /> Refresh
-              </button>
             </div>
           </div>
-        </div>
+        </AdminCard>
 
-        {/* Create Shipment */}
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Create shipment</div>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <AdminCard eyebrow="New shipment" title="Create shipment">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <input
               value={createOrderId}
-              onChange={(e) => setCreateOrderId(e.target.value)}
+              onChange={(e) => { setCreateOrderId(e.target.value); setCreateError(''); }}
               placeholder="Enter Order ID to ship…"
+              aria-label="Order ID to ship"
               className="flex-1 rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white placeholder:text-[#666]"
             />
             <button
               type="button"
               onClick={handleCreateShipment}
               disabled={createBusy || !createOrderId.trim()}
-              className="flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-opacity disabled:opacity-40"
+              className="flex items-center justify-center gap-2 rounded-full bg-[#FFC800] px-6 py-3 text-sm font-semibold text-black transition disabled:opacity-40"
             >
               {createBusy ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
               Create shipment
             </button>
           </div>
-        </div>
+          {createError && <p className="mt-3 text-sm text-red-300">{createError}</p>}
+        </AdminCard>
 
         {/* Shipment Table (Desktop) */}
         {isLoading ? <Skeleton lines={8} /> : isError ? (
@@ -4161,39 +4650,339 @@ function AdminPage({ initialSection }) {
     );
   };
 
-  const SettingsSection = () => {
-    const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['admin-settings'], queryFn: () => adminApi.settings() });
-    const settings = unwrapPayload(data)?.settings ?? [];
-    const [draft, setDraft] = useState({});
+  const SETTINGS_DEFAULTS = {
+    'store.name': 'KICKS',
+    'store.tagline': 'Premium sneakers for movement and everyday expression',
+    'store.description': '',
+    'store.logoUrl': '',
+    'store.currency': 'INR',
+    'store.country': 'India',
+    'store.timezone': 'Asia/Kolkata',
+    'contact.email': 'support@kicks.example',
+    'contact.phone': '+91 98765 43210',
+    'contact.address': '12 MG Road, Bengaluru, India',
+    'contact.hours': '',
+    'checkout.reviewsEnabled': true,
+    'notifications.orderEmails': true,
+    'notifications.paymentEmails': true,
+    'notifications.shippingEmails': true,
+    'notifications.deliveryEmails': true,
+  };
 
-    const updateSetting = async (key, currentValue) => {
-      await adminApi.updateSetting(key, { value: currentValue, description: 'Updated from admin UI' });
-      refetch();
+  const SETTINGS_GROUPS = [
+    {
+      id: 'store',
+      label: 'Store',
+      icon: ShoppingBag,
+      fields: [
+        { key: 'store.name', label: 'Store name', type: 'text', placeholder: 'KICKS' },
+        { key: 'store.tagline', label: 'Tagline', type: 'text', placeholder: 'Premium sneakers for movement' },
+        { key: 'store.description', label: 'Description', type: 'textarea', placeholder: 'Short store description' },
+        { key: 'store.logoUrl', label: 'Logo URL', type: 'url', placeholder: 'https://…', hint: 'Used only where the storefront renders a custom logo.' },
+        { key: 'store.currency', label: 'Currency', type: 'text', placeholder: 'INR' },
+        { key: 'store.country', label: 'Country', type: 'text', placeholder: 'India' },
+        { key: 'store.timezone', label: 'Timezone', type: 'text', placeholder: 'Asia/Kolkata' },
+      ],
+    },
+    {
+      id: 'contact',
+      label: 'Contact',
+      icon: MapPin,
+      fields: [
+        { key: 'contact.email', label: 'Support email', type: 'email', placeholder: 'support@example.com' },
+        { key: 'contact.phone', label: 'Support phone', type: 'text', placeholder: '+91 90000 00000' },
+        { key: 'contact.address', label: 'Business address', type: 'textarea', placeholder: 'Street, city, country' },
+        { key: 'contact.hours', label: 'Support hours', type: 'text', placeholder: 'Mon–Sat, 9am–7pm' },
+      ],
+    },
+    {
+      id: 'checkout',
+      label: 'Checkout & Orders',
+      icon: Package,
+      note: 'Order totals are computed server-side. Shipping and tax handling is fixed by the checkout flow and cannot be changed here.',
+      fields: [
+        { key: 'checkout.reviewsEnabled', label: 'Product reviews', type: 'toggle', hint: 'When off, customers cannot submit new product reviews.' },
+      ],
+    },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: Bell,
+      note: 'Controls transactional emails sent by the backend. Templates are unchanged.',
+      fields: [
+        { key: 'notifications.orderEmails', label: 'Order emails', type: 'toggle', hint: 'Order confirmation and cancellation emails.' },
+        { key: 'notifications.paymentEmails', label: 'Payment emails', type: 'toggle', hint: 'Payment confirmation emails.' },
+        { key: 'notifications.shippingEmails', label: 'Shipping emails', type: 'toggle', hint: 'Shipped and out-for-delivery emails.' },
+        { key: 'notifications.deliveryEmails', label: 'Delivery emails', type: 'toggle', hint: 'Delivered emails.' },
+      ],
+    },
+    { id: 'account', label: 'Admin Account', icon: User2, custom: true },
+  ];
+
+  const SettingsToggle = ({ checked, onChange, label }) => (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={Boolean(checked)}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={`relative flex h-7 w-12 shrink-0 items-center rounded-full border transition focus:outline-none focus:ring-2 focus:ring-white/60 ${checked ? 'justify-end border-white/40 bg-white/15' : 'justify-start border-white/10 bg-[#181818]'}`}
+    >
+      <span className={`mx-1 h-5 w-5 rounded-full ${checked ? 'bg-white' : 'bg-[#555]'}`} />
+    </button>
+  );
+
+  const SettingsSection = () => {
+    const { showToast } = useToast();
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+    const [activeGroup, setActiveGroup] = useState('store');
+    const [drafts, setDrafts] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [formStatus, setFormStatus] = useState(null);
+    const [pwError, setPwError] = useState('');
+    const [pwSaving, setPwSaving] = useState(false);
+    const pwForm = useForm({
+      resolver: zodResolver(z.object({
+        currentPassword: z.string().min(1, 'Current password is required'),
+        newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+        confirmPassword: z.string().min(1, 'Please confirm your new password'),
+      }).refine((values) => values.newPassword === values.confirmPassword, {
+        message: 'New passwords do not match',
+        path: ['confirmPassword'],
+      })),
+      defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+    });
+
+    const settingsQuery = useQuery({ queryKey: ['admin-settings'], queryFn: () => adminApi.settings() });
+    const meQuery = useQuery({ queryKey: ['admin-me'], queryFn: () => authApi.me() });
+
+    const savedMap = useMemo(() => {
+      const items = unwrapPayload(settingsQuery.data)?.settings ?? [];
+      const map = { ...SETTINGS_DEFAULTS };
+      for (const item of items) {
+        if (item && typeof item.key === 'string') map[item.key] = item.value;
+      }
+      return map;
+    }, [settingsQuery.data]);
+
+    const group = SETTINGS_GROUPS.find((entry) => entry.id === activeGroup) || SETTINGS_GROUPS[0];
+    const groupFields = group.fields || [];
+    const dirtyKeys = groupFields
+      .filter((field) => drafts[field.key] !== undefined && drafts[field.key] !== savedMap[field.key])
+      .map((field) => field.key);
+    const valueFor = (key) => (drafts[key] !== undefined ? drafts[key] : savedMap[key]);
+
+    const saveSection = async () => {
+      if (saving || dirtyKeys.length === 0) return;
+      setSaving(true);
+      setFormStatus(null);
+      try {
+        for (const key of dirtyKeys) {
+          await adminApi.updateSetting(key, { value: drafts[key] });
+        }
+        await settingsQuery.refetch();
+        setDrafts((current) => {
+          const next = { ...current };
+          dirtyKeys.forEach((key) => { delete next[key]; });
+          return next;
+        });
+        const message = `Saved ${dirtyKeys.length} setting${dirtyKeys.length === 1 ? '' : 's'}.`;
+        setFormStatus({ type: 'success', message });
+        showToast(message, 'success');
+      } catch (error) {
+        setFormStatus({ type: 'error', message: error?.message || 'Unable to save settings.' });
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    const changeAdminPassword = async (values) => {
+      setPwError('');
+      setPwSaving(true);
+      try {
+        await authApi.changePassword({ currentPassword: values.currentPassword, newPassword: values.newPassword });
+        showToast('Password changed. Please log in again.', 'success');
+        await logout().catch(() => {});
+        navigate('/login', { replace: true });
+      } catch (error) {
+        setPwError(error?.message || 'Unable to change password.');
+      } finally {
+        setPwSaving(false);
+      }
+    };
+
+    const signOutEverywhere = async () => {
+      if (!window.confirm('Sign out on all devices, including this one? You will need to log in again.')) return;
+      try {
+        await authApi.logoutAll();
+      } catch (error) {
+        showToast(error?.message || 'Unable to sign out everywhere.', 'error');
+        return;
+      }
+      showToast('Signed out everywhere. Please log in again.', 'success');
+      await logout().catch(() => {});
+      navigate('/login', { replace: true });
+    };
+
+    const adminUser = unwrapPayload(meQuery.data)?.user || null;
+
+    const renderField = (field) => {
+      const value = valueFor(field.key);
+      if (field.type === 'toggle') {
+        return (
+          <div key={field.key} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/10 bg-[#141414] p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white">{field.label}</p>
+              {field.hint && <p className="mt-1 text-xs text-[#8d8d8d]">{field.hint}</p>}
+            </div>
+            <SettingsToggle checked={Boolean(value)} onChange={(next) => setDrafts((current) => ({ ...current, [field.key]: next }))} label={field.label} />
+          </div>
+        );
+      }
+      return (
+        <div key={field.key}>
+          <label htmlFor={`setting-${field.key}`} className="mb-2 block text-xs uppercase tracking-[0.18em] text-[#a8a8a8]">
+            {field.label}
+          </label>
+          {field.type === 'textarea' ? (
+            <textarea
+              id={`setting-${field.key}`}
+              rows={3}
+              value={value ?? ''}
+              placeholder={field.placeholder}
+              onChange={(event) => setDrafts((current) => ({ ...current, [field.key]: event.target.value }))}
+              className="w-full rounded-[18px] border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
+            />
+          ) : (
+            <input
+              id={`setting-${field.key}`}
+              type={field.type === 'email' || field.type === 'url' ? 'text' : 'text'}
+              inputMode={field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : 'text'}
+              value={value ?? ''}
+              placeholder={field.placeholder}
+              onChange={(event) => setDrafts((current) => ({ ...current, [field.key]: event.target.value }))}
+              className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
+            />
+          )}
+          {field.hint && <p className="mt-1.5 text-xs text-[#8d8d8d]">{field.hint}</p>}
+        </div>
+      );
     };
 
     return (
       <div className="space-y-6">
-        <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Workspace</div>
-          <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">Settings</h3>
-        </div>
+        <AdminPageHeader eyebrow="Workspace" title="Settings" />
+        <AdminCard>
+          <nav aria-label="Settings sections" className="flex gap-2 overflow-x-auto pb-1">
+            {SETTINGS_GROUPS.map((entry) => {
+              const Icon = entry.icon;
+              const isActive = entry.id === group.id;
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => { setActiveGroup(entry.id); setFormStatus(null); }}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                    isActive ? 'bg-[#FFC800] text-black' : 'border border-white/10 text-[#c4c4c4] hover:border-white/30 hover:text-white'
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span>{entry.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </AdminCard>
 
-        {isLoading ? <Skeleton lines={5} /> : isError ? <ErrorState message="Unable to load settings." /> : (
-          <div className="space-y-3">
-            {settings.map((setting) => (
-              <div key={setting._id || setting.key} className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="flex-1">
-                    <div className="text-[11px] uppercase tracking-[0.24em] text-[#8f8f8f]">{setting.key}</div>
-                    <div className="mt-3 text-sm text-[#d7d7d7]">{typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value || {})}</div>
+        {settingsQuery.isLoading ? (
+          <Skeleton lines={5} />
+        ) : settingsQuery.isError ? (
+          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+            <ErrorState message="Unable to load settings." />
+            <button type="button" onClick={() => settingsQuery.refetch()} className="mt-4 rounded-full border border-white/10 px-4 py-2 text-sm text-white">Retry</button>
+          </div>
+        ) : group.custom ? (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+              <h4 className="text-lg font-bold text-white">Administrator</h4>
+              {meQuery.isLoading ? (
+                <div className="mt-4 h-20 animate-pulse rounded-[18px] bg-[#181818]" />
+              ) : (
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#8d8d8d]">Name</span>
+                    <span className="font-semibold text-white">{adminUser ? `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim() || '—' : '—'}</span>
                   </div>
-                  <div className="w-full max-w-xl">
-                    <input value={draft[setting.key] ?? (typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value || {}))} onChange={(event) => setDraft({ ...draft, [setting.key]: event.target.value })} className="w-full rounded-full border border-white/10 bg-[#181818] px-4 py-3 text-white" />
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#8d8d8d]">Email</span>
+                    <span className="truncate font-semibold text-white">{adminUser?.email || '—'}</span>
                   </div>
-                  <button type="button" onClick={() => updateSetting(setting.key, draft[setting.key] ?? setting.value)} className="rounded-full bg-white px-5 py-3 text-sm font-medium text-black">Save</button>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#8d8d8d]">Role</span>
+                    <StatusBadge status={adminUser?.role || 'ADMIN'} />
+                  </div>
+                  <p className="rounded-[14px] border border-white/10 bg-[#141414] p-3 text-xs leading-relaxed text-[#8d8d8d]">
+                    The administrator role cannot be changed here, and no additional admin accounts can be created from this screen.
+                  </p>
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+              <h4 className="text-lg font-bold text-white">Change password</h4>
+              <form onSubmit={pwForm.handleSubmit(changeAdminPassword)} className="mt-4 space-y-4">
+                <PasswordField label="Current password" name="currentPassword" register={pwForm.register} error={pwForm.formState.errors.currentPassword?.message} placeholder="Current password" />
+                <PasswordField label="New password" name="newPassword" register={pwForm.register} error={pwForm.formState.errors.newPassword?.message} placeholder="Minimum 8 characters" />
+                <PasswordField label="Confirm new password" name="confirmPassword" register={pwForm.register} error={pwForm.formState.errors.confirmPassword?.message} placeholder="Confirm new password" />
+                <button
+                  type="submit"
+                  disabled={pwSaving || pwForm.formState.isSubmitting}
+                  className="w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {pwSaving ? 'Updating...' : 'Update password'}
+                </button>
+                {pwError && <p className="text-sm text-red-300">{pwError}</p>}
+                <p className="text-xs text-[#8d8d8d]">Changing the password signs out every active session, including this one.</p>
+              </form>
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6 lg:col-span-2">
+              <h4 className="text-lg font-bold text-white">Active sessions</h4>
+              <p className="mt-2 text-sm text-[#a8a8a8]">End every admin session at once, including this device. You will need to log in again.</p>
+              <button
+                type="button"
+                onClick={signOutEverywhere}
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-red-200 transition hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              >
+                <LogOut size={14} /> Sign out everywhere
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-white/10 bg-[#111111] p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h4 className="text-lg font-bold text-white">{group.label}</h4>
+              {dirtyKeys.length > 0 && <span className="text-xs uppercase tracking-[0.18em] text-[#f4d66a]">• Unsaved changes</span>}
+            </div>
+            {group.note && <p className="mt-2 text-sm text-[#8d8d8d]">{group.note}</p>}
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {groupFields.map(renderField)}
+            </div>
+            {formStatus && (
+              <p className={`mt-4 text-sm ${formStatus.type === 'success' ? 'text-[#9feec8]' : 'text-red-300'}`}>{formStatus.message}</p>
+            )}
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={saveSection}
+                disabled={saving || dirtyKeys.length === 0}
+                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : dirtyKeys.length > 0 ? `Save ${dirtyKeys.length} change${dirtyKeys.length === 1 ? '' : 's'}` : 'Saved'}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -4215,37 +5004,99 @@ function AdminPage({ initialSection }) {
   };
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:py-12 lg:px-8">
+    <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:py-8 lg:px-8">
       <PageMeta title="Admin | KICKS" description="KICKS administrator dashboard" />
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[#8d8d8d]">Admin</p>
-          <h1 className="mt-3 text-3xl font-black uppercase tracking-[-0.06em] text-white sm:text-4xl">KICKS control center</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white">Storefront</Link>
-          <div className="rounded-full border border-white/10 bg-[#111111] px-4 py-2 text-sm text-white">Protected route</div>
-        </div>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-[26px] border border-white/10 bg-[#111111] p-4">
-          <div className="mb-4 text-[10px] uppercase tracking-[0.28em] text-[#8a8a8a]">Navigation</div>
-          <nav className="space-y-2">
-            {sections.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setSection(item)}
-                className={`w-full rounded-full px-4 py-3 text-left text-sm uppercase tracking-[0.18em] ${section === item ? 'bg-white text-black' : 'border border-white/10 bg-transparent text-white'}`}
-              >
-                {item}
-              </button>
-            ))}
-          </nav>
+      <div className="grid items-start gap-6 xl:grid-cols-[264px_minmax(0,1fr)]">
+        <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[22px] border border-white/10 bg-[#0c0c0c] p-4 xl:flex">
+          {renderSidebarBody()}
         </aside>
 
-        <div>{renderSection()}</div>
+        {drawerOpen && (
+          <div className="fixed inset-0 z-[70] xl:hidden">
+            <div className="absolute inset-0 bg-black/70" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
+            <aside className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col overflow-y-auto border-r border-white/10 bg-[#0c0c0c] p-4" role="dialog" aria-modal="true" aria-label="Admin menu">
+              <div className="mb-2 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(false)}
+                  aria-label="Close admin menu"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+              {renderSidebarBody()}
+            </aside>
+          </div>
+        )}
+
+        <div className="min-w-0">
+          <div className="mb-6 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open admin menu"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 text-white xl:hidden"
+            >
+              <Menu size={18} />
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] uppercase tracking-[0.24em] text-[#8d8d8d]">{todayLabel}</p>
+              <p className="mt-1 truncate text-lg font-bold text-white sm:text-xl">
+                {greeting}, {user?.firstName || 'Admin'}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                to="/faq"
+                aria-label="Help and FAQs"
+                title="Help and FAQs"
+                className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 sm:inline-flex"
+              >
+                <Info size={17} />
+              </Link>
+              <Link
+                to="/"
+                className="hidden items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white/30 sm:inline-flex"
+              >
+                <ExternalLink size={13} /> Storefront
+              </Link>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((current) => !current)}
+                  aria-label="Admin account menu"
+                  aria-expanded={menuOpen}
+                  aria-haspopup="menu"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-sm font-black text-[#FFC800] transition hover:bg-[#FFC800]/20"
+                >
+                  {adminInitials}
+                </button>
+                {menuOpen && (
+                  <div role="menu" aria-label="Admin account" className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-[18px] border border-white/10 bg-[#111111] p-2 shadow-2xl">
+                    <div className="px-3 py-2.5">
+                      <p className="truncate text-sm font-bold text-white">{adminName}</p>
+                      <p className="truncate text-xs text-[#8d8d8d]">{user?.email || ''}</p>
+                    </div>
+                    <div className="border-t border-white/10 pt-2">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#f0a8a8] transition hover:bg-red-500/10"
+                      >
+                        <LogOut size={14} /> Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>{renderSection()}</div>
+        </div>
       </div>
     </div>
   );

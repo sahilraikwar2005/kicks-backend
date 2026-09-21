@@ -126,7 +126,7 @@ export const authService = {
     await user.save();
     await UserSession.updateMany({ user: user._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
     await createSession(user._id, refreshToken);
-    if (['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (user.role === 'ADMIN') {
       await auditService.record({ actor: user._id, action: 'ADMIN_LOGIN', resource: 'user', resourceId: user._id });
     }
 
