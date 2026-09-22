@@ -15,7 +15,7 @@ import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/useToast';
 import ProductCard from '../components/ui/ProductCard';
 import { colorKey } from '../utils/variantMatrix';
-import { resolveGalleryImages, sizesForColor, variantColors, variantForSelection } from '../utils/productGallery';
+import { colorThumbnail, resolveGalleryImages, sizesForColor, variantColors, variantForSelection } from '../utils/productGallery';
 import { NEUTRAL_PRODUCT_IMAGE } from '../components/ui/productImage';
 
 const reviewSchema = z.object({
@@ -413,6 +413,52 @@ export default function ProductDetailPage() {
             ) : null}
 
             <div className="mt-8 space-y-5">
+              {colorOptions.length > 0 && (
+                <div>
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Available in</p>
+                    {resolvedColor && <span className="truncate text-xs text-[#d3d3d3]">Color: {resolvedColor}</span>}
+                  </div>
+                  <div className="kicks-scroll-row" role="radiogroup" aria-label="Available colors">
+                    {colorOptions.map((color) => {
+                      const hasStock = Boolean(colorAvailability[color]);
+                      const isSelected = colorKey(color) === colorKey(resolvedColor);
+                      const thumb = colorThumbnail(product, color) || getImageFallback;
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          aria-label={`Select color ${color}`}
+                          disabled={!hasStock}
+                          onClick={() => setSelectedColor(color)}
+                          title={color}
+                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-[10px] border bg-[#161616] transition focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-not-allowed ${
+                            isSelected
+                              ? 'border-white ring-1 ring-white/70'
+                              : 'border-white/10 hover:border-white/35'
+                          }`}
+                          style={hasStock ? undefined : { opacity: 0.35 }}
+                        >
+                          <img
+                            src={thumb}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = getImageFallback;
+                            }}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Size</p>
@@ -440,34 +486,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {colorOptions.length > 0 && (
-                <div>
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Color</p>
-                    {resolvedColor && <span className="text-xs text-[#d3d3d3]">{resolvedColor}</span>}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {colorOptions.map((color) => {
-                      const hasStock = Boolean(colorAvailability[color]);
-                      const isSelected = colorKey(color) === colorKey(resolvedColor);
-                      return (
-                        <button
-                          key={color}
-                          type="button"
-                          aria-label={`Select color ${color}`}
-                          disabled={!hasStock}
-                          onClick={() => setSelectedColor(color)}
-                          aria-pressed={isSelected}
-                          className="kicks-pill"
-                          style={hasStock ? undefined : { opacity: 0.35, cursor: 'not-allowed' }}
-                        >
-                          {color}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="mt-8 flex items-center justify-between rounded-[20px] border border-white/10 bg-[#181818] p-4 text-sm text-[#d3d3d3]">

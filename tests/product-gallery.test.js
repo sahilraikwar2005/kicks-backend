@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  cartLineImage,
   colorsWithGalleries,
+  colorThumbnail,
   getColorImages,
   resolveGalleryImages,
   sizesForColor,
@@ -72,6 +74,36 @@ test('sizesForColor returns only sizes existing for that color', () => {
   assert.deepEqual(sizesForColor(product.variants, 'Black'), ['UK 5', 'UK 6']);
   assert.deepEqual(sizesForColor(product.variants, 'White'), ['UK 5']);
   assert.deepEqual(sizesForColor(product.variants, 'Red'), []);
+});
+
+test('1. color thumbnails use the correct first gallery image', () => {
+  assert.equal(colorThumbnail(product, 'Black'), 'black-front.jpg');
+  assert.equal(colorThumbnail(product, 'White'), 'white-front.jpg');
+  assert.equal(colorThumbnail(product, 'black'), 'black-front.jpg');
+});
+
+test('color thumbnail falls back to variant, product, then empty', () => {
+  const withVariantImages = {
+    images: ['general-1.jpg'],
+    colorImages: {},
+    variants: [{ size: 'UK 5', color: 'Red', images: ['red-variant.jpg'] }],
+  };
+  assert.equal(colorThumbnail(withVariantImages, 'Red'), 'red-variant.jpg');
+  assert.equal(colorThumbnail({ images: ['general-1.jpg'], variants: [] }, 'Red'), 'general-1.jpg');
+  assert.equal(colorThumbnail({ images: [], variants: [] }, 'Red'), '');
+});
+
+test('15/35. cart line image uses the selected color gallery', () => {
+  const cartProduct = {
+    ...product,
+    variants: [
+      { _id: 'bb5', size: 'UK 5', color: 'Black' },
+      { _id: 'wb5', size: 'UK 5', color: 'White' },
+    ],
+  };
+  assert.equal(cartLineImage({ product: cartProduct, variantId: 'wb5' }, 'FALLBACK'), 'white-front.jpg');
+  assert.equal(cartLineImage({ product: cartProduct, variantId: 'bb5' }, 'FALLBACK'), 'black-front.jpg');
+  assert.equal(cartLineImage({ product: { images: [], variants: [] }, variantId: 'nope' }, 'FALLBACK'), 'FALLBACK');
 });
 
 test('31-32. selection resolves the exact variant, never a cross-color fallback', () => {

@@ -44,6 +44,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from './api/client';
 import { colorKey, dedupeColors, distinctSizes, normalizeColorName, syncMatrixRows } from './utils/variantMatrix';
 import { NEUTRAL_PRODUCT_IMAGE } from './components/ui/productImage';
+import { cartLineImage } from './utils/productGallery';
 import { addressesApi } from './api/addresses.api';
 import { adminApi } from './api/admin.api';
 import { authApi } from './api/auth.api';
@@ -939,7 +940,7 @@ function CartPage() {
               const quantity = Number(item.quantity || 0);
               const price = Number(item.unitPrice || item.price || 0);
               const subtotal = price * quantity;
-              const image = product?.images?.[0] || item?.variant?.images?.[0] || cartImageFallback;
+              const image = cartLineImage(item, cartImageFallback);
               const size = item.size || item.variant?.size || 'N/A';
               const color = item.color || item.variant?.color || 'N/A';
 
@@ -1274,7 +1275,7 @@ function CheckoutPage() {
             {items.map((item) => {
               const product = item.product || (typeof item.productId === 'object' ? item.productId : {}) || {};
               const productName = product?.name || 'Product';
-              const image = product?.images?.[0] || item?.variant?.images?.[0] || NEUTRAL_PRODUCT_IMAGE;
+              const image = cartLineImage(item, NEUTRAL_PRODUCT_IMAGE);
               const unitPrice = Number(item.unitPrice || item.price || 0);
               const lineTotal = unitPrice * Number(item.quantity || 0);
               return (
