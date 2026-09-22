@@ -3829,6 +3829,9 @@ function AdminPage({ initialSection }) {
   const [searchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navHidden, setNavHidden] = useState(false);
+  const [headerH, setHeaderH] = useState(68);
+  const headerRef = useRef(null);
   const sectionFromQuery = searchParams.get('section');
   const section = sectionFromQuery || initialSection || 'dashboard';
 
@@ -3849,6 +3852,54 @@ function AdminPage({ initialSection }) {
     document.body.style.overflow = drawerOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
+
+  // Scroll-aware admin top navbar: visible at the top, slides away on scroll
+  // down, returns on scroll up. Sidebar/drawer are untouched.
+  useEffect(() => {
+    const measure = () => {
+      if (headerRef.current) setHeaderH(headerRef.current.offsetHeight);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [section]);
+
+  // Reset the navbar to visible whenever the admin section changes, and keep
+  // it visible while the drawer is open. Render-time adjustment (no effect).
+  const [navSectionKey, setNavSectionKey] = useState(section);
+  if (navSectionKey !== section) {
+    setNavSectionKey(section);
+    if (navHidden) setNavHidden(false);
+  }
+  const headerHidden = navHidden && !drawerOpen;
+
+  useEffect(() => {
+    let lastY = window.scrollY || 0;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY || 0;
+        const dy = y - lastY;
+        lastY = y;
+        if (y <= 8) {
+          setNavHidden(false);
+          return;
+        }
+        if (Math.abs(dy) < 4) return;
+        if (dy > 0) {
+          setMenuOpen(false);
+          setNavHidden(true);
+        } else {
+          setNavHidden(false);
+        }
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const navGroups = [
     {
@@ -6876,8 +6927,16 @@ function AdminPage({ initialSection }) {
           </div>
         )}
 
-        <div className="min-w-0">
-          <div className="mb-5 flex items-center gap-2.5">
+        <div className="min-w-0 transition-[padding-top] duration-200 ease-out" style={{ paddingTop: headerHidden ? 0 : headerH }}>
+          <header
+            ref={headerRef}
+            aria-label="Admin top navigation"
+            aria-hidden={headerHidden || undefined}
+            inert={headerHidden || undefined}
+            className={`fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#0c0c0c]/80 backdrop-blur-md transition-transform duration-200 ease-out will-change-transform ${headerHidden ? '-translate-y-full' : 'translate-y-0'}`}
+          >
+            <div className="mx-auto w-full max-w-[1500px] px-4 lg:px-8">
+              <div className="flex items-center gap-2.5 py-3">
             <span className="shrink-0 xl:hidden">
               <button
                 type="button"
@@ -6943,7 +7002,9 @@ function AdminPage({ initialSection }) {
                 )}
               </div>
             </div>
-          </div>
+            </div>
+            </div>
+          </header>
 
           <div>{renderSection()}</div>
         </div>
