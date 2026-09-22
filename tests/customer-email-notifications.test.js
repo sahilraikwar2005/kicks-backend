@@ -65,17 +65,17 @@ test('1. Email templates generate valid HTML and text with proper layout', async
 
   await sendWelcomeEmail(dummyUser);
   assert.equal(sentEmails.length, 1);
-  assert.match(sentEmails[0].subject, /Welcome to KICKS/i);
-  assert.match(sentEmails[0].html, /Welcome to KICKS, Alex!/);
+  assert.match(sentEmails[0].subject, /Welcome to AJ SPORTS/i);
+  assert.match(sentEmails[0].html, /Welcome to AJ SPORTS, Alex!/);
 
   await sendVerificationEmail(dummyUser, 'https://kicks.test/verify-email?token=abc');
   assert.equal(sentEmails.length, 2);
-  assert.match(sentEmails[1].subject, /Verify your KICKS email/i);
+  assert.match(sentEmails[1].subject, /Verify your AJ SPORTS email/i);
   assert.match(sentEmails[1].html, /https:\/\/kicks\.test\/verify-email\?token=abc/);
 
   await sendPasswordResetEmail(dummyUser, 'https://kicks.test/reset-password?token=def');
   assert.equal(sentEmails.length, 3);
-  assert.match(sentEmails[2].subject, /Reset your KICKS password/i);
+  assert.match(sentEmails[2].subject, /Reset your AJ SPORTS password/i);
   assert.match(sentEmails[2].html, /https:\/\/kicks\.test\/reset-password\?token=def/);
 
   await sendPasswordChangedEmail(dummyUser);
@@ -113,7 +113,7 @@ test('1. Email templates generate valid HTML and text with proper layout', async
 
   await sendDeliveryEmail(dummyUser, dummyOrder);
   assert.equal(sentEmails.length, 12);
-  assert.match(sentEmails[11].subject, /Delivered: KICKS Order KICKS-TMPL-1234/i);
+  assert.match(sentEmails[11].subject, /Delivered: AJ SPORTS Order KICKS-TMPL-1234/i);
 });
 
 test('2. Forgot password security: sends ONLY to registered account email, suppresses unregistered', async () => {
@@ -133,7 +133,7 @@ test('2. Forgot password security: sends ONLY to registered account email, suppr
   assert.equal(res1.message, 'If the account exists, a password reset link was sent.');
   assert.equal(sentEmails.length, 1);
   assert.equal(sentEmails[0].to, registeredEmail);
-  assert.match(sentEmails[0].subject, /Reset your KICKS password/i);
+  assert.match(sentEmails[0].subject, /Reset your AJ SPORTS password/i);
 
   // B: Request for non-existent/unregistered account
   sentEmails = [];
@@ -160,9 +160,9 @@ test('3. Auth notifications: register sends welcome + verification, resetPasswor
   // Should send welcome email and verification email
   assert.equal(sentEmails.length, 2);
   assert.equal(sentEmails[0].to, email);
-  assert.match(sentEmails[0].subject, /Welcome to KICKS/i);
+  assert.match(sentEmails[0].subject, /Welcome to AJ SPORTS/i);
   assert.equal(sentEmails[1].to, email);
-  assert.match(sentEmails[1].subject, /Verify your KICKS email/i);
+  assert.match(sentEmails[1].subject, /Verify your AJ SPORTS email/i);
 
   // Change Password
   sentEmails = [];

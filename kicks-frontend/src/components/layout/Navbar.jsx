@@ -41,21 +41,23 @@ export default function Navbar() {
   const cartCount = cartItems.reduce((total, item) => total + Number(item?.quantity || 0), 0);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#090909]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/55 backdrop-blur-md">
       <nav className="kicks-page py-2.5">
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5 lg:justify-self-start">
-            <button
-              type="button"
-              onClick={() => setMobileOpen((current) => !current)}
-              aria-label="Toggle navigation menu"
-              aria-expanded={mobileOpen}
-              className="kicks-icon-btn lg:hidden"
-            >
-              <Menu size={16} />
-            </button>
-            <Link to="/" className="truncate text-sm font-black uppercase tracking-[0.3em] text-white sm:text-base" aria-label="KICKS home">
-              KICKS
+            <span className="shrink-0 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setMobileOpen((current) => !current)}
+                aria-label="Toggle navigation menu"
+                aria-expanded={mobileOpen}
+                className="kicks-icon-btn"
+              >
+                <Menu size={16} />
+              </button>
+            </span>
+            <Link to="/" className="truncate text-sm font-black uppercase tracking-[0.3em] text-white sm:text-base" aria-label="AJ SPORTS home">
+              AJ SPORTS
             </Link>
           </div>
 
@@ -102,9 +104,11 @@ export default function Navbar() {
             </div>
           ) : (
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:justify-self-end">
-            <Link to="/shop" aria-label="Search products" title="Search products" className="kicks-icon-btn hidden sm:inline-flex">
-              <Search size={15} />
-            </Link>
+            <span className="hidden shrink-0 sm:inline-flex">
+              <Link to="/shop" aria-label="Search products" title="Search products" className="kicks-icon-btn">
+                <Search size={15} />
+              </Link>
+            </span>
 
             {isAuthenticated && (
               <Link

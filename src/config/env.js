@@ -56,7 +56,7 @@ export const env = {
   smtpPort: Number(process.env.SMTP_PORT) || 587,
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
-  emailFrom: process.env.EMAIL_FROM || 'KICKS <noreply@example.com>',
+  emailFrom: process.env.EMAIL_FROM || 'AJ SPORTS <noreply@example.com>',
   shippingProvider: process.env.SHIPPING_PROVIDER || 'shiprocket',
   shippingApiKey: process.env.SHIPPING_API_KEY || '',
   shippingApiSecret: process.env.SHIPPING_API_SECRET || '',

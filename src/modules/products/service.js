@@ -54,6 +54,22 @@ const normalizeSku = (value) => {
 
 const comboKey = (size, color) => `${String(size || '').trim().toLowerCase()}::${String(color || '').trim().toLowerCase()}`;
 
+const sanitizeColorImages = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const result = {};
+  const keys = Object.keys(value).slice(0, 12);
+  for (const key of keys) {
+    const name = String(key || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    if (!name) continue;
+    const urls = (Array.isArray(value[key]) ? value[key] : [])
+      .filter((url) => typeof url === 'string' && url.trim())
+      .map((url) => url.trim())
+      .slice(0, 12);
+    if (urls.length > 0) result[name] = urls;
+  }
+  return result;
+};
+
 const resolveBrandName = async (brandRef) => {
   if (!brandRef) return '';
   if (typeof brandRef === 'object' && brandRef.name) return String(brandRef.name);
@@ -208,8 +224,13 @@ export const productService = {
   },
 
   async createProduct(payload) {
-    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'description', 'shortDescription', 'images', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
+    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'description', 'shortDescription', 'images', 'colorImages', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
     const cleanPayload = Object.fromEntries(allowedFields.filter((key) => payload[key] !== undefined).map((key) => [key, payload[key]]));
+    if (cleanPayload.colorImages !== undefined) {
+      const sanitizedColorImages = sanitizeColorImages(cleanPayload.colorImages);
+      if (sanitizedColorImages === undefined) delete cleanPayload.colorImages;
+      else cleanPayload.colorImages = sanitizedColorImages;
+    }
     if (cleanPayload.salePrice !== undefined && cleanPayload.salePrice !== null && cleanPayload.salePrice > cleanPayload.price) { const error = new Error('Sale price cannot exceed price'); error.statusCode = 400; throw error; }
 
     const basePrice = Number(cleanPayload.price || 0);
@@ -255,8 +276,13 @@ export const productService = {
       throw error;
     }
 
-    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'description', 'shortDescription', 'images', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
+    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'description', 'shortDescription', 'images', 'colorImages', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
     const cleanPayload = Object.fromEntries(allowedFields.filter((key) => payload[key] !== undefined).map((key) => [key, payload[key]]));
+    if (cleanPayload.colorImages !== undefined) {
+      const sanitizedColorImages = sanitizeColorImages(cleanPayload.colorImages);
+      if (sanitizedColorImages === undefined) delete cleanPayload.colorImages;
+      else cleanPayload.colorImages = sanitizedColorImages;
+    }
     if (cleanPayload.salePrice !== undefined && cleanPayload.salePrice !== null && cleanPayload.price !== undefined && cleanPayload.salePrice > cleanPayload.price) { const error = new Error('Sale price cannot exceed price'); error.statusCode = 400; throw error; }
 
     if (cleanPayload.variants) {

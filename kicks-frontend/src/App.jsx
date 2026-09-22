@@ -189,6 +189,21 @@ const detectSizeSystem = (size) => {
   return SIZE_SYSTEMS[prefix] ? prefix : 'UK';
 };
 
+// Normalizes persisted product.colorImages into { DisplayName: [urls] }.
+const normalizePersistedColorImages = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const result = {};
+  for (const [key, urls] of Object.entries(value)) {
+    const name = String(key || '').trim().replace(/\s+/g, ' ');
+    if (!name) continue;
+    const list = (Array.isArray(urls) ? urls : [])
+      .filter((url) => typeof url === 'string' && url.trim())
+      .map((url) => url.trim());
+    if (list.length > 0) result[name] = list;
+  }
+  return result;
+};
+
 // Deterministic SKU generation mirrored from src/modules/products/sku.js.
 // Format: BRAND-MODEL-COLOR-SIZE. The backend revalidates/regenerates, so the
 // admin never types a SKU and displayed values match persisted ones.
@@ -364,7 +379,7 @@ function PasswordField({ label, name, register, error, placeholder = 'Enter pass
 function CategoriesPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Categories | KICKS" description="Browse premium sneaker categories" />
+      <PageMeta title="Categories | AJ SPORTS" description="Browse premium sneaker categories" />
       <div className="mb-8">
         <p className="kicks-eyebrow">Shop all</p>
         <h1 className="mt-3 kicks-section-title">Categories</h1>
@@ -389,12 +404,12 @@ function CategoriesPage() {
 function AboutPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="About | KICKS" description="About KICKS" />
+      <PageMeta title="About | AJ SPORTS" description="About AJ SPORTS" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="kicks-eyebrow">About us</p>
         <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">More than a shoe store.</h1>
         <p className="mt-6 max-w-2xl text-lg text-[#d0d0d0]">
-          KICKS brings together premium craftsmanship, performance-driven design, and effortless street style for the modern mover.
+          AJ SPORTS brings together premium craftsmanship, performance-driven design, and effortless street style for the modern mover.
         </p>
       </div>
     </div>
@@ -404,7 +419,7 @@ function AboutPage() {
 function ContactPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Contact | KICKS" description="Contact the KICKS team" />
+      <PageMeta title="Contact | AJ SPORTS" description="Contact the AJ SPORTS team" />
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <p className="kicks-eyebrow">Contact</p>
@@ -434,7 +449,7 @@ function ContactPage() {
 function FaqPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="FAQ | KICKS" description="Frequently asked questions" />
+      <PageMeta title="FAQ | AJ SPORTS" description="Frequently asked questions" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="kicks-eyebrow">FAQ</p>
         <h1 className="mt-4 kicks-section-title">Frequently asked questions</h1>
@@ -442,7 +457,7 @@ function FaqPage() {
           {['Do you ship nationwide?', 'How long does a return take?', 'Can I track my order?', 'Do you offer cash on delivery?'].map((question) => (
             <div key={question} className="rounded-[18px] border border-white/10 bg-[#171717] p-5">
               <strong className="text-white">{question}</strong>
-              <p className="mt-2 text-sm text-[#b0b0b0]">Yes, KICKS supports fast domestic shipping and secure order tracking across key service zones.</p>
+              <p className="mt-2 text-sm text-[#b0b0b0]">Yes, AJ SPORTS supports fast domestic shipping and secure order tracking across key service zones.</p>
             </div>
           ))}
         </div>
@@ -454,12 +469,12 @@ function FaqPage() {
 function PolicyPage({ title }) {
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title={`${title} | KICKS`} description={title} />
+      <PageMeta title={`${title} | AJ SPORTS`} description={title} />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="kicks-eyebrow">Policy</p>
         <h1 className="mt-4 kicks-section-title">{title}</h1>
         <div className="mt-8 space-y-5 text-[#d1d1d1]">
-          <p>These terms and policies are applied in line with the KICKS storefront experience and your purchase rights.</p>
+          <p>These terms and policies are applied in line with the AJ SPORTS storefront experience and your purchase rights.</p>
           <p>For the live business rules, the backend is the source of truth for shipping timelines, returns, eligibility, and payment compliance.</p>
         </div>
       </div>
@@ -470,12 +485,12 @@ function PolicyPage({ title }) {
 function AuthenticityPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Authenticity & Product Information | KICKS" description="Product authenticity and information disclosure" />
+      <PageMeta title="Authenticity & Product Information | AJ SPORTS" description="Product authenticity and information disclosure" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-12">
         <p className="kicks-eyebrow">Product Information</p>
         <h1 className="mt-4 kicks-section-title">Authenticity &amp; Product Information</h1>
         <div className="mt-8 max-w-3xl space-y-5 text-sm leading-relaxed text-[#d1d1d1] sm:text-base">
-          <p>Product descriptions, images, branding references, and availability are provided for informational purposes. Unless explicitly stated and verified, KICKS does not represent products as officially brand-authorized or independently authenticated.</p>
+          <p>Product descriptions, images, branding references, and availability are provided for informational purposes. Unless explicitly stated and verified, AJ SPORTS does not represent products as officially brand-authorized or independently authenticated.</p>
           <p>Customers should review the product information carefully before placing an order. If you have questions about a specific product, please contact our support team before purchase.</p>
           <p>By placing an order, you acknowledge the product information and authenticity disclosure shown on this website.</p>
         </div>
@@ -497,7 +512,7 @@ function AuthenticityPage() {
 
 //   return (
 //     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-//       <PageMeta title="Wishlist | KICKS" description="Your saved items" />
+//       <PageMeta title="Wishlist | AJ SPORTS" description="Your saved items" />
 //       <div className="mb-8 flex items-center justify-between gap-4">
 //         <div>
 //           <p className="kicks-eyebrow">Saved</p>
@@ -529,7 +544,7 @@ function AuthenticityPage() {
 //                 <img src={product?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'} alt={product?.name || 'Saved product'} className="h-64 w-full rounded-[20px] object-cover" />
 //                 <div className="mt-4 flex items-start justify-between gap-3">
 //                   <div>
-//                     <p className="text-[10px] uppercase tracking-[0.26em] text-[#a3a3a3]">{product?.brand?.name || 'KICKS'}</p>
+//                     <p className="text-[10px] uppercase tracking-[0.26em] text-[#a3a3a3]">{product?.brand?.name || 'AJ SPORTS'}</p>
 //                     <Link to={`/products/${product?.slug || productId}`} className="mt-2 block text-xl font-medium text-white">{product?.name}</Link>
 //                   </div>
 //                   <button type="button" onClick={() => removeMutation.mutate(productId)} className="rounded-full border border-white/10 p-2 text-white">✕</button>
@@ -599,7 +614,7 @@ function WishlistPage() {
   if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 py-10 sm:py-16 lg:px-8">
-        <PageMeta title="Wishlist | KICKS" description="Your saved items" />
+        <PageMeta title="Wishlist | AJ SPORTS" description="Your saved items" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-10">
           <h1 className="text-3xl font-black uppercase tracking-[-0.05em] text-white">
             Your wishlist
@@ -622,7 +637,7 @@ function WishlistPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Wishlist | KICKS" description="Your saved items" />
+      <PageMeta title="Wishlist | AJ SPORTS" description="Your saved items" />
 
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -777,7 +792,7 @@ function WishlistPage() {
 
                 <div className="p-3 sm:p-4">
                   <p className="truncate text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">
-                    {product?.brand?.name || 'KICKS'}
+                    {product?.brand?.name || 'AJ SPORTS'}
                   </p>
 
                   <Link
@@ -899,7 +914,7 @@ function CartPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Cart | KICKS" description="Shopping cart" />
+      <PageMeta title="Cart | AJ SPORTS" description="Shopping cart" />
       <div className="mb-6 sm:mb-8">
         <p className="kicks-eyebrow">Your cart</p>
         <h1 className="mt-3 kicks-section-title">Cart</h1>
@@ -932,8 +947,8 @@ function CartPage() {
                 <div key={variantId} className="flex gap-3 rounded-[24px] border border-white/10 bg-[#111111] p-3 sm:gap-4 sm:p-4 md:items-center">
                   <img src={image} alt={product?.name || 'Cart item'} className="h-20 w-20 shrink-0 rounded-[16px] object-cover sm:h-24 sm:w-24 sm:rounded-[18px]" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = cartImageFallback; }} />
                   <div className="min-w-0 flex-1">
-                    <h3 className="break-words text-base font-semibold text-white line-clamp-2 sm:text-xl">{product?.name || 'KICKS product'}</h3>
-                    <p className="mt-1 truncate text-xs text-[#9d9d9d] sm:text-sm">{product?.brand?.name || 'KICKS'} • Size {size} • Color {color}</p>
+                    <h3 className="break-words text-base font-semibold text-white line-clamp-2 sm:text-xl">{product?.name || 'AJ SPORTS product'}</h3>
+                    <p className="mt-1 truncate text-xs text-[#9d9d9d] sm:text-sm">{product?.brand?.name || 'AJ SPORTS'} • Size {size} • Color {color}</p>
                     <p className="mt-1 text-xs font-medium text-white sm:mt-2 sm:text-sm">{formatMoney(price)} each</p>
                     <div className="mt-2 flex items-center gap-2 sm:gap-3">
                       <button type="button" aria-label="Decrease quantity" title="Decrease quantity" onClick={() => updateMutation.mutate({ variantId, quantity: Math.max(1, quantity - 1) })} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/60 sm:h-9 sm:w-9">−</button>
@@ -1094,14 +1109,14 @@ function CheckoutPage() {
         key: razorpayKey,
         amount: Number(gatewayOrder.amount || 0),
         currency: gatewayOrder.currency || 'INR',
-        name: 'KICKS',
+        name: 'AJ SPORTS',
         description: `Order ${order.orderNumber || orderId}`,
         order_id: gatewayOrder.id,
         handler: async (razorpayResponse) => {
           await handlePaymentSuccess(orderId, razorpayResponse);
         },
         prefill: {
-          name: `${order.customerSnapshot?.firstName || ''} ${order.customerSnapshot?.lastName || ''}`.trim() || 'KICKS customer',
+          name: `${order.customerSnapshot?.firstName || ''} ${order.customerSnapshot?.lastName || ''}`.trim() || 'AJ SPORTS customer',
           email: order.customerSnapshot?.email || '',
           contact: order.customerSnapshot?.phone || '',
         },
@@ -1172,7 +1187,7 @@ function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Checkout | KICKS" description="Checkout" />
+      <PageMeta title="Checkout | AJ SPORTS" description="Checkout" />
       <div className="mb-6 sm:mb-8">
         <p className="kicks-eyebrow">Checkout</p>
         <h1 className="mt-3 kicks-section-title">Secure checkout</h1>
@@ -1267,7 +1282,7 @@ function CheckoutPage() {
                   <img src={image} alt={productName} className="h-16 w-16 rounded-[14px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-white">{productName}</div>
-                    <div className="mt-1 text-xs text-[#d3d3d3]">{product?.brand?.name || 'KICKS'} • {item.size || item.variant?.size || 'N/A'} • {item.color || item.variant?.color || 'N/A'}</div>
+                    <div className="mt-1 text-xs text-[#d3d3d3]">{product?.brand?.name || 'AJ SPORTS'} • {item.size || item.variant?.size || 'N/A'} • {item.color || item.variant?.color || 'N/A'}</div>
                     <div className="mt-1 text-xs text-[#d3d3d3]">Qty {item.quantity}</div>
                   </div>
                   <div className="text-sm font-medium text-white">{formatMoney(lineTotal)}</div>
@@ -1322,7 +1337,7 @@ function OrderSuccessPage() {
   if (!id) {
     return (
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
-        <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
+        <PageMeta title="Order issue | AJ SPORTS" description="Order information unavailable" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
           <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load your order details.</p>
@@ -1343,7 +1358,7 @@ function OrderSuccessPage() {
   if (isError || !order?._id) {
     return (
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
-        <PageMeta title="Order issue | KICKS" description="Order information unavailable" />
+        <PageMeta title="Order issue | AJ SPORTS" description="Order information unavailable" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
           <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now. Please try again.</p>
@@ -1358,7 +1373,7 @@ function OrderSuccessPage() {
   if (!isPaid) {
     return (
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
-        <PageMeta title="Payment pending | KICKS" description="Payment confirmation is still pending" />
+        <PageMeta title="Payment pending | AJ SPORTS" description="Payment confirmation is still pending" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 text-center sm:p-8 md:p-12">
           <h1 className="kicks-section-title">Payment pending</h1>
           <p className="mt-4 text-[#d3d3d3]">Your payment is still being confirmed. Please check again shortly.</p>
@@ -1370,7 +1385,7 @@ function OrderSuccessPage() {
 
   return (
     <div className="mx-auto max-w-[900px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Order placed | KICKS" description="Your order was successful" />
+      <PageMeta title="Order placed | AJ SPORTS" description="Your order was successful" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-12">
         <div className="flex flex-col items-center text-center">
           <div aria-hidden="true" className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black">✓</div>
@@ -1412,7 +1427,7 @@ function OrderSuccessPage() {
               {order.items.slice(0, 3).map((item) => (
                 <div key={item._id || item.variantId || item.productId} className="flex items-center justify-between gap-4 rounded-[14px] border border-white/10 bg-[#111111] p-3">
                   <div>
-                    <div className="text-sm font-medium text-white">{item.productName || item.name || 'KICKS product'}</div>
+                    <div className="text-sm font-medium text-white">{item.productName || item.name || 'AJ SPORTS product'}</div>
                     <div className="mt-1 text-xs text-[#b4b4b4]">Qty {item.quantity || 1}</div>
                   </div>
                   <div className="text-sm font-medium text-white">{formatMoney(Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1))}</div>
@@ -1437,7 +1452,7 @@ function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="My orders | KICKS" description="Order history" />
+      <PageMeta title="My orders | AJ SPORTS" description="Order history" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
         <h1 className="kicks-section-title">My orders</h1>
         {isLoading ? (
@@ -1445,7 +1460,7 @@ function OrdersPage() {
         ) : isError ? (
           <div className="mt-6 rounded-[20px] border border-white/10 bg-[#181818] p-5 text-[#d2d2d2]">Unable to load your orders.</div>
         ) : orders.length === 0 ? (
-          <div className="mt-6 rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">No orders yet. Your KICKS history will appear here.</div>
+          <div className="mt-6 rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d2d2d2]">No orders yet. Your AJ SPORTS history will appear here.</div>
         ) : (
           <div className="mt-6 space-y-4 text-[#d2d2d2]">
             {orders.map((order) => (
@@ -1520,7 +1535,7 @@ function OrderDetailPage() {
   if (!id) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-        <PageMeta title="Order details | KICKS" description="Order details" />
+        <PageMeta title="Order details | AJ SPORTS" description="Order details" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
           <h1 className="kicks-section-title">Order not found</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not find this order.</p>
@@ -1541,7 +1556,7 @@ function OrderDetailPage() {
   if (isError || !order._id) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-        <PageMeta title="Order details | KICKS" description="Order details" />
+        <PageMeta title="Order details | AJ SPORTS" description="Order details" />
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
           <h1 className="kicks-section-title">Order unavailable</h1>
           <p className="mt-4 text-[#d3d3d3]">We could not load this order right now.</p>
@@ -1559,7 +1574,7 @@ function OrderDetailPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Order details | KICKS" description="Order details" />
+      <PageMeta title="Order details | AJ SPORTS" description="Order details" />
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="kicks-eyebrow">Order details</p>
@@ -1631,7 +1646,7 @@ function OrderDetailPage() {
                 <div key={item._id || item.variantId || item.productId} className="flex flex-col gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:flex-row md:items-center">
                   <img src={image} alt={item.productName || 'Ordered product'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-white">{item.productName || item.name || 'KICKS product'}</h3>
+                    <h3 className="text-xl font-semibold text-white">{item.productName || item.name || 'AJ SPORTS product'}</h3>
                     <p className="mt-1 text-sm text-[#a8a8a8]">{item.size || 'Size N/A'} • {item.color || 'Color N/A'}</p>
                     <p className="mt-2 text-sm text-[#d3d3d3]">Qty {item.quantity || 1}</p>
                   </div>
@@ -2431,7 +2446,7 @@ function AccountPage({ initialTab }) {
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-10 lg:px-8">
-      <PageMeta title="My Account | KICKS" description="Manage your KICKS customer account and preferences" />
+      <PageMeta title="My Account | AJ SPORTS" description="Manage your AJ SPORTS customer account and preferences" />
 
       <div className="mb-6 sm:mb-8">
         <p className="kicks-eyebrow">Customer Center</p>
@@ -2552,7 +2567,7 @@ function AccountPage({ initialTab }) {
           type="button"
           onClick={() => setShowLogoutConfirm(true)}
           aria-label="Log out of your account"
-          className="kicks-btn kicks-btn-danger w-full lg:hidden"
+          className="kicks-btn kicks-btn-danger w-full"
         >
           <LogOut size={16} /> Log out
         </button>
@@ -2623,7 +2638,7 @@ function LoginPage() {
 
   return (
     <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Login | KICKS" description="Login to your KICKS account" />
+      <PageMeta title="Login | AJ SPORTS" description="Login to your AJ SPORTS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Welcome back</p>
         <h1 className="mt-4 kicks-section-title">Login</h1>
@@ -2816,7 +2831,7 @@ function RegisterPage() {
     setOtpError('');
     try {
       await authApi.verifyRegistrationOtp({ identifier: rawIdentifier, code });
-      showToast('Account verified. Welcome to KICKS.', 'success');
+      showToast('Account verified. Welcome to AJ SPORTS.', 'success');
       window.location.href = '/account';
     } catch (error) {
       setOtpError(error?.message || 'Verification failed. Please try again.');
@@ -2854,7 +2869,7 @@ function RegisterPage() {
 
   return (
     <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Register | KICKS" description="Create a KICKS account" />
+      <PageMeta title="Register | AJ SPORTS" description="Create an AJ SPORTS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Start here</p>
         <h1 className="mt-4 kicks-section-title">Create account</h1>
@@ -2978,7 +2993,7 @@ function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Forgot password | KICKS" description="Recover your KICKS account" />
+      <PageMeta title="Forgot password | AJ SPORTS" description="Recover your AJ SPORTS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Account</p>
         <h1 className="mt-4 kicks-section-title">Forgot password</h1>
@@ -3021,7 +3036,7 @@ function ResetPasswordPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Reset password | KICKS" description="Set a new password" />
+      <PageMeta title="Reset password | AJ SPORTS" description="Set a new password" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Security</p>
         <h1 className="mt-4 kicks-section-title">Reset password</h1>
@@ -3067,7 +3082,7 @@ function VerifyEmailPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Verify email | KICKS" description="Verify your account" />
+      <PageMeta title="Verify email | AJ SPORTS" description="Verify your account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <h1 className="kicks-section-title">Email verification</h1>
         <p className="mt-6 text-[#d1d1d1]">{message}</p>
@@ -3096,7 +3111,7 @@ function ChangePasswordPage() {
 
   return (
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Change password | KICKS" description="Change your password" />
+      <PageMeta title="Change password | AJ SPORTS" description="Change your password" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Security</p>
         <h1 className="mt-4 kicks-section-title">Change password</h1>
@@ -3183,7 +3198,7 @@ function AddressBookPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Addresses | KICKS" description="Manage delivery addresses" />
+      <PageMeta title="Addresses | AJ SPORTS" description="Manage delivery addresses" />
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <p className="kicks-eyebrow">Address book</p>
@@ -3261,7 +3276,7 @@ function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Notifications | KICKS" description="Your updates" />
+      <PageMeta title="Notifications | AJ SPORTS" description="Your updates" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
         <h1 className="kicks-section-title">Notifications</h1>
         {isLoading ? (
@@ -3337,7 +3352,7 @@ function BlogPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Journal | KICKS" description="KICKS stories and style insights" />
+      <PageMeta title="Journal | AJ SPORTS" description="AJ SPORTS stories and style insights" />
       <div className="mb-8">
         <p className="kicks-eyebrow">Journal</p>
         <h1 className="mt-3 kicks-section-title">Stories & style</h1>
@@ -3348,7 +3363,7 @@ function BlogPage() {
           <div className="p-6">
             <p className="text-[10px] uppercase tracking-[0.28em] text-[#a1a1a1]">{post.category || 'Culture'}</p>
             <h3 className="mt-3 text-xl font-bold text-white sm:text-2xl">{post.title}</h3>
-            <p className="mt-3 text-[#d0d0d0]">{post.shortDescription || post.excerpt || 'Read the latest KICKS conversation.'}</p>
+            <p className="mt-3 text-[#d0d0d0]">{post.shortDescription || post.excerpt || 'Read the latest AJ SPORTS conversation.'}</p>
           </div>
         </Link>
       ))}</div>}
@@ -3370,7 +3385,7 @@ function BlogDetailPage() {
 
   return (
     <article className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title={`${post.title} | KICKS`} description={post.shortDescription || post.excerpt || 'KICKS editorial'} />
+      <PageMeta title={`${post.title} | AJ SPORTS`} description={post.shortDescription || post.excerpt || 'AJ SPORTS editorial'} />
       <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[#111111]">
         <img src={post.coverImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80'} alt={post.title} className="h-[420px] w-full object-cover" />
       </div>
@@ -3398,7 +3413,7 @@ function CmsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title={`${page.title} | KICKS`} description={page.description || 'KICKS content page'} />
+      <PageMeta title={`${page.title} | AJ SPORTS`} description={page.description || 'AJ SPORTS content page'} />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 md:p-12">
         <p className="kicks-eyebrow">Content</p>
         <h1 className="mt-4 kicks-section-title">{page.title}</h1>
@@ -3862,10 +3877,10 @@ function AdminPage({ initialSection }) {
 
   const renderSidebarBody = () => (
     <>
-      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5 px-2 py-1.5" aria-label="KICKS admin home">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFC800] text-xs font-black text-black">K</span>
+      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5 px-2 py-1.5" aria-label="AJ SPORTS admin home">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFC800] text-xs font-black text-black">A</span>
         <span className="leading-tight">
-          <span className="block text-sm font-black uppercase tracking-[0.28em] text-white">Kicks</span>
+          <span className="block text-sm font-black uppercase tracking-[0.28em] text-white">AJ Sports</span>
           <span className="block text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">Control Center</span>
         </span>
       </Link>
@@ -4120,6 +4135,8 @@ function AdminPage({ initialSection }) {
     const [toast, setToast] = useState('');
     const [mediaItems, setMediaItems] = useState([]);
     const [sessionUploadIds, setSessionUploadIds] = useState([]);
+    const [colorSessionUploads, setColorSessionUploads] = useState([]);
+    const [uploadingColor, setUploadingColor] = useState('');
     const [urlInput, setUrlInput] = useState('');
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
@@ -4150,6 +4167,7 @@ function AdminPage({ initialSection }) {
       sizeSystem: 'UK',
       defaultColor: 'Black',
       colors: [],
+      colorImages: {},
       variants: [],
     });
     const makeMediaId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -4208,10 +4226,13 @@ function AdminPage({ initialSection }) {
         sizeSystem: 'UK',
         defaultColor: 'Black',
         colors: [],
+        colorImages: {},
         variants: [],
       });
       setMediaItems([]);
       setSessionUploadIds([]);
+      setColorSessionUploads([]);
+      setUrlInput('');
       setUrlInput('');
       setUploadError('');
       setFormError('');
@@ -4263,10 +4284,12 @@ function AdminPage({ initialSection }) {
         sizeSystem: detectSizeSystem(product.variants?.[0]?.size),
         defaultColor: product.variants?.[0]?.color || 'Black',
         colors: dedupeColors((product.variants || []).map((variant) => variant?.color)),
+        colorImages: normalizePersistedColorImages(product.colorImages),
         variants: hydrated,
       });
       setMediaItems(Array.isArray(product.images) ? product.images.filter(Boolean).map((url) => ({ id: makeMediaId(), kind: 'manual', url })) : []);
       setSessionUploadIds([]);
+      setColorSessionUploads([]);
       setUrlInput('');
       setUploadError('');
       setFormError('');
@@ -4363,15 +4386,28 @@ function AdminPage({ initialSection }) {
     const removeColor = (name) => {
       const rowsForColor = productForm.variants.filter((row) => colorKey(row.color) === colorKey(name));
       const configured = rowsForColor.filter(isRowConfigured);
-      if (configured.length > 0 && !window.confirm(`Remove color "${name}" (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/price data will be lost.`)) {
+      const galleryCount = (productForm.colorImages?.[name] || []).length;
+      if ((configured.length > 0 || galleryCount > 0) && !window.confirm(`Remove color "${name}" (${configured.length} configured row${configured.length > 1 ? 's' : ''}${galleryCount > 0 ? `, ${galleryCount} galler${galleryCount > 1 ? 'ies' : 'y'} image${galleryCount > 1 ? 's' : ''}` : ''})? Entered data will be lost.`)) {
         return;
       }
       const keys = new Set(rowsForColor.map((row) => row.key));
-      setProductForm((current) => ({
-        ...current,
-        colors: current.colors.filter((color) => colorKey(color) !== colorKey(name)),
-        variants: current.variants.filter((row) => !keys.has(row.key)),
-      }));
+      const staleUploads = colorSessionUploads.filter((item) => colorKey(item.color) === colorKey(name) && item.publicId);
+      setProductForm((current) => {
+        const nextColorImages = { ...current.colorImages };
+        for (const key of Object.keys(nextColorImages)) {
+          if (colorKey(key) === colorKey(name)) delete nextColorImages[key];
+        }
+        return {
+          ...current,
+          colors: current.colors.filter((color) => colorKey(color) !== colorKey(name)),
+          colorImages: nextColorImages,
+          variants: current.variants.filter((row) => !keys.has(row.key)),
+        };
+      });
+      if (staleUploads.length > 0) {
+        setColorSessionUploads((entries) => entries.filter((item) => colorKey(item.color) !== colorKey(name)));
+        Promise.allSettled(staleUploads.map((item) => deleteStoredUpload(item.publicId)));
+      }
       setFormError('');
     };
 
@@ -4562,6 +4598,11 @@ function AdminPage({ initialSection }) {
           description: productForm.description,
           tags: productForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
           images: mediaItems.map((item) => item.url).filter(Boolean),
+          colorImages: Object.fromEntries(
+            Object.entries(productForm.colorImages || {})
+              .map(([color, urls]) => [String(color || '').trim(), (Array.isArray(urls) ? urls : []).filter((url) => typeof url === 'string' && url.trim())])
+              .filter(([, urls]) => urls.length > 0),
+          ),
           variants: productForm.variants.map((row) => ({
             sku: skuByKey[row.key] || buildVariantSku({ brand: formBrandName, model: productForm.name, color: row.color, size: row.size }),
             size: String(row.size || '').trim(),
@@ -4583,6 +4624,7 @@ function AdminPage({ initialSection }) {
         setIsFormOpen(false);
         setPage(1);
         setSessionUploadIds([]);
+        setColorSessionUploads([]);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['admin-products'] }),
           queryClient.invalidateQueries({ queryKey: ['products-list'] }),
@@ -4599,9 +4641,12 @@ function AdminPage({ initialSection }) {
     const cleanupSessionUploads = async () => {
       const stale = mediaItems.filter((item) => item.kind === 'upload' && item.publicId && sessionUploadIds.includes(item.id));
       setSessionUploadIds([]);
-      await Promise.allSettled(
-        stale.map((item) => apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`)),
-      );
+      const staleColorUploads = colorSessionUploads.filter((item) => item.publicId);
+      setColorSessionUploads([]);
+      await Promise.allSettled([
+        ...stale.map((item) => apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`)),
+        ...staleColorUploads.map((item) => apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`)),
+      ]);
     };
 
     const closeEditor = async () => {
@@ -4688,6 +4733,133 @@ function AdminPage({ initialSection }) {
         [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
         return reordered;
       });
+    };
+
+    const validateImageFiles = (files) => {
+      const list = Array.from(files || []);
+      const valid = [];
+      for (const file of list) {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+          setUploadError(`Unsupported file type: ${file.name || 'file'}. Use JPG, PNG or WebP.`);
+          continue;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          setUploadError(`"${file.name || 'file'}" exceeds the 5 MB limit.`);
+          continue;
+        }
+        valid.push(file);
+      }
+      return valid;
+    };
+
+    // Uploads one File to Cloudinary via the existing endpoint. Each file is
+    // uploaded exactly once per call; the caller decides where the URL lands.
+    const uploadSingleImage = async (file) => {
+      const form = new FormData();
+      form.append('image', file);
+      // NOTE: apiClient defaults to Content-Type: application/json, which makes
+      // axios JSON-stringify FormData (file never leaves the browser) and multer
+      // then sees no file -> backend 400 "Invalid upload file". Strip the header
+      // for this request only so the browser sets multipart/form-data + boundary.
+      const response = await apiClient.post('/uploads/images', form, {
+        transformRequest: [
+          (data, headers) => {
+            if (headers && typeof headers.delete === 'function') headers.delete('Content-Type');
+            else if (headers) delete headers['Content-Type'];
+            return data;
+          },
+        ],
+      });
+      const uploaded = unwrapPayload(response.data) ?? {};
+      if (!uploaded.url) throw new Error(`Upload failed for "${file.name || 'file'}". Choose the file again to retry.`);
+      return { url: uploaded.url, publicId: uploaded.publicId || '' };
+    };
+
+    const deleteStoredUpload = async (publicId) => {
+      if (!publicId) return;
+      try {
+        await apiClient.delete(`/uploads/images/${encodeURIComponent(publicId)}`);
+      } catch {
+        setUploadError('Removed from the product, but the uploaded file could not be deleted from storage.');
+      }
+    };
+
+    const uploadColorImages = async (color, files) => {
+      const valid = validateImageFiles(files);
+      if (valid.length === 0 || uploading) return;
+      setUploadError('');
+      setUploading(true);
+      setUploadingColor(color);
+      try {
+        for (const file of valid) {
+          const uploaded = await uploadSingleImage(file);
+          setColorSessionUploads((entries) => [...entries, { color, url: uploaded.url, publicId: uploaded.publicId }]);
+          setProductForm((current) => ({
+            ...current,
+            colorImages: {
+              ...current.colorImages,
+              [color]: [...(current.colorImages?.[color] || []), uploaded.url],
+            },
+          }));
+        }
+      } catch (error) {
+        setUploadError(getUploadErrorMessage(error));
+      } finally {
+        setUploading(false);
+        setUploadingColor('');
+      }
+    };
+
+    const forgetColorSessionUpload = (color, url) => {
+      const entry = colorSessionUploads.find((item) => item.color === color && item.url === url);
+      if (entry?.publicId) {
+        setColorSessionUploads((entries) => entries.filter((item) => !(item.color === color && item.url === url)));
+        return deleteStoredUpload(entry.publicId);
+      }
+      return Promise.resolve();
+    };
+
+    const removeColorImage = (color, index) => {
+      const urls = productForm.colorImages?.[color] || [];
+      const url = urls[index];
+      if (!url) return;
+      setProductForm((current) => ({
+        ...current,
+        colorImages: { ...current.colorImages, [color]: (current.colorImages?.[color] || []).filter((_, position) => position !== index) },
+      }));
+      forgetColorSessionUpload(color, url);
+    };
+
+    const moveColorImage = (color, index, direction) => {
+      setProductForm((current) => {
+        const urls = [...(current.colorImages?.[color] || [])];
+        const next = index + direction;
+        if (index < 0 || next < 0 || next >= urls.length) return current;
+        [urls[index], urls[next]] = [urls[next], urls[index]];
+        return { ...current, colorImages: { ...current.colorImages, [color]: urls } };
+      });
+    };
+
+    const moveColorImageTo = (fromColor, index, toColor) => {
+      if (!toColor || colorKey(fromColor) === colorKey(toColor)) return;
+      const url = (productForm.colorImages?.[fromColor] || [])[index];
+      if (!url) return;
+      setProductForm((current) => {
+        const source = [...(current.colorImages?.[fromColor] || [])];
+        const [moved] = source.splice(index, 1);
+        if (!moved) return current;
+        return {
+          ...current,
+          colorImages: {
+            ...current.colorImages,
+            [fromColor]: source,
+            [toColor]: [...(current.colorImages?.[toColor] || []), moved],
+          },
+        };
+      });
+      setColorSessionUploads((entries) => entries.map((item) => (
+        item.color === fromColor && item.url === url ? { ...item, color: toColor } : item
+      )));
     };
 
     const deleteProduct = async (productId, productName) => {
@@ -5119,6 +5291,91 @@ function AdminPage({ initialSection }) {
                 </div>
               </div>
 
+              <div className="mt-5 border-t border-white/10 pt-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">Color images</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-[#767676]">Each color gets its own gallery. First image is that color&apos;s main image.</p>
+                {productForm.colors.length === 0 ? (
+                  <p className="mt-3 rounded-[12px] border border-dashed border-white/15 bg-[#141414] p-3 text-center text-xs text-[#8d8d8d]">
+                    Add a color in the form to assign it dedicated images.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-3">
+                    {productForm.colors.map((color) => {
+                      const urls = productForm.colorImages?.[color] || [];
+                      const others = productForm.colors.filter((entry) => colorKey(entry) !== colorKey(color));
+                      const inputId = `admin-color-images-${colorKey(color) || 'color'}`;
+                      return (
+                        <div key={colorKey(color)} className="rounded-[12px] border border-white/10 bg-[#141414] p-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-white">{color}</p>
+                            <label
+                              htmlFor={inputId}
+                              className={`inline-flex h-[30px] cursor-pointer items-center gap-1 rounded-[8px] border border-white/15 px-2.5 text-[11px] font-semibold text-white transition hover:border-white/35 ${uploading ? 'pointer-events-none opacity-50' : ''}`}
+                            >
+                              {uploading && uploadingColor === color
+                                ? <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                                : <Plus size={12} aria-hidden="true" />}
+                              Upload
+                            </label>
+                            <input
+                              id={inputId}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              multiple
+                              className="sr-only"
+                              disabled={uploading}
+                              onChange={(event) => { uploadColorImages(color, event.target.files); event.target.value = ''; }}
+                            />
+                          </div>
+                          {urls.length > 0 ? (
+                            <div className="mt-2 grid grid-cols-3 gap-1.5">
+                              {urls.map((url, index) => (
+                                <div key={`${url}-${index}`} className="group relative overflow-hidden rounded-lg border border-white/10 bg-[#181818]">
+                                  <img src={url} alt={`${color} image ${index + 1}`} className="h-16 w-full object-cover" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = '0.25'; }} />
+                                  {index === 0 && (
+                                    <span className="absolute left-1 top-1 rounded bg-[#FFC800] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] text-black">Main</span>
+                                  )}
+                                  <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-0.5">
+                                    <span className="flex gap-0.5">
+                                      <button type="button" onClick={() => moveColorImage(color, index, -1)} disabled={index === 0} aria-label={`Move ${color} image ${index + 1} left`} title="Move left" className="flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
+                                        <ChevronLeft size={11} />
+                                      </button>
+                                      <button type="button" onClick={() => moveColorImage(color, index, 1)} disabled={index === urls.length - 1} aria-label={`Move ${color} image ${index + 1} right`} title="Move right" className="flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
+                                        <ChevronRight size={11} />
+                                      </button>
+                                    </span>
+                                    <button type="button" onClick={() => removeColorImage(color, index)} aria-label={`Remove ${color} image ${index + 1}`} title="Remove image" className="flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-black/60 text-red-200 backdrop-blur-sm transition hover:bg-red-500/20">
+                                      <Trash2 size={11} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-[11px] text-[#767676]">No dedicated images — falls back to general images.</p>
+                          )}
+                          {others.length > 0 && urls.length > 0 && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <label htmlFor={`${inputId}-move`} className="shrink-0 text-[10px] uppercase tracking-[0.14em] text-[#8d8d8d]">Move last to</label>
+                              <select
+                                id={`${inputId}-move`}
+                                defaultValue=""
+                                onChange={(event) => { moveColorImageTo(color, urls.length - 1, event.target.value); event.target.value = ''; }}
+                                aria-label={`Move last ${color} image to another color`}
+                                className="kicks-field kicks-field-sm min-w-0 flex-1"
+                              >
+                                <option value="">Select color…</option>
+                                {others.map((entry) => <option key={colorKey(entry)} value={entry}>{entry}</option>)}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               <p className="mt-4 text-xs leading-relaxed text-[#8d8d8d]">The first image is used as the main storefront image.</p>
             </AdminCard>
           </aside>
@@ -5493,7 +5750,7 @@ function AdminPage({ initialSection }) {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-white">{product.name}</p>
                         <p className="mt-0.5 truncate text-xs text-[#8d8d8d]">
-                          {(product.brand?.name || product.brand || 'KICKS')} • {(product.category?.name || product.category || 'Sneakers')}
+                          {(product.brand?.name || product.brand || 'AJ SPORTS')} • {(product.category?.name || product.category || 'Sneakers')}
                         </p>
                         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#a0a0a0]">
                           <span><strong className="text-white">{stats.total}</strong> units</span>
@@ -6238,7 +6495,7 @@ function AdminPage({ initialSection }) {
   };
 
   const SETTINGS_DEFAULTS = {
-    'store.name': 'KICKS',
+    'store.name': 'AJ SPORTS',
     'store.tagline': 'Premium sneakers for movement and everyday expression',
     'store.description': '',
     'store.logoUrl': '',
@@ -6262,7 +6519,7 @@ function AdminPage({ initialSection }) {
       label: 'Store',
       icon: ShoppingBag,
       fields: [
-        { key: 'store.name', label: 'Store name', type: 'text', placeholder: 'KICKS' },
+        { key: 'store.name', label: 'Store name', type: 'text', placeholder: 'AJ SPORTS' },
         { key: 'store.tagline', label: 'Tagline', type: 'text', placeholder: 'Premium sneakers for movement' },
         { key: 'store.description', label: 'Description', type: 'textarea', placeholder: 'Short store description' },
         { key: 'store.logoUrl', label: 'Logo URL', type: 'url', placeholder: 'https://…', hint: 'Used only where the storefront renders a custom logo.' },
@@ -6592,7 +6849,7 @@ function AdminPage({ initialSection }) {
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:py-8 lg:px-8">
-      <PageMeta title="Admin | KICKS" description="KICKS administrator dashboard" />
+      <PageMeta title="Admin | AJ SPORTS" description="AJ SPORTS administrator dashboard" />
 
       <div className="grid items-start gap-5 xl:grid-cols-[232px_minmax(0,1fr)]">
         <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[22px] border border-white/10 bg-[#0c0c0c] p-3 xl:flex">
@@ -6620,14 +6877,16 @@ function AdminPage({ initialSection }) {
 
         <div className="min-w-0">
           <div className="mb-5 flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open admin menu"
-              className="kicks-icon-btn shrink-0 xl:hidden"
-            >
-              <Menu size={15} />
-            </button>
+            <span className="shrink-0 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open admin menu"
+                className="kicks-icon-btn"
+              >
+                <Menu size={15} />
+              </button>
+            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] uppercase tracking-[0.24em] text-[#8d8d8d]">{todayLabel}</p>
               <p className="mt-0.5 truncate text-base font-bold text-white sm:text-lg">
@@ -6635,14 +6894,16 @@ function AdminPage({ initialSection }) {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <Link
-                to="/faq"
-                aria-label="Help and FAQs"
-                title="Help and FAQs"
-                className="kicks-icon-btn hidden sm:inline-flex"
-              >
-                <Info size={15} />
-              </Link>
+              <span className="hidden shrink-0 sm:inline-flex">
+                <Link
+                  to="/faq"
+                  aria-label="Help and FAQs"
+                  title="Help and FAQs"
+                  className="kicks-icon-btn"
+                >
+                  <Info size={15} />
+                </Link>
+              </span>
               <Link
                 to="/"
                 className="hidden h-8 items-center gap-1.5 rounded-[10px] border border-white/10 px-3 text-[11px] font-semibold text-white transition hover:border-white/30 sm:inline-flex"
@@ -6693,7 +6954,7 @@ function AdminPage({ initialSection }) {
 function NotFoundPage() {
   return (
     <div className="mx-auto max-w-[900px] px-4 py-20 text-center lg:px-8">
-      <PageMeta title="Page not found | KICKS" description="The page you requested does not exist" />
+      <PageMeta title="Page not found | AJ SPORTS" description="The page you requested does not exist" />
       <h1 className="text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">404</h1>
       <p className="mt-5 text-[#c7c7c7]">This page does not exist yet.</p>
       <Link to="/" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Back home</Link>

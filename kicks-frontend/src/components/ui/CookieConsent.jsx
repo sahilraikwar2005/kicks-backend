@@ -42,7 +42,7 @@ export default function CookieConsent() {
           <div className="rounded-2xl border border-white/10 bg-[#111111]/95 p-4 shadow-2xl backdrop-blur-xl">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white">Cookie &amp; Privacy</p>
             <p className="mt-2 text-xs leading-relaxed text-[#a8a8a8]">
-              We use essential cookies required for KICKS to function. Optional cookies may be used for analytics or
+              We use essential cookies required for AJ SPORTS to function. Optional cookies may be used for analytics or
               other non-essential functionality.
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">

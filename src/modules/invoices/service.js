@@ -13,7 +13,7 @@ function createPdf(order, invoiceNumber, customer) {
     document.on('data', (chunk) => chunks.push(chunk));
     document.on('end', () => resolve(Buffer.concat(chunks)));
     document.on('error', reject);
-    document.fontSize(22).text('KICKS', { bold: true });
+    document.fontSize(22).text('AJ SPORTS', { bold: true });
     document.fontSize(14).text('Commercial Invoice');
     document.moveDown().fontSize(10).text(`Invoice number: ${invoiceNumber}`).text(`Invoice date: ${new Date().toISOString().slice(0, 10)}`).text(`Payment status: ${order.paymentStatus}`);
     document.moveDown().text(`Customer: ${customer.firstName} ${customer.lastName}`).text(`Email: ${customer.email}`);

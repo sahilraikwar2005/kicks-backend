@@ -76,10 +76,10 @@ export default function HomePage() {
           <div className="hero-rise mt-7 flex flex-wrap items-center gap-3 sm:mt-9" style={{ animationDelay: '400ms' }}>
             <Link
               to="/shop"
-              aria-label="Shop KICKS sneakers"
+              aria-label="Shop AJ SPORTS sneakers"
               className="kicks-btn kicks-btn-primary group/btn"
             >
-              Shop KICKS
+              Shop AJ SPORTS
               <span className="relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent text-current transition-all duration-200">
                 <ArrowRight size={15} strokeWidth={2.6} className="translate-x-0 transition-transform duration-200 group-hover/btn:translate-x-1" />
               </span>
@@ -96,7 +96,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section aria-label="Why KICKS" className="border-y border-white/10 bg-[#090909]">
+      <section aria-label="Why AJ SPORTS" className="border-y border-white/10 bg-[#090909]">
         <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-px bg-white/10 lg:grid-cols-4">
           {featurePillars.map((pillar) => (
             <div key={pillar} className="bg-[#090909] px-4 py-6 text-center sm:py-8">
@@ -275,10 +275,10 @@ export default function HomePage() {
           </p>
           <Link
             to="/about"
-            aria-label="Meet KICKS"
+            aria-label="Meet AJ SPORTS"
             className="kicks-btn mt-9 bg-black text-white hover:bg-black/85 focus:outline-none focus:ring-2 focus:ring-black/50 focus:ring-offset-2 focus:ring-offset-[#FFC800]"
           >
-            Meet Kicks <ArrowRight size={16} />
+            Meet AJ SPORTS <ArrowRight size={16} />
           </Link>
         </div>
       </section>

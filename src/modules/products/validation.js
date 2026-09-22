@@ -30,6 +30,9 @@ export const createProductSchema = Joi.object({
   newArrival: Joi.boolean().optional(),
   bestSeller: Joi.boolean().optional(),
   images: Joi.array().items(Joi.string().allow('')).optional(),
+  colorImages: Joi.object()
+    .pattern(/^[ -~]{1,40}$/, Joi.array().items(Joi.string().allow('')).max(12))
+    .optional(),
   variants: Joi.array().items(
     Joi.object({
       sku: Joi.string().allow('').optional(),

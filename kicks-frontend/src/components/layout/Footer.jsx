@@ -20,7 +20,7 @@ export default function Footer() {
     <footer className="border-t border-white/10 bg-[#090909]">
       <div className="mx-auto grid max-w-[1400px] gap-10 px-4 py-14 sm:py-16 md:grid-cols-2 lg:grid-cols-[1.3fr_0.8fr_0.8fr_1.1fr] lg:px-8">
         <div>
-          <p className="text-xl font-black uppercase tracking-[0.3em] text-white">KICKS</p>
+          <p className="text-xl font-black uppercase tracking-[0.3em] text-white">AJ SPORTS</p>
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-[#a7a7a7]">
             Good shoes take you good places. Discover footwear for performance, style, and every move between.
           </p>
@@ -103,7 +103,7 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-3 px-4 py-6 text-[11px] uppercase tracking-[0.2em] text-[#777] sm:flex-row lg:px-8">
-          <span>© 2026 KICKS</span>
+          <span>© 2026 AJ SPORTS</span>
           <Link to="/authenticity" className="transition hover:text-white">
             Authenticity &amp; Product Information
           </Link>

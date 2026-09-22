@@ -15,7 +15,7 @@ function escapeHtml(value) {
 }
 
 /**
- * Common base layout wrapper for all KICKS transactional emails.
+ * Common base layout wrapper for all AJ SPORTS transactional emails.
  */
 function emailLayout({ title, content }) {
   return `<!DOCTYPE html>
@@ -33,7 +33,7 @@ function emailLayout({ title, content }) {
           <!-- Header -->
           <tr>
             <td style="background-color: #09090b; padding: 24px 32px; text-align: left;">
-              <span style="color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">KICKS</span>
+              <span style="color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">AJ SPORTS</span>
             </td>
           </tr>
           <!-- Body -->
@@ -45,7 +45,7 @@ function emailLayout({ title, content }) {
           <!-- Footer -->
           <tr>
             <td style="background-color: #fafafa; padding: 20px 32px; border-top: 1px solid #f4f4f5; text-align: center; font-size: 12px; color: #71717a;">
-              <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} KICKS Store. All rights reserved.</p>
+              <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} AJ SPORTS Store. All rights reserved.</p>
               <p style="margin: 0;">This is an automated notification. Please do not reply directly to this email.</p>
             </td>
           </tr>
@@ -92,12 +92,12 @@ export async function sendEmail({ to, subject, html, text, attachments }) {
  */
 export async function sendWelcomeEmail(user) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
-  const subject = 'Welcome to KICKS!';
-  const text = `Hi ${user.firstName || 'there'},\n\nWelcome to KICKS! Your account has been successfully created. Explore the latest premium sneakers and footwear on our store.\n\nHappy shopping!\nThe KICKS Team`;
+  const subject = 'Welcome to AJ SPORTS!';
+  const text = `Hi ${user.firstName || 'there'},\n\nWelcome to AJ SPORTS! Your account has been successfully created. Explore the latest premium sneakers and footwear on our store.\n\nHappy shopping!\nThe AJ SPORTS Team`;
   const html = emailLayout({
     title: subject,
     content: `
-      <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Welcome to KICKS, ${name}!</h2>
+      <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Welcome to AJ SPORTS, ${name}!</h2>
       <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Your account has been successfully created. Discover our curated collection of authentic, high-performance sneakers and timeless classics.</p>
       <div style="margin: 28px 0; text-align: center;">
         <a href="${escapeHtml(env.clientUrl)}/shop" style="background-color: #09090b; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 14px;">Explore Collection</a>
@@ -114,13 +114,13 @@ export async function sendWelcomeEmail(user) {
  */
 export async function sendOtpEmail({ to, firstName, otp }) {
   const name = firstName ? escapeHtml(firstName) : 'there';
-  const subject = 'Your KICKS verification code';
-  const text = `Hi ${firstName || 'there'},\n\nYour KICKS verification code is:\n${otp}\n\nThis code expires in 10 minutes. Do not share this code with anyone.\n\nThe KICKS Team`;
+  const subject = 'Your AJ SPORTS verification code';
+  const text = `Hi ${firstName || 'there'},\n\nYour AJ SPORTS verification code is:\n${otp}\n\nThis code expires in 10 minutes. Do not share this code with anyone.\n\nThe AJ SPORTS Team`;
   const html = emailLayout({
     title: subject,
     content: `
       <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Verify your email</h2>
-      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, use the code below to finish creating your KICKS account.</p>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, use the code below to finish creating your AJ SPORTS account.</p>
       <div style="margin: 24px 0; text-align: center; background-color: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; padding: 20px;">
         <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #09090b;">${escapeHtml(otp)}</span>
       </div>
@@ -136,13 +136,13 @@ export async function sendOtpEmail({ to, firstName, otp }) {
  */
 export async function sendVerificationEmail(user, url) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
-  const subject = 'Verify your KICKS email';
-  const text = `Hi ${user.firstName || 'there'},\n\nPlease verify your email address by visiting the following link:\n${url}\n\nThis verification link will expire in 24 hours.\n\nThe KICKS Team`;
+  const subject = 'Verify your AJ SPORTS email';
+  const text = `Hi ${user.firstName || 'there'},\n\nPlease verify your email address by visiting the following link:\n${url}\n\nThis verification link will expire in 24 hours.\n\nThe AJ SPORTS Team`;
   const html = emailLayout({
     title: subject,
     content: `
       <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Verify Your Email Address</h2>
-      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, thank you for joining KICKS! Please confirm your email address by clicking the button below.</p>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, thank you for joining AJ SPORTS! Please confirm your email address by clicking the button below.</p>
       <div style="margin: 28px 0; text-align: center;">
         <a href="${escapeHtml(url)}" style="background-color: #09090b; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 14px;">Verify Email</a>
       </div>
@@ -158,13 +158,13 @@ export async function sendVerificationEmail(user, url) {
  */
 export async function sendPasswordResetEmail(user, url) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
-  const subject = 'Reset your KICKS password';
-  const text = `Hi ${user.firstName || 'there'},\n\nWe received a request to reset your KICKS password. Click the link below to choose a new password:\n${url}\n\nThis link expires in 1 hour. If you did not request a password reset, please ignore this email or contact support immediately.\n\nThe KICKS Team`;
+  const subject = 'Reset your AJ SPORTS password';
+  const text = `Hi ${user.firstName || 'there'},\n\nWe received a request to reset your AJ SPORTS password. Click the link below to choose a new password:\n${url}\n\nThis link expires in 1 hour. If you did not request a password reset, please ignore this email or contact support immediately.\n\nThe AJ SPORTS Team`;
   const html = emailLayout({
     title: subject,
     content: `
       <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Password Reset Request</h2>
-      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, we received a request to reset your password for your KICKS account.</p>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, we received a request to reset your password for your AJ SPORTS account.</p>
       <div style="margin: 28px 0; text-align: center;">
         <a href="${escapeHtml(url)}" style="background-color: #09090b; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 14px;">Reset Password</a>
       </div>
@@ -181,13 +181,13 @@ export async function sendPasswordResetEmail(user, url) {
  */
 export async function sendPasswordChangedEmail(user) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
-  const subject = 'Your KICKS password was changed';
-  const text = `Hi ${user.firstName || 'there'},\n\nYour KICKS account password was successfully changed on ${new Date().toUTCString()}.\n\nIf you did not make this change, please contact KICKS support immediately to protect your account.\n\nThe KICKS Team`;
+  const subject = 'Your AJ SPORTS password was changed';
+  const text = `Hi ${user.firstName || 'there'},\n\nYour AJ SPORTS account password was successfully changed on ${new Date().toUTCString()}.\n\nIf you did not make this change, please contact AJ SPORTS support immediately to protect your account.\n\nThe AJ SPORTS Team`;
   const html = emailLayout({
     title: subject,
     content: `
       <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Password Changed Successfully</h2>
-      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, this email confirms that your KICKS password was successfully updated.</p>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, this email confirms that your AJ SPORTS password was successfully updated.</p>
       <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: 14px 18px; margin: 20px 0;">
         <p style="margin: 0; color: #991b1b; font-size: 13px; line-height: 1.5;"><strong>Important:</strong> If you did not make this update, please contact support or reset your password immediately to secure your account.</p>
       </div>
@@ -238,13 +238,13 @@ export async function sendOrderConfirmationEmail(user, order) {
   const orderNumber = escapeHtml(order.orderNumber);
   const subject = `Order Confirmed: ${order.orderNumber}`;
   const itemsText = (order.items || []).map((i) => `- ${i.productName} (Qty: ${i.quantity}) - INR ${i.finalPrice ?? (i.unitPrice * i.quantity)}`).join('\n');
-  const text = `Hi ${user.firstName || 'there'},\n\nThank you for your order! Your order ${order.orderNumber} has been received.\n\nItems:\n${itemsText}\n\nGrand Total: INR ${order.grandTotal}\nPayment Status: ${order.paymentStatus}\n\nThe KICKS Team`;
+  const text = `Hi ${user.firstName || 'there'},\n\nThank you for your order! Your order ${order.orderNumber} has been received.\n\nItems:\n${itemsText}\n\nGrand Total: INR ${order.grandTotal}\nPayment Status: ${order.paymentStatus}\n\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,
     content: `
       <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Order Confirmed!</h2>
-      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, thank you for shopping with KICKS! We have received your order <strong>${orderNumber}</strong>.</p>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, thank you for shopping with AJ SPORTS! We have received your order <strong>${orderNumber}</strong>.</p>
       ${renderOrderItemsHtml(order.items)}
       <div style="background-color: #fafafa; border-radius: 6px; padding: 14px 18px; margin-top: 16px;">
         <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #09090b;">
@@ -269,7 +269,7 @@ export async function sendPaymentConfirmationEmail(user, order) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
   const orderNumber = escapeHtml(order.orderNumber);
   const subject = `Payment Successful for Order ${order.orderNumber}`;
-  const text = `Hi ${user.firstName || 'there'},\n\nWe have successfully received your payment of INR ${order.grandTotal} for order ${order.orderNumber}.\n\nPayment ID: ${order.paymentId || 'Verified'}\nWe are now preparing your order for shipment.\n\nThe KICKS Team`;
+  const text = `Hi ${user.firstName || 'there'},\n\nWe have successfully received your payment of INR ${order.grandTotal} for order ${order.orderNumber}.\n\nPayment ID: ${order.paymentId || 'Verified'}\nWe are now preparing your order for shipment.\n\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,
@@ -294,7 +294,7 @@ export async function sendOrderCancelledEmail(user, order) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
   const orderNumber = escapeHtml(order.orderNumber);
   const subject = `Order Cancelled: ${order.orderNumber}`;
-  const text = `Hi ${user.firstName || 'there'},\n\nYour KICKS order ${order.orderNumber} has been cancelled.\n\nIf you have any questions or this was done in error, please reach out to our customer support.\n\nThe KICKS Team`;
+  const text = `Hi ${user.firstName || 'there'},\n\nYour AJ SPORTS order ${order.orderNumber} has been cancelled.\n\nIf you have any questions or this was done in error, please reach out to our customer support.\n\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,
@@ -302,7 +302,7 @@ export async function sendOrderCancelledEmail(user, order) {
       <h2 style="margin-top: 0; color: #b91c1c; font-size: 20px; font-weight: 700;">Order Cancelled</h2>
       <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, your order <strong>${orderNumber}</strong> has been cancelled.</p>
       <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: 16px; margin: 20px 0;">
-        <p style="margin: 0; font-size: 13px; color: #991b1b;">If this cancellation was not requested by you, or if you require further assistance, please contact KICKS support.</p>
+        <p style="margin: 0; font-size: 13px; color: #991b1b;">If this cancellation was not requested by you, or if you require further assistance, please contact AJ SPORTS support.</p>
       </div>
     `,
   });
@@ -316,8 +316,8 @@ export async function sendOrderCancelledEmail(user, order) {
 export async function sendInvoiceEmail(user, invoice, filePath) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
   const invoiceNumber = escapeHtml(invoice.invoiceNumber);
-  const subject = `Invoice ${invoice.invoiceNumber} for your KICKS order`;
-  const text = `Hi ${user.firstName || 'there'},\n\nPlease find attached the official commercial tax invoice ${invoice.invoiceNumber} for your recent KICKS order.\n\nThank you for shopping with us!\nThe KICKS Team`;
+  const subject = `Invoice ${invoice.invoiceNumber} for your AJ SPORTS order`;
+  const text = `Hi ${user.firstName || 'there'},\n\nPlease find attached the official commercial tax invoice ${invoice.invoiceNumber} for your recent AJ SPORTS order.\n\nThank you for shopping with us!\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,
@@ -344,7 +344,7 @@ export async function sendRefundEmail(user, order, amount) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
   const orderNumber = escapeHtml(order.orderNumber);
   const subject = `Refund Processed for Order ${order.orderNumber}`;
-  const text = `Hi ${user.firstName || 'there'},\n\nA refund of INR ${amount} has been processed for your order ${order.orderNumber}.\n\nThe amount should reflect in your original payment method in 5-7 business days.\n\nThe KICKS Team`;
+  const text = `Hi ${user.firstName || 'there'},\n\nA refund of INR ${amount} has been processed for your order ${order.orderNumber}.\n\nThe amount should reflect in your original payment method in 5-7 business days.\n\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,
@@ -369,8 +369,8 @@ export async function sendShippedEmail(user, order, shipment = {}) {
   const orderNumber = escapeHtml(order.orderNumber);
   const awb = shipment.awb ? escapeHtml(shipment.awb) : '';
   const trackingUrl = shipment.trackingUrl ? escapeHtml(shipment.trackingUrl) : '';
-  const subject = `Your KICKS Order ${order.orderNumber} Has Shipped!`;
-  const text = `Hi ${user.firstName || 'there'},\n\nGreat news! Your order ${order.orderNumber} has been shipped.\n${awb ? `Tracking / AWB Number: ${awb}\n` : ''}${trackingUrl ? `Track package: ${trackingUrl}\n` : ''}\nThe KICKS Team`;
+  const subject = `Your AJ SPORTS Order ${order.orderNumber} Has Shipped!`;
+  const text = `Hi ${user.firstName || 'there'},\n\nGreat news! Your order ${order.orderNumber} has been shipped.\n${awb ? `Tracking / AWB Number: ${awb}\n` : ''}${trackingUrl ? `Track package: ${trackingUrl}\n` : ''}\nThe AJ SPORTS Team`;
 
   const trackingButton = trackingUrl ? `
     <div style="margin: 24px 0; text-align: center;">
@@ -397,8 +397,8 @@ export async function sendShippedEmail(user, order, shipment = {}) {
 export async function sendOutForDeliveryEmail(user, order, shipment = {}) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
   const orderNumber = escapeHtml(order.orderNumber);
-  const subject = `Out for Delivery: KICKS Order ${order.orderNumber}`;
-  const text = `Hi ${user.firstName || 'there'},\n\nYour order ${order.orderNumber} is out for delivery today! Please ensure someone is available at the delivery address to receive it.\n\nThe KICKS Team`;
+  const subject = `Out for Delivery: AJ SPORTS Order ${order.orderNumber}`;
+  const text = `Hi ${user.firstName || 'there'},\n\nYour order ${order.orderNumber} is out for delivery today! Please ensure someone is available at the delivery address to receive it.\n\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,
@@ -421,8 +421,8 @@ export async function sendOutForDeliveryEmail(user, order, shipment = {}) {
 export async function sendDeliveryEmail(user, order) {
   const name = user.firstName ? escapeHtml(user.firstName) : 'there';
   const orderNumber = escapeHtml(order.orderNumber);
-  const subject = `Delivered: KICKS Order ${order.orderNumber}`;
-  const text = `Hi ${user.firstName || 'there'},\n\nYour order ${order.orderNumber} has been delivered! We hope you love your new kicks.\n\nIf you have any feedback or didn't receive your package, please reach out to us right away.\n\nThe KICKS Team`;
+  const subject = `Delivered: AJ SPORTS Order ${order.orderNumber}`;
+  const text = `Hi ${user.firstName || 'there'},\n\nYour order ${order.orderNumber} has been delivered! We hope you love your new kicks.\n\nIf you have any feedback or didn't receive your package, please reach out to us right away.\n\nThe AJ SPORTS Team`;
 
   const html = emailLayout({
     title: subject,

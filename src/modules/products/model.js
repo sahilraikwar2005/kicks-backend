@@ -29,6 +29,9 @@ const productSchema = new mongoose.Schema(
     description: { type: String, default: '' },
     shortDescription: { type: String, default: '' },
     images: [{ type: String }],
+    // Optional per-color galleries: { "Black": ["https://..."], "White": [...] }.
+    // Priority on the storefront: variant.images → colorImages[color] → images[].
+    colorImages: { type: Map, of: [String] },
     variants: [variantSchema],
     tags: [{ type: String, index: true }],
     price: { type: Number, default: 0 },

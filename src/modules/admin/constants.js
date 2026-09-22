@@ -1,3 +1,3 @@
 export const ADMIN_CONSTANTS = {
-  dashboardTitle: 'KICKS Admin',
+  dashboardTitle: 'AJ SPORTS Admin',
 };

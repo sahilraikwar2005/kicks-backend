@@ -14,6 +14,8 @@ import { wishlistApi } from '../api/wishlist.api';
 import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/useToast';
 import ProductCard from '../components/ui/ProductCard';
+import { colorKey } from '../utils/variantMatrix';
+import { resolveGalleryImages, sizesForColor, variantColors, variantForSelection } from '../utils/productGallery';
 import { NEUTRAL_PRODUCT_IMAGE } from '../components/ui/productImage';
 
 const reviewSchema = z.object({
@@ -23,13 +25,6 @@ const reviewSchema = z.object({
 });
 
 const formatMoney = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
-
-const normalizeImageList = (value) => {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value === 'string') return [value];
-  return [];
-};
 
 const getImageFallback = NEUTRAL_PRODUCT_IMAGE;
 
@@ -55,59 +50,55 @@ export default function ProductDetailPage() {
   const product = data;
   const variantOptions = product?.variants || [];
 
-  const sizeOptions = useMemo(() => Array.from(new Set(variantOptions.map((variant) => variant?.size).filter(Boolean))), [variantOptions]);
+  // Color-first selection: pick a color, then a size valid for that color.
+  // The resolved variant is always the EXACT Size + Color match (or null).
+  const allColors = useMemo(() => variantColors(variantOptions), [variantOptions]);
+  const firstAvailableColor = useMemo(
+    () => variantOptions.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0)?.color
+      || variantOptions[0]?.color
+      || '',
+    [variantOptions],
+  );
+  const resolvedColor = allColors.some((color) => colorKey(color) === colorKey(selectedColor))
+    ? allColors.find((color) => colorKey(color) === colorKey(selectedColor))
+    : firstAvailableColor;
+
+  const colorVariants = useMemo(
+    () => (resolvedColor ? variantOptions.filter((variant) => colorKey(variant?.color) === colorKey(resolvedColor)) : []),
+    [resolvedColor, variantOptions],
+  );
+  const sizeOptions = useMemo(() => sizesForColor(variantOptions, resolvedColor), [variantOptions, resolvedColor]);
   const sizeAvailability = useMemo(
     () =>
       sizeOptions.reduce((acc, size) => {
-        acc[size] = variantOptions.some(
+        acc[size] = colorVariants.some(
           (variant) => String(variant?.size) === String(size) && variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0,
         );
         return acc;
       }, {}),
-    [sizeOptions, variantOptions],
+    [sizeOptions, colorVariants],
   );
 
-  // Derive default selected size without useEffect
-  const firstAvailable = variantOptions.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0);
-  const defaultSizeValue = firstAvailable?.size || variantOptions[0]?.size || '';
+  const defaultSizeValue = colorVariants.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0)?.size
+    || colorVariants[0]?.size
+    || '';
   const resolvedSize = sizeOptions.includes(selectedSize) ? selectedSize : defaultSizeValue;
 
-  const sizeVariants = useMemo(
-    () => (resolvedSize ? variantOptions.filter((variant) => variant?.size === resolvedSize) : []),
-    [resolvedSize, variantOptions],
-  );
-  const colorOptions = useMemo(() => Array.from(new Set(sizeVariants.map((variant) => variant?.color).filter(Boolean))), [sizeVariants]);
+  const colorOptions = allColors;
   const colorAvailability = useMemo(
     () =>
-      colorOptions.reduce((acc, color) => {
-        acc[color] = sizeVariants.some(
-          (variant) => String(variant?.color) === String(color) && variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0,
+      allColors.reduce((acc, color) => {
+        acc[color] = variantOptions.some(
+          (variant) => colorKey(variant?.color) === colorKey(color) && variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0,
         );
         return acc;
       }, {}),
-    [colorOptions, sizeVariants],
+    [allColors, variantOptions],
   );
 
-  // Derive default selected color without useEffect
-  const preferredColor =
-    sizeVariants.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0)?.color ||
-    sizeVariants[0]?.color ||
-    '';
-  const resolvedColor =
-    resolvedSize && sizeVariants.length > 0 && sizeVariants.some((variant) => variant?.color === selectedColor)
-      ? selectedColor
-      : preferredColor;
-
   const selectedVariant = useMemo(
-    () =>
-      variantOptions.find(
-        (variant) => String(variant?.size) === String(resolvedSize) && String(variant?.color) === String(resolvedColor),
-      ) ||
-      sizeVariants.find((variant) => variant?.status !== 'INACTIVE' && Number(variant?.stock || 0) > 0) ||
-      sizeVariants[0] ||
-      variantOptions[0] ||
-      null,
-    [resolvedColor, resolvedSize, sizeVariants, variantOptions],
+    () => variantForSelection(variantOptions, resolvedSize, resolvedColor),
+    [resolvedSize, resolvedColor, variantOptions],
   );
 
   const currentPrice = Number(selectedVariant?.price ?? product?.price ?? 0);
@@ -116,12 +107,22 @@ export default function ProductDetailPage() {
   const isOutOfStock = Boolean(selectedVariant) && (selectedVariant?.status === 'INACTIVE' || Number(selectedVariant?.stock || 0) <= 0);
   const isLowStock = currentStock > 0 && currentStock <= 3;
 
-  // Derive active image index: reset to 0 when selection changes via key tracking
+  // Gallery priority: exact variant images → selected color gallery →
+  // product images → neutral placeholder. Switching colors recomputes from
+  // already-loaded product data (no extra requests).
   const galleryImages = useMemo(() => {
-    const variantImages = normalizeImageList(selectedVariant?.images);
-    const productImages = normalizeImageList(product?.images);
-    return variantImages.length ? variantImages : productImages.length ? productImages : [getImageFallback];
-  }, [product?.images, selectedVariant]);
+    const resolved = resolveGalleryImages({ product, variant: selectedVariant, color: resolvedColor });
+    return resolved.length > 0 ? resolved : [getImageFallback];
+  }, [product, selectedVariant, resolvedColor]);
+  // Reset to the first image whenever the gallery identity (product/color)
+  // changes. Render-time adjustment with a key guard (no effect needed).
+  const galleryKey = `${slug}::${resolvedColor}`;
+  const [seenGalleryKey, setSeenGalleryKey] = useState(galleryKey);
+  if (seenGalleryKey !== galleryKey) {
+    setSeenGalleryKey(galleryKey);
+    if (activeImageIndex !== 0) setActiveImageIndex(0);
+  }
+  const safeImageIndex = activeImageIndex >= galleryImages.length ? 0 : activeImageIndex;
 
   const reviewsQuery = useQuery({
     queryKey: ['product-reviews', product?._id],
@@ -310,8 +311,8 @@ export default function ProductDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{product?.seo?.title || `${product?.name} | KICKS`}</title>
-        <meta name="description" content={product?.seo?.description || product?.shortDescription || product?.description || 'Premium KICKS sneaker product.'} />
+        <title>{product?.seo?.title || `${product?.name} | AJ SPORTS`}</title>
+        <meta name="description" content={product?.seo?.description || product?.shortDescription || product?.description || 'Premium AJ SPORTS sneaker product.'} />
       </Helmet>
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 md:py-10 lg:px-8">
@@ -319,7 +320,7 @@ export default function ProductDetailPage() {
           <button type="button" onClick={() => navigate(-1)} className="kicks-btn kicks-btn-dark kicks-btn-sm">
             <ArrowLeft size={14} /> Back
           </button>
-          <div className="kicks-meta text-right">{product?.brand?.name || 'KICKS'} / {product?.category?.name || 'Sneaker'}</div>
+          <div className="kicks-meta text-right">{product?.brand?.name || 'AJ SPORTS'} / {product?.category?.name || 'Sneaker'}</div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
@@ -334,7 +335,7 @@ export default function ProductDetailPage() {
                 </button>
               </div>
               <img
-                src={galleryImages[activeImageIndex] || getImageFallback}
+                src={galleryImages[safeImageIndex] || getImageFallback}
                 alt={product?.name || 'Product'}
                 className="h-[300px] w-full rounded-[22px] object-cover sm:h-[420px] md:h-[560px]"
                 onError={(event) => {
@@ -351,7 +352,7 @@ export default function ProductDetailPage() {
                   type="button"
                   aria-label={`View product image ${index + 1}`}
                   onClick={() => setActiveImageIndex(index)}
-                  className={`overflow-hidden rounded-[22px] border p-2 transition ${activeImageIndex === index ? 'border-white/60 bg-[#161616]' : 'border-white/10 bg-[#111111]'}`}
+                  className={`overflow-hidden rounded-[22px] border p-2 transition ${safeImageIndex === index ? 'border-white/60 bg-[#161616]' : 'border-white/10 bg-[#111111]'}`}
                 >
                   <img
                     src={image || getImageFallback}
@@ -368,7 +369,7 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 md:p-8">
-            <p className="kicks-meta">{product?.brand?.name || 'KICKS'}</p>
+            <p className="kicks-meta">{product?.brand?.name || 'AJ SPORTS'}</p>
             <h1 className="mt-3 break-words text-2xl font-black uppercase tracking-[-0.04em] text-white sm:text-3xl">{product?.name}</h1>
 
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#d3d3d3]">
@@ -415,12 +416,12 @@ export default function ProductDetailPage() {
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Size</p>
-                  {selectedSize && <span className="text-xs text-[#d3d3d3]">{selectedSize}</span>}
+                  {resolvedSize && <span className="text-xs text-[#d3d3d3]">{resolvedSize}</span>}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {sizeOptions.map((size) => {
                     const isAvailable = Boolean(sizeAvailability[size]);
-                    const isSelected = size === selectedSize;
+                    const isSelected = size === resolvedSize;
                     return (
                       <button
                         key={size}
@@ -439,16 +440,16 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {sizeOptions.length > 0 && colorOptions.length > 0 && (
+              {colorOptions.length > 0 && (
                 <div>
                   <div className="mb-3 flex items-center justify-between">
                     <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a9a9a]">Color</p>
-                    {selectedColor && <span className="text-xs text-[#d3d3d3]">{selectedColor}</span>}
+                    {resolvedColor && <span className="text-xs text-[#d3d3d3]">{resolvedColor}</span>}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {colorOptions.map((color) => {
                       const hasStock = Boolean(colorAvailability[color]);
-                      const isSelected = color === selectedColor;
+                      const isSelected = colorKey(color) === colorKey(resolvedColor);
                       return (
                         <button
                           key={color}
@@ -519,7 +520,7 @@ export default function ProductDetailPage() {
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white">Authenticity Notice</p>
                 <p className="mt-1.5 text-xs leading-relaxed text-[#b8b8b8]">
-                  KICKS does not represent this product as officially brand-authorized or independently authenticated.
+                  AJ SPORTS does not represent this product as officially brand-authorized or independently authenticated.
                   Please review the product details carefully before purchase.{' '}
                   <Link to="/authenticity" className="text-white underline decoration-white/30 underline-offset-2 hover:decoration-white">Learn more</Link>
                 </p>

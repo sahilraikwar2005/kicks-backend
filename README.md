@@ -1,10 +1,10 @@
-# KICKS Backend
+# AJ SPORTS Backend
 
 A production-ready Node.js + Express.js + MongoDB backend for a sneaker e-commerce platform.
 
 ## Overview
 
-This project implements a modular backend architecture for the KICKS brand covering authentication, products, cart, checkout, payments, orders, shipping, audits, analytics, and admin APIs.
+This project implements a modular backend architecture for the AJ SPORTS brand covering authentication, products, cart, checkout, payments, orders, shipping, audits, analytics, and admin APIs.
 
 ## Tech Stack
 

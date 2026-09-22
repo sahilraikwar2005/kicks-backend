@@ -79,7 +79,7 @@ export default function ProductCard({ product }) {
     wishlistMutation.mutate();
   };
 
-  const brand = product?.brand?.name || product?.brand || 'KICKS';
+  const brand = product?.brand?.name || product?.brand || 'AJ SPORTS';
   const category = product?.category?.name || product?.category || 'Sneakers';
 
   return (

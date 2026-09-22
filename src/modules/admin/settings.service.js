@@ -5,9 +5,9 @@ const stringSetting = (min, max) => Joi.string().trim().min(min).max(max).requir
 const optionalStringSetting = (max) => Joi.string().trim().max(max).allow('').required();
 
 export const SETTING_DEFINITIONS = {
-  'store.name': { defaultValue: 'KICKS', schema: stringSetting(1, 80) },
+  'store.name': { defaultValue: 'AJ SPORTS', schema: stringSetting(1, 80) },
   'store.tagline': { defaultValue: 'Premium sneakers for movement and everyday expression', schema: stringSetting(1, 160) },
-  'store.description': { defaultValue: 'KICKS brings together premium craftsmanship, performance-driven design, and effortless street style.', schema: optionalStringSetting(500) },
+  'store.description': { defaultValue: 'AJ SPORTS brings together premium craftsmanship, performance-driven design, and effortless street style.', schema: optionalStringSetting(500) },
   'store.logoUrl': { defaultValue: '', schema: Joi.string().trim().uri().max(500).allow('').required() },
   'store.currency': { defaultValue: 'INR', schema: stringSetting(1, 10) },
   'store.country': { defaultValue: 'India', schema: stringSetting(1, 60) },
