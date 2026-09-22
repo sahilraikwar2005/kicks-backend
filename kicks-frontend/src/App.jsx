@@ -2921,7 +2921,7 @@ function RegisterPage() {
   const captchaBoxRef = useRef(null);
   const [captchaWidgetId, setCaptchaWidgetId] = useState(null);
 
-  const { register, handleSubmit, setError, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, setError, formState: { errors } } = useForm({
     defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
   });
 
@@ -2971,7 +2971,28 @@ function RegisterPage() {
 
   const onSubmit = async (values) => {
     setFormError('');
-    const parsed = registerEmailSchema.safeParse(values);
+    // Browser autofill can fill the DOM without firing input events, leaving
+    // RHF state stale. Re-sync live DOM values before validating.
+    const liveValues = { ...values };
+    try {
+      const domByField = {
+        fullName: 'register-fullname',
+        email: 'register-email',
+        password: 'password',
+        confirmPassword: 'confirmPassword',
+      };
+      for (const [field, id] of Object.entries(domByField)) {
+        const input = typeof document !== 'undefined' ? document.getElementById(id) : null;
+        const domValue = input && typeof input.value === 'string' ? input.value : '';
+        if (domValue !== liveValues[field]) {
+          setValue(field, domValue, { shouldDirty: true });
+          liveValues[field] = domValue;
+        }
+      }
+    } catch {
+      // Fall back to RHF state if the DOM cannot be read.
+    }
+    const parsed = registerEmailSchema.safeParse(liveValues);
     if (!parsed.success) {
       parsed.error.issues.forEach((issue) => {
         const field = issue.path[0];
