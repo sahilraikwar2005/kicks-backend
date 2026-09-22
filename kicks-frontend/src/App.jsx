@@ -3829,9 +3829,6 @@ function AdminPage({ initialSection }) {
   const [searchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navHidden, setNavHidden] = useState(false);
-  const [headerH, setHeaderH] = useState(68);
-  const headerRef = useRef(null);
   const sectionFromQuery = searchParams.get('section');
   const section = sectionFromQuery || initialSection || 'dashboard';
 
@@ -3852,54 +3849,6 @@ function AdminPage({ initialSection }) {
     document.body.style.overflow = drawerOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
-
-  // Scroll-aware admin top navbar: visible at the top, slides away on scroll
-  // down, returns on scroll up. Sidebar/drawer are untouched.
-  useEffect(() => {
-    const measure = () => {
-      if (headerRef.current) setHeaderH(headerRef.current.offsetHeight);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [section]);
-
-  // Reset the navbar to visible whenever the admin section changes, and keep
-  // it visible while the drawer is open. Render-time adjustment (no effect).
-  const [navSectionKey, setNavSectionKey] = useState(section);
-  if (navSectionKey !== section) {
-    setNavSectionKey(section);
-    if (navHidden) setNavHidden(false);
-  }
-  const headerHidden = navHidden && !drawerOpen;
-
-  useEffect(() => {
-    let lastY = window.scrollY || 0;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        ticking = false;
-        const y = window.scrollY || 0;
-        const dy = y - lastY;
-        lastY = y;
-        if (y <= 8) {
-          setNavHidden(false);
-          return;
-        }
-        if (Math.abs(dy) < 4) return;
-        if (dy > 0) {
-          setMenuOpen(false);
-          setNavHidden(true);
-        } else {
-          setNavHidden(false);
-        }
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   const navGroups = [
     {
@@ -4933,7 +4882,7 @@ function AdminPage({ initialSection }) {
 
     if (isFormOpen) {
       return (
-        <div className="space-y-5">
+        <div className="admin-product-form space-y-4">
           <AdminPageHeader
             eyebrow="Catalog"
             title={editingProduct ? 'Edit product' : 'Add product'}
@@ -4946,7 +4895,7 @@ function AdminPage({ initialSection }) {
                   type="button"
                   onClick={saveProduct}
                   disabled={savingProduct || uploading}
-                  className="kicks-btn kicks-btn-accent"
+                  className="kicks-btn kicks-btn-accent kicks-btn-sm"
                 >
                   {(savingProduct || uploading) && <Loader2 size={13} className="animate-spin" />}
                   {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
@@ -4958,12 +4907,12 @@ function AdminPage({ initialSection }) {
           {toast && <div><Toast message={toast} /></div>}
           {formError && <div><Toast message={formError} type="error" /></div>}
 
-          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <AdminCard>
-              <div className="space-y-7">
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <AdminCard className="admin-product-main">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Basics</p>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Product information</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full kicks-field text-white" /></FormField>
                     <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full kicks-field text-white" placeholder="auto-generated from name" /></FormField>
                     <div>
@@ -5019,9 +4968,9 @@ function AdminPage({ initialSection }) {
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 pt-6">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Pricing</p>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="border-t border-white/10 pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Pricing</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <FormField label="Default price (₹)" hint="New sizes start with this price."><input type="number" min="0" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: Number(event.target.value) })} className="w-full kicks-field text-white" /></FormField>
                     <FormField label="Default sale price (₹)" hint="Optional. Must not exceed price."><input type="number" min="0" value={productForm.salePrice} onChange={(event) => setProductForm({ ...productForm, salePrice: event.target.value })} className="w-full kicks-field text-white" /></FormField>
                   </div>
@@ -5035,9 +4984,9 @@ function AdminPage({ initialSection }) {
                   </button>
                 </div>
 
-                <div className="border-t border-white/10 pt-6">
+                <div className="border-t border-white/10 pt-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Available sizes & variants</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Variants</p>
                     {productForm.variants.length > 0 && (
                       <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#a8a8a8]">
                         {productForm.variants.length} variant{productForm.variants.length === 1 ? '' : 's'} • Total stock {totalVariantStock}
@@ -5045,7 +4994,7 @@ function AdminPage({ initialSection }) {
                     )}
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <FormField label="Size system">
                       <select
                         value={productForm.sizeSystem}
@@ -5060,7 +5009,7 @@ function AdminPage({ initialSection }) {
                     </FormField>
                   </div>
 
-                  <p className="mb-2 mt-4 block text-sm text-[#d4d4d4]">Colors</p>
+                  <p className="mb-1.5 mt-3 block text-xs font-medium text-[#c9c9c9]">Colors</p>
                   <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Product colors">
                     {productForm.colors.map((color) => (
                       <span
@@ -5100,7 +5049,7 @@ function AdminPage({ initialSection }) {
                     </span>
                   </div>
 
-                  <p className="mb-2 mt-4 block text-sm text-[#d4d4d4]">Available sizes</p>
+                  <p className="mb-1.5 mt-3 block text-xs font-medium text-[#c9c9c9]">Available sizes</p>
                   <div className="flex flex-wrap gap-1.5" role="group" aria-label="Available sizes">
                     {(SIZE_SYSTEMS[productForm.sizeSystem] || SIZE_SYSTEMS.UK).map((size) => {
                       const selected = productForm.variants.some((row) => row.size === size);
@@ -5119,7 +5068,7 @@ function AdminPage({ initialSection }) {
                   </div>
 
                   {productForm.variants.length === 0 ? (
-                    <p className="mt-4 rounded-[14px] border border-dashed border-white/15 bg-[#141414] p-4 text-center text-xs leading-relaxed text-[#8d8d8d]">
+                    <p className="mt-3 rounded-[12px] border border-dashed border-white/15 bg-[#141414] p-3 text-center text-xs leading-relaxed text-[#8d8d8d]">
                       Select sizes above to auto-generate variant rows. Stock and prices stay empty until you enter them. SKUs generate automatically.
                     </p>
                   ) : (
@@ -5194,9 +5143,9 @@ function AdminPage({ initialSection }) {
                         </table>
                       </div>
 
-                      <div className="mt-3 space-y-2.5 md:hidden">
+                      <div className="mt-2.5 space-y-2 md:hidden">
                         {productForm.variants.map((row) => (
-                          <div key={row.key} className="rounded-[14px] border border-white/10 bg-[#141414] p-3">
+                          <div key={row.key} className="rounded-[12px] border border-white/10 bg-[#141414] p-2.5">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-sm font-bold text-white">{row.size} <span className="font-medium text-[#a8a8a8]">• {row.color || 'No color'}</span></p>
                               <button type="button" onClick={() => removeVariantRow(row.key)} aria-label={`Remove ${row.size} variant`} title="Remove variant" className="inline-flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-lg border border-red-500/30 text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-400/60">
@@ -5232,43 +5181,40 @@ function AdminPage({ initialSection }) {
                   )}
                 </div>
 
-                <div className="border-t border-white/10 pt-6">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Description</p>
-                  <div className="mt-4 grid gap-4">
+                <div className="border-t border-white/10 pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Description</p>
+                  <div className="mt-3 grid gap-3">
                     <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full kicks-field text-white" /></FormField>
-                    <FormField label="Short description"><textarea rows={3} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="kicks-field" /></FormField>
-                    <FormField label="Description"><textarea rows={5} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="kicks-field" /></FormField>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-6">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Publishing</p>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full kicks-field text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
-                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#d5d5d5]">
-                      <input type="checkbox" checked={productForm.featured} onChange={(event) => setProductForm({ ...productForm, featured: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Featured
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#d5d5d5]">
-                      <input type="checkbox" checked={productForm.newArrival} onChange={(event) => setProductForm({ ...productForm, newArrival: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> New arrival
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#d5d5d5]">
-                      <input type="checkbox" checked={productForm.bestSeller} onChange={(event) => setProductForm({ ...productForm, bestSeller: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Bestseller
-                    </label>
+                    <FormField label="Short description"><textarea rows={2} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="kicks-field" /></FormField>
+                    <FormField label="Description"><textarea rows={3} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="kicks-field" /></FormField>
                   </div>
                 </div>
               </div>
             </AdminCard>
 
-          <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <AdminCard eyebrow="Publishing" title="Status & visibility">
+              <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full kicks-field text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
+              <div className="mt-3 grid gap-2">
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#d5d5d5]">
+                  <input type="checkbox" checked={productForm.featured} onChange={(event) => setProductForm({ ...productForm, featured: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Featured
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#d5d5d5]">
+                  <input type="checkbox" checked={productForm.newArrival} onChange={(event) => setProductForm({ ...productForm, newArrival: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> New arrival
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#d5d5d5]">
+                  <input type="checkbox" checked={productForm.bestSeller} onChange={(event) => setProductForm({ ...productForm, bestSeller: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Bestseller
+                </label>
+              </div>
+            </AdminCard>
+
             <AdminCard eyebrow="Media" title="Product media">
               <label
                 htmlFor="admin-product-images"
                 onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
                 onDragLeave={() => setDragActive(false)}
                 onDrop={(event) => { event.preventDefault(); setDragActive(false); uploadFiles(event.dataTransfer?.files); }}
-                className={`flex cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed px-4 py-8 text-center transition focus-within:border-white/40 ${dragActive ? 'border-[#FFC800] bg-[#FFC800]/5' : 'border-white/15 bg-[#141414] hover:border-white/30'}`}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-[14px] border border-dashed px-4 py-5 text-center transition focus-within:border-white/40 ${dragActive ? 'border-[#FFC800] bg-[#FFC800]/5' : 'border-white/15 bg-[#141414] hover:border-white/30'}`}
               >
                 <input
                   id="admin-product-images"
@@ -5300,10 +5246,10 @@ function AdminPage({ initialSection }) {
               )}
 
               {mediaItems.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2">
+                <div className="mt-3 grid grid-cols-3 gap-2">
                   {mediaItems.map((item, index) => (
                     <div key={item.id} className="group relative overflow-hidden rounded-xl border border-white/10 bg-[#181818]">
-                      <img src={item.url} alt={`Product image ${index + 1}`} className="h-20 w-full object-cover sm:h-24" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = '0.25'; }} />
+                      <img src={item.url} alt={`Product image ${index + 1}`} className="h-16 w-full object-cover sm:h-20" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = '0.25'; }} />
                       {index === 0 && (
                         <span className="absolute left-1.5 top-1.5 rounded-full bg-[#FFC800] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-black">Main</span>
                       )}
@@ -5325,8 +5271,8 @@ function AdminPage({ initialSection }) {
                 </div>
               )}
 
-              <div className="mt-4">
-                <label htmlFor="admin-image-url" className="mb-2 block text-xs uppercase tracking-[0.18em] text-[#a8a8a8]">Add image URL</label>
+              <div className="mt-3">
+                <label htmlFor="admin-image-url" className="mb-1.5 block text-[11px] uppercase tracking-[0.14em] text-[#8d8d8d]">Image URL <span className="normal-case tracking-normal text-[#767676]">• optional</span></label>
                 <div className="flex gap-2">
                   <input
                     id="admin-image-url"
@@ -5343,8 +5289,8 @@ function AdminPage({ initialSection }) {
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-white/10 pt-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">Color images</p>
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Color images</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-[#767676]">Each color gets its own gallery. First image is that color&apos;s main image.</p>
                 {productForm.colors.length === 0 ? (
                   <p className="mt-3 rounded-[12px] border border-dashed border-white/15 bg-[#141414] p-3 text-center text-xs text-[#8d8d8d]">
@@ -5439,7 +5385,7 @@ function AdminPage({ initialSection }) {
               type="button"
               onClick={saveProduct}
               disabled={savingProduct || uploading}
-              className="kicks-btn kicks-btn-accent"
+              className="kicks-btn kicks-btn-accent kicks-btn-sm"
             >
               {(savingProduct || uploading) && <Loader2 size={14} className="animate-spin" />}
               {savingProduct ? 'Saving...' : uploading ? 'Uploading...' : editingProduct ? 'Save changes' : 'Create product'}
@@ -6927,16 +6873,8 @@ function AdminPage({ initialSection }) {
           </div>
         )}
 
-        <div className="min-w-0 transition-[padding-top] duration-200 ease-out" style={{ paddingTop: headerHidden ? 0 : headerH }}>
-          <header
-            ref={headerRef}
-            aria-label="Admin top navigation"
-            aria-hidden={headerHidden || undefined}
-            inert={headerHidden || undefined}
-            className={`fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#0c0c0c]/80 backdrop-blur-md transition-transform duration-200 ease-out will-change-transform ${headerHidden ? '-translate-y-full' : 'translate-y-0'}`}
-          >
-            <div className="mx-auto w-full max-w-[1500px] px-4 lg:px-8">
-              <div className="flex items-center gap-2.5 py-3">
+        <div className="min-w-0">
+          <div className="mb-5 flex items-center gap-2.5">
             <span className="shrink-0 xl:hidden">
               <button
                 type="button"
@@ -7002,9 +6940,7 @@ function AdminPage({ initialSection }) {
                 )}
               </div>
             </div>
-            </div>
-            </div>
-          </header>
+          </div>
 
           <div>{renderSection()}</div>
         </div>

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bell, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User } from 'lucide-react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { notificationsApi } from '../../api/notifications.api';
 import { cartApi } from '../../api/cart.api';
 import { useAuth } from '../../context/useAuth';
@@ -17,6 +17,58 @@ const navItems = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { pathname } = useLocation();
+
+  // Scroll-aware admin top navbar (Header 1 only): visible at the top, slides
+  // away on scroll down, returns on any upward scroll. Customer navbar keeps
+  // its existing sticky behavior. Header 2 (admin content header) is untouched.
+  const [navHidden, setNavHidden] = useState(false);
+  const [barH, setBarH] = useState(57);
+  const barRef = useRef(null);
+
+  // Reset to visible on route change (render-time adjustment, no effect).
+  const [navPath, setNavPath] = useState(pathname);
+  if (navPath !== pathname) {
+    setNavPath(pathname);
+    if (navHidden) setNavHidden(false);
+  }
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const measure = () => {
+      if (barRef.current) setBarH(barRef.current.offsetHeight);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [isAdmin, pathname, mobileOpen]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    let lastY = window.scrollY || 0;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY || 0;
+        const dy = y - lastY;
+        lastY = y;
+        if (y <= 8) {
+          setNavHidden(false);
+          return;
+        }
+        if (Math.abs(dy) < 3) return;
+        setNavHidden(dy > 0);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isAdmin]);
+
+  // Keep the bar visible while its mobile menu is open so the menu stays usable.
+  const barHidden = isAdmin && navHidden && !mobileOpen;
 
   const { data: unreadNotifications = 0 } = useQuery({
     queryKey: ['notifications-count'],
@@ -41,7 +93,15 @@ export default function Navbar() {
   const cartCount = cartItems.reduce((total, item) => total + Number(item?.quantity || 0), 0);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/55 backdrop-blur-md">
+    <>
+    <header
+      ref={barRef}
+      className={
+        isAdmin
+          ? `fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/55 backdrop-blur-md transition-transform duration-200 ease-out will-change-transform ${barHidden ? '-translate-y-full' : 'translate-y-0'}`
+          : 'sticky top-0 z-50 border-b border-white/10 bg-black/55 backdrop-blur-md'
+      }
+    >
       <nav className="kicks-page py-2.5">
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5 lg:justify-self-start">
@@ -208,5 +268,7 @@ export default function Navbar() {
         )}
       </nav>
     </header>
+    {isAdmin && <div aria-hidden="true" style={{ height: barH }} />}
+    </>
   );
 }

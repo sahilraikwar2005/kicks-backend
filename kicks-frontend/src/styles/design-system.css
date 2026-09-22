@@ -434,3 +434,41 @@ textarea.kicks-field {
     height: 36px;
   }
 }
+
+/* ---------- Admin Add/Edit Product (compact, scoped) ---------- */
+.admin-product-form {
+  min-width: 0;
+  overflow-x: clip;
+}
+.admin-product-form .admin-product-main {
+  padding: 16px;
+}
+@media (min-width: 640px) {
+  .admin-product-form .admin-product-main {
+    padding: 18px;
+  }
+}
+.admin-product-form label.block > span.mb-2 {
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #c9c9c9;
+}
+.admin-product-form label.block > span.mt-2 {
+  font-size: 11px;
+  margin-top: 6px;
+}
+.admin-product-form .kicks-field {
+  font-size: 12.5px;
+  min-height: 38px;
+}
+.admin-product-form textarea.kicks-field {
+  min-height: 84px;
+  font-size: 12.5px;
+}
+.admin-product-form .kicks-field-sm {
+  min-height: 34px;
+  font-size: 12px;
+}
+.admin-product-form table {
+  font-size: 12px;
+}
