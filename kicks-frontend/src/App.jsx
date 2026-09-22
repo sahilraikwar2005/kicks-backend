@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
@@ -101,31 +101,6 @@ function getRegistrationErrorMessage(error) {
   if (error?.status === 400 && error?.message === 'Validation failed') return 'Please check the highlighted fields.';
   if (error?.status === 400 || error?.status === 503) return error?.message || 'Unable to create your account. Please try again.';
   return 'Unable to create your account. Please try again.';
-}
-
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
-const CAPTCHA_ENABLED = import.meta.env.VITE_CAPTCHA_ENABLED === 'true' && RECAPTCHA_SITE_KEY !== '';
-
-let recaptchaScriptPromise = null;
-
-function loadRecaptchaScript() {
-  if (typeof window === 'undefined') return Promise.reject(new Error('No window'));
-  if (window.grecaptcha) return Promise.resolve();
-  if (!recaptchaScriptPromise) {
-    recaptchaScriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => resolve();
-      script.onerror = () => {
-        recaptchaScriptPromise = null;
-        reject(new Error('CAPTCHA script failed to load'));
-      };
-      document.head.appendChild(script);
-    });
-  }
-  return recaptchaScriptPromise;
 }
 
 function ProtectedRoute() {
@@ -3029,8 +3004,6 @@ function RegisterPage() {
   const { showToast } = useToast();
 
   const [phase, setPhase] = useState('form');
-  const [captchaToken, setCaptchaToken] = useState('');
-  const [captchaError, setCaptchaError] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [rawIdentifier, setRawIdentifier] = useState('');
@@ -3041,56 +3014,15 @@ function RegisterPage() {
   const [cooldown, setCooldown] = useState(0);
   const [resending, setResending] = useState(false);
 
-  const captchaBoxRef = useRef(null);
-  const [captchaWidgetId, setCaptchaWidgetId] = useState(null);
-
   const { register, handleSubmit, setValue, setError, formState: { errors } } = useForm({
     defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
   });
-
-  useEffect(() => {
-    if (!CAPTCHA_ENABLED || !captchaBoxRef.current || phase !== 'form' || captchaWidgetId !== null) return undefined;
-    let cancelled = false;
-    loadRecaptchaScript().then(() => {
-      if (cancelled || !window.grecaptcha) return;
-      try {
-        const widgetId = window.grecaptcha.render(captchaBoxRef.current, {
-          sitekey: RECAPTCHA_SITE_KEY,
-          theme: 'dark',
-          callback: (token) => {
-            setCaptchaToken(token || '');
-            setCaptchaError('');
-          },
-          'expired-callback': () => setCaptchaToken(''),
-          'error-callback': () => {
-            setCaptchaToken('');
-            setCaptchaError('CAPTCHA failed. Please reload and try again.');
-          },
-        });
-        if (!cancelled) setCaptchaWidgetId(widgetId);
-      } catch {
-        if (!cancelled) setCaptchaError('CAPTCHA failed to load. Please reload and try again.');
-      }
-    }).catch(() => {
-      if (!cancelled) setCaptchaError('CAPTCHA failed to load. Check your connection and reload.');
-    });
-    return () => { cancelled = true; };
-  }, [phase, captchaWidgetId]);
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
     const timer = window.setInterval(() => setCooldown((current) => Math.max(0, current - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [cooldown]);
-
-  const resetCaptcha = () => {
-    try {
-      if (captchaWidgetId !== null && window.grecaptcha) window.grecaptcha.reset(captchaWidgetId);
-    } catch {
-      // token state remains the source of truth
-    }
-    setCaptchaToken('');
-  };
 
   const onSubmit = async (values) => {
     setFormError('');
@@ -3117,19 +3049,12 @@ function RegisterPage() {
       showToast('Please check the highlighted fields.', 'error');
       return;
     }
-    if (CAPTCHA_ENABLED && !captchaToken) {
-      setCaptchaError('Please complete the "I\'m not a robot" check.');
-      showToast('Please complete the CAPTCHA.', 'error');
-      return;
-    }
-
     const data = parsed.data;
     const payload = {
       name: data.fullName.trim(),
       email: data.email.trim(),
       password: data.password,
       confirmPassword: data.confirmPassword,
-      ...(CAPTCHA_ENABLED ? { captchaToken } : {}),
     };
 
     setSubmitting(true);
@@ -3144,7 +3069,6 @@ function RegisterPage() {
       setPhase('otp');
       showToast('Code sent to your email.', 'success');
     } catch (error) {
-      resetCaptcha();
       const fieldErrors = (error?.errors || [])
         .map((message) => ({ field: getRegistrationFieldError(message), message }))
         .filter(({ field }) => field);
@@ -3226,7 +3150,6 @@ function RegisterPage() {
 
   const backToForm = (event) => {
     event.preventDefault();
-    resetCaptcha();
     setPhase('form');
     setOtpError('');
   };
@@ -3256,16 +3179,6 @@ function RegisterPage() {
 
             <PasswordField label="Password" name="password" register={register} error={errors.password?.message} placeholder="Create a password (min 8 characters)" />
             <PasswordField label="Confirm password" name="confirmPassword" register={register} error={errors.confirmPassword?.message} placeholder="Repeat your password" />
-
-            {CAPTCHA_ENABLED && (
-              <div>
-                <p className="mb-2 block text-sm text-[#d5d5d5]">Security check</p>
-                <div className="overflow-x-auto rounded-[14px] border border-white/10 bg-[#181818] p-3">
-                  <div ref={captchaBoxRef} aria-label="I'm not a robot verification" />
-                </div>
-                {captchaError && <p role="alert" className="mt-2 text-sm text-red-300">{captchaError}</p>}
-              </div>
-            )}
 
             {formError && <p role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{formError}</p>}
 
