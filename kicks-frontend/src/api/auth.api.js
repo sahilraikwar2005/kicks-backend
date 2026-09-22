@@ -2,6 +2,8 @@ import { apiClient } from './client';
 
 export const authApi = {
   register: (payload) => apiClient.post('/auth/register', payload).then((response) => response.data),
+  verifyRegistrationOtp: (payload) => apiClient.post('/auth/register/verify-otp', payload).then((response) => response.data),
+  resendRegistrationOtp: (payload) => apiClient.post('/auth/register/resend-otp', payload).then((response) => response.data),
   login: (payload) => apiClient.post('/auth/login', payload).then((response) => response.data),
   logout: () => apiClient.post('/auth/logout').then((response) => response.data),
   logoutAll: () => apiClient.post('/auth/logout-all').then((response) => response.data),

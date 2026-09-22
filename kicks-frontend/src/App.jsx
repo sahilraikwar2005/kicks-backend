@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
@@ -42,6 +42,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from './api/client';
+import { colorKey, dedupeColors, distinctSizes, normalizeColorName, syncMatrixRows } from './utils/variantMatrix';
 import { addressesApi } from './api/addresses.api';
 import { adminApi } from './api/admin.api';
 import { authApi } from './api/auth.api';
@@ -73,14 +74,17 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name required'),
-  lastName: z.string().min(2, 'Last name required'),
+const registerEmailSchema = z.object({
+  fullName: z.string().trim().min(2, 'Enter your full name'),
   email: z.string().email('Valid email required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8, 'Confirm your password'),
+}).refine((values) => values.password === values.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
-const registrationFields = new Set(['firstName', 'lastName', 'email', 'password']);
+const registrationFields = new Set(['name', 'email', 'password', 'captchaToken']);
 
 function getRegistrationFieldError(message) {
   const field = message?.match(/^"([^"]+)"/)?.[1];
@@ -88,10 +92,35 @@ function getRegistrationFieldError(message) {
 }
 
 function getRegistrationErrorMessage(error) {
-  if (error?.status === 409) return 'An account with this email already exists.';
-  if (error?.status === 429) return 'Too many attempts. Please try again shortly.';
+  if (error?.status === 409) return error?.message || 'An account with these details already exists.';
+  if (error?.status === 429) return error?.message || 'Too many attempts. Please try again shortly.';
   if (error?.status === 400 && error?.message === 'Validation failed') return 'Please check the highlighted fields.';
+  if (error?.status === 400 || error?.status === 503) return error?.message || 'Unable to create your account. Please try again.';
   return 'Unable to create your account. Please try again.';
+}
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
+
+let recaptchaScriptPromise = null;
+
+function loadRecaptchaScript() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('No window'));
+  if (window.grecaptcha) return Promise.resolve();
+  if (!recaptchaScriptPromise) {
+    recaptchaScriptPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => {
+        recaptchaScriptPromise = null;
+        reject(new Error('CAPTCHA script failed to load'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+  return recaptchaScriptPromise;
 }
 
 function ProtectedRoute() {
@@ -2623,80 +2652,310 @@ function LoginPage() {
 }
 
 function RegisterPage() {
-  const { register: registerUser, isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const { showToast } = useToast();
-  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { firstName: '', lastName: '', email: '', password: '' },
+
+  const [phase, setPhase] = useState('form');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaError, setCaptchaError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [rawIdentifier, setRawIdentifier] = useState('');
+  const [maskedTarget, setMaskedTarget] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+
+  const captchaBoxRef = useRef(null);
+  const [captchaWidgetId, setCaptchaWidgetId] = useState(null);
+
+  const { register, handleSubmit, setError, formState: { errors } } = useForm({
+    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
   });
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY || !captchaBoxRef.current || phase !== 'form' || captchaWidgetId !== null) return undefined;
+    let cancelled = false;
+    loadRecaptchaScript().then(() => {
+      if (cancelled || !window.grecaptcha) return;
+      try {
+        const widgetId = window.grecaptcha.render(captchaBoxRef.current, {
+          sitekey: RECAPTCHA_SITE_KEY,
+          theme: 'dark',
+          callback: (token) => {
+            setCaptchaToken(token || '');
+            setCaptchaError('');
+          },
+          'expired-callback': () => setCaptchaToken(''),
+          'error-callback': () => {
+            setCaptchaToken('');
+            setCaptchaError('CAPTCHA failed. Please reload and try again.');
+          },
+        });
+        if (!cancelled) setCaptchaWidgetId(widgetId);
+      } catch {
+        if (!cancelled) setCaptchaError('CAPTCHA failed to load. Please reload and try again.');
+      }
+    }).catch(() => {
+      if (!cancelled) setCaptchaError('CAPTCHA failed to load. Check your connection and reload.');
+    });
+    return () => { cancelled = true; };
+  }, [phase, captchaWidgetId]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = window.setInterval(() => setCooldown((current) => Math.max(0, current - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldown]);
+
+  const resetCaptcha = () => {
+    try {
+      if (captchaWidgetId !== null && window.grecaptcha) window.grecaptcha.reset(captchaWidgetId);
+    } catch {
+      // token state remains the source of truth
+    }
+    setCaptchaToken('');
+  };
 
   const onSubmit = async (values) => {
+    setFormError('');
+    const parsed = registerEmailSchema.safeParse(values);
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue) => {
+        const field = issue.path[0];
+        if (typeof field === 'string') setError(field, { type: 'manual', message: issue.message });
+      });
+      showToast('Please check the highlighted fields.', 'error');
+      return;
+    }
+    if (!RECAPTCHA_SITE_KEY) {
+      setCaptchaError('Account verification is currently unavailable. Please try again later.');
+      showToast('Account verification is currently unavailable.', 'error');
+      return;
+    }
+    if (!captchaToken) {
+      setCaptchaError('Please complete the "I\'m not a robot" check.');
+      showToast('Please complete the CAPTCHA.', 'error');
+      return;
+    }
+
+    const data = parsed.data;
+    const payload = {
+      name: data.fullName.trim(),
+      email: data.email.trim(),
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+      captchaToken,
+    };
+
+    setSubmitting(true);
     try {
-      await registerUser(values);
-      showToast('Account created. Welcome to KICKS.', 'success');
-      navigate('/account', { replace: true });
+      const response = await authApi.register(payload);
+      const result = response?.data ?? response ?? {};
+      setRawIdentifier(payload.email.toLowerCase());
+      setMaskedTarget(result.identifier || '');
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpError('');
+      setCooldown(Number(result.resendAfterSeconds) || 60);
+      setPhase('otp');
+      showToast('Code sent to your email.', 'success');
     } catch (error) {
+      resetCaptcha();
       const fieldErrors = (error?.errors || [])
         .map((message) => ({ field: getRegistrationFieldError(message), message }))
         .filter(({ field }) => field);
-
-      fieldErrors.forEach(({ field, message }) => {
-        setError(field, { type: 'server', message });
-      });
-
+      fieldErrors.forEach(({ field, message }) => setError(field, { type: 'server', message }));
+      setFormError(getRegistrationErrorMessage(error));
       showToast(getRegistrationErrorMessage(error), 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const onInvalid = () => showToast('Please check the highlighted fields.', 'error');
+  const focusOtpBox = (index) => {
+    if (typeof document === 'undefined') return;
+    const box = document.getElementById(`register-otp-${index}`);
+    if (box) box.focus();
+  };
+
+  const handleOtpChange = (index, value) => {
+    const digit = String(value || '').replace(/\D/g, '').slice(-1);
+    setOtpDigits((current) => {
+      const next = [...current];
+      next[index] = digit;
+      return next;
+    });
+    setOtpError('');
+    if (digit && index < 5) focusOtpBox(index + 1);
+  };
+
+  const handleOtpKeyDown = (index, event) => {
+    if (event.key === 'Backspace' && !otpDigits[index] && index > 0) focusOtpBox(index - 1);
+  };
+
+  const handleOtpPaste = (event) => {
+    event.preventDefault();
+    const digits = String(event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6).split('');
+    if (digits.length === 0) return;
+    setOtpDigits((current) => current.map((_, index) => digits[index] || ''));
+    setOtpError('');
+    focusOtpBox(Math.min(digits.length, 5));
+  };
+
+  const onVerify = async (event) => {
+    event.preventDefault();
+    const code = otpDigits.join('');
+    if (code.length !== 6) {
+      setOtpError('Enter the 6-digit code.');
+      return;
+    }
+    setVerifying(true);
+    setOtpError('');
+    try {
+      await authApi.verifyRegistrationOtp({ identifier: rawIdentifier, code });
+      showToast('Account verified. Welcome to KICKS.', 'success');
+      window.location.href = '/account';
+    } catch (error) {
+      setOtpError(error?.message || 'Verification failed. Please try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const onResend = async () => {
+    if (resending || cooldown > 0) return;
+    setResending(true);
+    setOtpError('');
+    try {
+      const response = await authApi.resendRegistrationOtp({ identifier: rawIdentifier });
+      const result = response?.data ?? response ?? {};
+      setCooldown(Number(result.resendAfterSeconds) || 60);
+      setOtpDigits(['', '', '', '', '', '']);
+      showToast('A new code was sent.', 'success');
+      focusOtpBox(0);
+    } catch (error) {
+      setOtpError(error?.message || 'Could not resend the code.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const backToForm = (event) => {
+    event.preventDefault();
+    resetCaptcha();
+    setPhase('form');
+    setOtpError('');
+  };
 
   if (isAuthenticated) return <Navigate to={isAdmin ? '/admin' : '/account'} replace />;
 
   return (
-    <div className="mx-auto max-w-[700px] px-4 py-6 sm:py-12 lg:px-8">
+    <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Register | KICKS" description="Create a KICKS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Start here</p>
         <h1 className="mt-4 kicks-section-title">Create account</h1>
 
-        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-5">
-          <div className="grid gap-5 md:grid-cols-2">
+        {phase === 'form' ? (
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
             <div>
-              <label className="mb-2 block text-sm text-[#d5d5d5]">First name</label>
-              <input {...register('firstName')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
-              {errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}
+              <label className="mb-2 block text-sm text-[#d5d5d5]" htmlFor="register-fullname">Full name</label>
+              <input id="register-fullname" {...register('fullName')} autoComplete="name" className="w-full kicks-field text-white outline-none transition focus:border-white/25" placeholder="Aisha Patel" />
+              {errors.fullName && <p className="mt-2 text-sm text-red-300">{errors.fullName.message}</p>}
             </div>
+
             <div>
-              <label className="mb-2 block text-sm text-[#d5d5d5]">Last name</label>
-              <input {...register('lastName')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
-              {errors.lastName && <p className="mt-2 text-sm text-red-300">{errors.lastName.message}</p>}
+              <label className="mb-2 block text-sm text-[#d5d5d5]" htmlFor="register-email">Email address</label>
+              <input id="register-email" {...register('email')} type="email" autoComplete="email" className="w-full kicks-field text-white outline-none transition focus:border-white/25" placeholder="you@example.com" />
+              {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
+            </div>
+
+            <PasswordField label="Password" name="password" register={register} error={errors.password?.message} placeholder="Create a password (min 8 characters)" />
+            <PasswordField label="Confirm password" name="confirmPassword" register={register} error={errors.confirmPassword?.message} placeholder="Repeat your password" />
+
+            <div>
+              <p className="mb-2 block text-sm text-[#d5d5d5]">Security check</p>
+              {!RECAPTCHA_SITE_KEY ? (
+                <p role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-xs leading-relaxed text-red-200">
+                  Account verification is currently unavailable. Please try again later.
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-[14px] border border-white/10 bg-[#181818] p-3">
+                  <div ref={captchaBoxRef} aria-label="I'm not a robot verification" />
+                </div>
+              )}
+              {captchaError && <p role="alert" className="mt-2 text-sm text-red-300">{captchaError}</p>}
+            </div>
+
+            {formError && <p role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{formError}</p>}
+
+            <button type="submit" className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={submitting}>
+              {submitting ? 'Sending code...' : 'Create account'}
+            </button>
+
+            <div className="text-center text-sm text-[#c4c4c4]">
+              Already have an account? <Link to="/login" className="text-white underline">Login</Link>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-8">
+            <h2 className="text-xl font-bold text-white">
+              Verify email
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#a8a8a8]">
+              Enter the 6-digit code sent to{' '}
+              <span className="font-semibold text-white">{maskedTarget || 'your device'}</span>.
+            </p>
+
+            <form onSubmit={onVerify} className="mt-6">
+              <div className="flex justify-between gap-1.5 sm:gap-2" role="group" aria-label="6-digit verification code">
+                {otpDigits.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`register-otp-${index}`}
+                    value={digit}
+                    onChange={(event) => handleOtpChange(index, event.target.value)}
+                    onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                    onPaste={handleOtpPaste}
+                    inputMode="numeric"
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    aria-label={`Digit ${index + 1}`}
+                    maxLength={1}
+                    className="h-12 min-w-0 flex-1 rounded-[10px] border border-white/10 bg-[#181818] text-center text-lg font-bold text-white outline-none transition focus:border-white/40"
+                  />
+                ))}
+              </div>
+
+              {otpError && <p role="alert" className="mt-3 rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{otpError}</p>}
+
+              <button type="submit" disabled={verifying} className="mt-5 w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-wait disabled:opacity-60">
+                {verifying ? 'Verifying...' : 'Verify'}
+              </button>
+            </form>
+
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+              {cooldown > 0 ? (
+                <span className="text-[#8d8d8d]" aria-live="polite">
+                  Resend code in 00:{String(cooldown).padStart(2, '0')}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onResend}
+                  disabled={resending}
+                  className="text-white underline decoration-white/30 underline-offset-4 hover:decoration-white disabled:opacity-60"
+                >
+                  {resending ? 'Sending...' : 'Resend OTP'}
+                </button>
+              )}
+              <a href="/register" onClick={backToForm} className="text-[#a8a8a8] underline decoration-white/20 underline-offset-4 hover:text-white">
+                Use a different email
+              </a>
             </div>
           </div>
-
-          <div>
-            <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-            <input {...register('email')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
-            {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
-          </div>
-
-          <PasswordField
-            label="Password"
-            name="password"
-            register={register}
-            error={errors.password?.message}
-            placeholder="Create a password"
-          />
-
-          <button type="submit" className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating account...' : 'Create account'}
-          </button>
-
-          <div className="text-center text-sm text-[#c4c4c4]">
-            Already have an account? <Link to="/login" className="text-white underline">Login</Link>
-          </div>
-        </form>
+        )}
       </div>
     </div>
   );
@@ -3870,6 +4129,7 @@ function AdminPage({ initialSection }) {
     const [savingProduct, setSavingProduct] = useState(false);
     const [formError, setFormError] = useState('');
     const [bulkStock, setBulkStock] = useState('');
+    const [colorInput, setColorInput] = useState('');
     const [brandDialogOpen, setBrandDialogOpen] = useState(false);
     const [brandName, setBrandName] = useState('');
     const [brandSaving, setBrandSaving] = useState(false);
@@ -3892,6 +4152,7 @@ function AdminPage({ initialSection }) {
       tags: '',
       sizeSystem: 'UK',
       defaultColor: 'Black',
+      colors: [],
       variants: [],
     });
     const makeMediaId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -3949,6 +4210,7 @@ function AdminPage({ initialSection }) {
         tags: '',
         sizeSystem: 'UK',
         defaultColor: 'Black',
+        colors: [],
         variants: [],
       });
       setMediaItems([]);
@@ -4003,6 +4265,7 @@ function AdminPage({ initialSection }) {
         tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
         sizeSystem: detectSizeSystem(product.variants?.[0]?.size),
         defaultColor: product.variants?.[0]?.color || 'Black',
+        colors: dedupeColors((product.variants || []).map((variant) => variant?.color)),
         variants: hydrated,
       });
       setMediaItems(Array.isArray(product.images) ? product.images.filter(Boolean).map((url) => ({ id: makeMediaId(), kind: 'manual', url })) : []);
@@ -4035,26 +4298,83 @@ function AdminPage({ initialSection }) {
       || Boolean(row.touched.price)
       || Boolean(row.touched.salePrice && (row.salePrice !== '' && row.salePrice !== null && row.salePrice !== undefined));
 
+    const defaultVariantPrices = () => {
+      const price = Number(productForm.price || 0);
+      const salePrice = productForm.salePrice === '' || productForm.salePrice === null || productForm.salePrice === undefined
+        ? ''
+        : Number(productForm.salePrice);
+      return { price, salePrice };
+    };
+
+    const makeMatrixRow = (size, color) => {
+      const { price, salePrice } = defaultVariantPrices();
+      return blankVariant({ size, color, price, salePrice });
+    };
+
     const toggleSize = (size) => {
-      const existing = productForm.variants.filter((row) => row.size === size);
-      if (existing.length === 0) {
-        const price = Number(productForm.price || 0);
-        const salePrice = productForm.salePrice === '' || productForm.salePrice === null || productForm.salePrice === undefined
-          ? ''
-          : Number(productForm.salePrice);
-        setProductForm((current) => ({
-          ...current,
-          variants: [...current.variants, blankVariant({ size, color: current.defaultColor || 'Black', price, salePrice })],
-        }));
+      const colors = productForm.colors.length > 0 ? productForm.colors : [productForm.defaultColor || 'Black'];
+      const rowsForSize = productForm.variants.filter((row) => row.size === size);
+      const missing = colors.filter((color) => !rowsForSize.some((row) => colorKey(row.color) === colorKey(color)));
+      if (rowsForSize.length > 0 && missing.length === 0) {
+        const configured = rowsForSize.filter(isRowConfigured);
+        if (configured.length > 0 && !window.confirm(`Remove ${size} (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/price data will be lost.`)) {
+          return;
+        }
+        const keys = new Set(rowsForSize.map((row) => row.key));
+        setProductForm((current) => ({ ...current, variants: current.variants.filter((row) => !keys.has(row.key)) }));
         setFormError('');
         return;
       }
-      const configured = existing.filter(isRowConfigured);
-      if (configured.length > 0 && !window.confirm(`Remove ${size} (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/price data will be lost.`)) {
+      // Add only the missing Size × Color combinations; existing rows keep
+      // their stock, price, sale price and SKU data untouched.
+      const needed = colors.filter((color) => !rowsForSize.some((row) => colorKey(row.color) === colorKey(color)));
+      if (needed.length === 0) return;
+      setProductForm((current) => ({
+        ...current,
+        colors: current.colors.length > 0 ? current.colors : colors,
+        variants: syncMatrixRows({ rows: current.variants, sizes: [size], colors: needed, makeRow: (nextSize, nextColor) => makeMatrixRow(nextSize, nextColor) }),
+      }));
+      setFormError('');
+    };
+
+    const addColor = () => {
+      const name = normalizeColorName(colorInput);
+      if (!name) {
+        setFormError('Enter a color name first.');
         return;
       }
-      const keys = new Set(existing.map((row) => row.key));
-      setProductForm((current) => ({ ...current, variants: current.variants.filter((row) => !keys.has(row.key)) }));
+      if (productForm.colors.some((color) => colorKey(color) === colorKey(name))) {
+        setFormError(`Color "${name}" already exists.`);
+        return;
+      }
+      const sizes = distinctSizes(productForm.variants);
+      const { price, salePrice } = defaultVariantPrices();
+      setProductForm((current) => ({
+        ...current,
+        colors: [...current.colors, name],
+        variants: syncMatrixRows({
+          rows: current.variants,
+          sizes,
+          colors: [name],
+          makeRow: (size, color) => blankVariant({ size, color, price, salePrice }),
+        }),
+      }));
+      setColorInput('');
+      setFormError('');
+    };
+
+    const removeColor = (name) => {
+      const rowsForColor = productForm.variants.filter((row) => colorKey(row.color) === colorKey(name));
+      const configured = rowsForColor.filter(isRowConfigured);
+      if (configured.length > 0 && !window.confirm(`Remove color "${name}" (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/price data will be lost.`)) {
+        return;
+      }
+      const keys = new Set(rowsForColor.map((row) => row.key));
+      setProductForm((current) => ({
+        ...current,
+        colors: current.colors.filter((color) => colorKey(color) !== colorKey(name)),
+        variants: current.variants.filter((row) => !keys.has(row.key)),
+      }));
       setFormError('');
     };
 
@@ -4091,6 +4411,7 @@ function AdminPage({ initialSection }) {
       }
       setProductForm((current) => ({
         ...current,
+        colors: [normalizeColorName(color)],
         variants: current.variants.map((row) => ({ ...row, color, touched: { ...row.touched, color: true } })),
       }));
       setFormError('');
@@ -4508,6 +4829,46 @@ function AdminPage({ initialSection }) {
                     </FormField>
                   </div>
 
+                  <p className="mb-2 mt-4 block text-sm text-[#d4d4d4]">Colors</p>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Product colors">
+                    {productForm.colors.map((color) => (
+                      <span
+                        key={colorKey(color)}
+                        className="inline-flex min-h-[34px] items-center gap-1.5 rounded-[10px] border border-white bg-white py-1 pl-3.5 pr-1.5 text-xs font-semibold text-black"
+                      >
+                        {color}
+                        <button
+                          type="button"
+                          onClick={() => removeColor(color)}
+                          aria-label={`Remove color ${color}`}
+                          title={`Remove color ${color}`}
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-black/60 transition hover:bg-black/10 hover:text-black focus:outline-none focus:ring-2 focus:ring-black/40"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                    <span className="inline-flex min-h-[34px] items-center gap-1.5">
+                      <input
+                        value={colorInput}
+                        onChange={(event) => { setColorInput(event.target.value); setFormError(''); }}
+                        onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addColor(); } }}
+                        placeholder="Add color"
+                        aria-label="New color name"
+                        className="kicks-field kicks-field-sm w-28"
+                      />
+                      <button
+                        type="button"
+                        onClick={addColor}
+                        aria-label="Add color"
+                        title="Add color"
+                        className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/15 text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </span>
+                  </div>
+
                   <p className="mb-2 mt-4 block text-sm text-[#d4d4d4]">Available sizes</p>
                   <div className="flex flex-wrap gap-1.5" role="group" aria-label="Available sizes">
                     {(SIZE_SYSTEMS[productForm.sizeSystem] || SIZE_SYSTEMS.UK).map((size) => {
@@ -4577,9 +4938,7 @@ function AdminPage({ initialSection }) {
                             {productForm.variants.map((row) => (
                               <tr key={row.key} className="border-b border-white/5 last:border-0">
                                 <td className="whitespace-nowrap px-3 py-2 font-semibold text-white">{row.size}</td>
-                                <td className="px-3 py-2">
-                                  <input value={row.color} onChange={(event) => updateVariant(row.key, { color: event.target.value }, ['color'])} aria-label={`Color for ${row.size}`} className="kicks-field kicks-field-sm w-24" />
-                                </td>
+                                <td className="whitespace-nowrap px-3 py-2 font-medium text-white">{row.color}</td>
                                 <td className="px-3 py-2">
                                   <span className="block whitespace-nowrap font-mono text-xs text-white" title="Auto-generated SKU">{skuByKey[row.key] || '—'}</span>
                                   <span className="mt-0.5 block text-[9px] uppercase tracking-[0.16em] text-[#767676]">Auto</span>
@@ -4614,10 +4973,10 @@ function AdminPage({ initialSection }) {
                               </button>
                             </div>
                             <div className="mt-2.5 grid grid-cols-2 gap-2">
-                              <label className="block">
+                              <div>
                                 <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Color</span>
-                                <input value={row.color} onChange={(event) => updateVariant(row.key, { color: event.target.value }, ['color'])} className="kicks-field kicks-field-sm w-full" />
-                              </label>
+                                <span className="block truncate text-sm font-medium text-white">{row.color || '—'}</span>
+                              </div>
                               <div>
                                 <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">SKU • Auto</span>
                                 <span className="block break-all font-mono text-xs text-white">{skuByKey[row.key] || '—'}</span>

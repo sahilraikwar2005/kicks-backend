@@ -1,11 +1,34 @@
 import { apiSuccess } from '../../utils/apiResponse.js';
 import { authService } from './service.js';
+import { registrationService } from './registration.service.js';
 
 export const authController = {
   register: async (req, res) => {
-    const result = await authService.register(req.body);
+    const result = await registrationService.startRegistration(
+      {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        confirmPassword: req.body.confirmPassword,
+        captchaToken: req.body.captchaToken,
+      },
+      req.ip,
+    );
+    return res.status(200).json(apiSuccess('Verification code sent', result));
+  },
+
+  verifyRegistrationOtp: async (req, res) => {
+    const result = await registrationService.verifyOtp({
+      identifier: req.body.identifier,
+      code: req.body.code,
+    });
     authService.setAuthCookies(res, result.accessToken, result.refreshToken);
-    return res.status(201).json(apiSuccess('Registration successful', { user: result.user }));
+    return res.status(201).json(apiSuccess('Account verified successfully', { user: result.user }));
+  },
+
+  resendRegistrationOtp: async (req, res) => {
+    const result = await registrationService.resendOtp({ identifier: req.body.identifier });
+    return res.status(200).json(apiSuccess('Verification code sent', result));
   },
 
   login: async (req, res) => {

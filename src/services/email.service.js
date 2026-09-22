@@ -110,6 +110,28 @@ export async function sendWelcomeEmail(user) {
 }
 
 /**
+ * 2b. Registration OTP (email channel)
+ */
+export async function sendOtpEmail({ to, firstName, otp }) {
+  const name = firstName ? escapeHtml(firstName) : 'there';
+  const subject = 'Your KICKS verification code';
+  const text = `Hi ${firstName || 'there'},\n\nYour KICKS verification code is:\n${otp}\n\nThis code expires in 10 minutes. Do not share this code with anyone.\n\nThe KICKS Team`;
+  const html = emailLayout({
+    title: subject,
+    content: `
+      <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Verify your email</h2>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, use the code below to finish creating your KICKS account.</p>
+      <div style="margin: 24px 0; text-align: center; background-color: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; padding: 20px;">
+        <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #09090b;">${escapeHtml(otp)}</span>
+      </div>
+      <p style="color: #71717a; font-size: 13px; line-height: 1.5;">This code expires in 10 minutes. Do not share this code with anyone.</p>
+    `,
+  });
+
+  return sendEmail({ to, subject, text, html });
+}
+
+/**
  * 2. Email Verification & Resend Verification
  */
 export async function sendVerificationEmail(user, url) {

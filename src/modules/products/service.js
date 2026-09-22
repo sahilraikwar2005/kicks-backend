@@ -118,6 +118,23 @@ const createSkuConflictError = () => {
 export const productService = {
   normalizeSku,
 
+  validateVariantComboUniqueness(variants = []) {
+    const seen = new Set();
+    for (const variant of variants) {
+      const size = String(variant?.size || '').trim();
+      const color = String(variant?.color || '').trim();
+      if (!size || !color) continue;
+      const key = `${size.toLowerCase()}::${color.toLowerCase()}`;
+      if (seen.has(key)) {
+        const error = new Error(`Duplicate variant combination "${variant.size} / ${variant.color}"`);
+        error.statusCode = 400;
+        throw error;
+      }
+      seen.add(key);
+    }
+    return true;
+  },
+
   validateVariantSkuUniqueness(variants = []) {
     const seen = new Set();
     for (const variant of variants) {
@@ -210,6 +227,7 @@ export const productService = {
       }];
     const variants = await finalizeVariantSkus({ variants: rawVariants, brandName, modelName });
 
+    productService.validateVariantComboUniqueness(variants);
     productService.validateVariantSkuUniqueness(variants);
     await productService.validateGlobalVariantSkuUniqueness(variants);
 
@@ -260,6 +278,7 @@ export const productService = {
         excludedProductId: id,
         existingByCombo,
       });
+      productService.validateVariantComboUniqueness(finalizedVariants);
       productService.validateVariantSkuUniqueness(finalizedVariants);
       await productService.validateGlobalVariantSkuUniqueness(finalizedVariants, id);
       cleanPayload.variants = finalizedVariants;

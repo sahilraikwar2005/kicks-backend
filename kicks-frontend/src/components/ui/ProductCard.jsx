@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { cartApi } from '../../api/cart.api';
 import { wishlistApi } from '../../api/wishlist.api';
+import { primaryProductImage, NEUTRAL_PRODUCT_IMAGE } from './productImage';
 import { useToast } from '../../context/useToast';
 import { useAuth } from '../../context/useAuth';
 
@@ -86,12 +87,12 @@ export default function ProductCard({ product }) {
       <div className="kicks-product-media">
         <Link to={`/products/${product?.slug}`} className="block h-full w-full" aria-label={`View ${product?.name || 'product'}`}>
           <img
-            src={product?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'}
+            src={primaryProductImage(product)}
             alt={product?.name || 'Product'}
             loading="lazy"
             onError={(event) => {
               event.currentTarget.onerror = null;
-              event.currentTarget.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
+              event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE;
             }}
           />
         </Link>

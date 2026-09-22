@@ -14,6 +14,7 @@ import { wishlistApi } from '../api/wishlist.api';
 import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/useToast';
 import ProductCard from '../components/ui/ProductCard';
+import { NEUTRAL_PRODUCT_IMAGE } from '../components/ui/productImage';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1).max(5),
@@ -30,7 +31,7 @@ const normalizeImageList = (value) => {
   return [];
 };
 
-const getImageFallback = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80';
+const getImageFallback = NEUTRAL_PRODUCT_IMAGE;
 
 export default function ProductDetailPage() {
   const { slug } = useParams();

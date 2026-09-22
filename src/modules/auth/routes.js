@@ -6,6 +6,8 @@ import { protect } from '../../middleware/auth.middleware.js';
 import { authController } from './controller.js';
 import {
   registerSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
   loginSchema,
   refreshSchema,
   forgotPasswordSchema,
@@ -17,6 +19,8 @@ import {
 const router = express.Router();
 
 router.post('/register', authRateLimiter, validate(registerSchema), asyncHandler(authController.register));
+router.post('/register/verify-otp', authRateLimiter, validate(verifyOtpSchema), asyncHandler(authController.verifyRegistrationOtp));
+router.post('/register/resend-otp', authRateLimiter, validate(resendOtpSchema), asyncHandler(authController.resendRegistrationOtp));
 router.post('/login', authRateLimiter, validate(loginSchema), asyncHandler(authController.login));
 router.post('/logout', protect, asyncHandler(authController.logout));
 router.post('/logout-all', protect, asyncHandler(authController.logoutAll));
