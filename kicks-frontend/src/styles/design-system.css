@@ -478,3 +478,134 @@ textarea.kicks-field {
 .admin-product-form table {
   font-size: 12px;
 }
+
+/* ---------- Admin premium system (scoped, visual only) ---------- */
+.admin-shell {
+  --admin-bg: #080808;
+  --admin-surface: #0d0d0d;
+  --admin-surface-2: #141414;
+  --admin-line: rgba(255, 255, 255, 0.08);
+  --admin-text-dim: #a0a0a0;
+}
+
+/* Inputs: yellow focus ring, smooth transitions */
+.admin-shell .kicks-field {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.admin-shell .kicks-field:focus {
+  border-color: rgba(255, 200, 0, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.12);
+}
+.admin-shell .kicks-field::placeholder {
+  color: #6f6f6f;
+}
+
+/* Tables: clean dark rows, subtle separators, hover */
+.admin-shell table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.admin-shell thead th {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8d8d8d;
+  background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap;
+}
+.admin-shell thead th:first-child {
+  border-top-left-radius: 10px;
+}
+.admin-shell thead th:last-child {
+  border-top-right-radius: 10px;
+}
+.admin-shell tbody tr {
+  transition: background 0.15s ease;
+}
+.admin-shell tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+.admin-shell tbody td {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+/* Sidebar nav: elegant active state */
+.admin-nav-item {
+  position: relative;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.admin-nav-item[data-active='true'] {
+  background: rgba(255, 200, 0, 0.09);
+  color: #fff;
+}
+.admin-nav-item[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--kicks-accent);
+  box-shadow: 0 0 12px rgba(255, 200, 0, 0.55);
+}
+.admin-nav-item[data-active='true'] svg {
+  color: var(--kicks-accent);
+}
+
+/* Skeleton shimmer */
+.admin-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #141414;
+}
+.admin-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: admin-shimmer 1.4s infinite;
+}
+@keyframes admin-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Modal / drawer / menu entrances */
+.admin-pop {
+  animation: admin-pop 0.18s ease-out;
+  transform-origin: top right;
+}
+@keyframes admin-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.admin-drawer-in {
+  animation: admin-drawer-in 0.22s ease-out;
+}
+@keyframes admin-drawer-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.admin-fade-in {
+  animation: admin-fade-in 0.18s ease-out;
+}
+@keyframes admin-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slim scrollbars for sidebar and table wells */
+.admin-shell .admin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.admin-shell .admin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+.admin-shell .admin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

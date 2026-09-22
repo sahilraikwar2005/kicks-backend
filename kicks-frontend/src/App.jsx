@@ -3460,9 +3460,9 @@ function Pagination({ page, totalPages, onPageChange }) {
 
   return (
     <div className="mt-4 flex items-center justify-end gap-1.5">
-      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="inline-flex h-8 items-center rounded-[8px] border border-white/10 px-3 text-xs text-white disabled:opacity-40">Prev</button>
-      <span className="px-1 text-xs text-[#d5d5d5]">Page {page} / {totalPages}</span>
-      <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="inline-flex h-8 items-center rounded-[8px] border border-white/10 px-3 text-xs text-white disabled:opacity-40">Next</button>
+      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="inline-flex h-8 items-center rounded-[8px] border border-white/10 bg-white/[0.02] px-3 text-xs font-medium text-white transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-40">Prev</button>
+      <span className="px-1 text-xs tabular-nums text-[#8d8d8d]">Page {page} / {totalPages}</span>
+      <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="inline-flex h-8 items-center rounded-[8px] border border-white/10 bg-white/[0.02] px-3 text-xs font-medium text-white transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-40">Next</button>
     </div>
   );
 }
@@ -3698,8 +3698,8 @@ function ProductInventoryDetail({
 
 function SearchInput({ value, onChange, placeholder = 'Search...' }) {
   return (
-    <div className="rounded-[10px] border border-white/10 bg-[#181818] px-3.5 py-2">
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full bg-transparent text-[13px] text-white placeholder:text-[#7d7d7d] outline-none" />
+    <div className="rounded-[10px] border border-white/10 bg-[#121212] px-3.5 py-2 transition focus-within:border-[#FFC800]/50 focus-within:shadow-[0_0_0_3px_rgba(255,200,0,0.1)]">
+      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full bg-transparent text-[13px] text-white placeholder:text-[#6f6f6f] outline-none" />
     </div>
   );
 }
@@ -3721,45 +3721,50 @@ function FormField({ label, children, hint }) {
 function StatusBadge({ status }) {
   const normalizedStatus = String(status || 'DEFAULT').toUpperCase();
   const palette = {
-    PUBLISHED: 'bg-[#10271d] text-[#8ff0a8]',
-    DRAFT: 'bg-[#2d2a19] text-[#f3d87d]',
-    ARCHIVED: 'bg-[#2c1a1a] text-[#f5a0a0]',
-    ACTIVE: 'bg-[#10271d] text-[#8ff0a8]',
-    INACTIVE: 'bg-[#2f2c2c] text-[#e7e7e7]',
-    APPROVED: 'bg-[#10271d] text-[#8ff0a8]',
-    REJECTED: 'bg-[#2c1a1a] text-[#f5a0a0]',
-    PENDING: 'bg-[#2d2a19] text-[#f3d87d]',
-    PROCESSING: 'bg-[#2d2a19] text-[#f3d87d]',
-    SHIPPED: 'bg-[#112b2a] text-[#8ee9d3]',
-    DELIVERED: 'bg-[#10271d] text-[#8ff0a8]',
-    CANCELLED: 'bg-[#2c1a1a] text-[#f5a0a0]',
-    PAID: 'bg-[#10271d] text-[#8ff0a8]',
-    FAILED: 'bg-[#2c1a1a] text-[#f5a0a0]',
-    REFUNDED: 'bg-[#2c1a1a] text-[#f5a0a0]',
-    DEFAULT: 'bg-[#1d1d1d] text-[#e8e8e8]',
+    PUBLISHED: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
+    DRAFT: 'border-[#FFC800]/25 bg-[#FFC800]/10 text-[#f3d87d]',
+    ARCHIVED: 'border-red-400/25 bg-red-400/10 text-red-300',
+    ACTIVE: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
+    INACTIVE: 'border-white/15 bg-white/5 text-[#d5d5d5]',
+    APPROVED: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
+    REJECTED: 'border-red-400/25 bg-red-400/10 text-red-300',
+    PENDING: 'border-[#FFC800]/25 bg-[#FFC800]/10 text-[#f3d87d]',
+    PROCESSING: 'border-sky-400/25 bg-sky-400/10 text-sky-300',
+    SHIPPED: 'border-teal-400/25 bg-teal-400/10 text-teal-300',
+    DELIVERED: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
+    CANCELLED: 'border-red-400/25 bg-red-400/10 text-red-300',
+    PAID: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
+    FAILED: 'border-red-400/25 bg-red-400/10 text-red-300',
+    REFUNDED: 'border-orange-400/25 bg-orange-400/10 text-orange-300',
+    DEFAULT: 'border-white/15 bg-white/5 text-[#e8e8e8]',
   };
 
-  return <span className={`inline-flex rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] ${palette[normalizedStatus] || palette.DEFAULT}`}>{normalizedStatus}</span>;
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${palette[normalizedStatus] || palette.DEFAULT}`}>
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+      {normalizedStatus}
+    </span>
+  );
 }
 
 function EmptyState({ title, description }) {
   return (
-    <div className="rounded-[22px] border border-dashed border-white/15 bg-[#121212] p-6 text-center sm:p-10">
-      <h3 className="text-xl font-black uppercase tracking-[-0.05em] text-white sm:text-2xl">{title}</h3>
-      <p className="mt-3 text-[#d5d5d5]">{description}</p>
+    <div className="rounded-[14px] border border-dashed border-white/15 bg-[#0d0d0d] p-6 text-center sm:p-10">
+      <h3 className="text-xl font-black uppercase tracking-[-0.04em] text-white sm:text-2xl">{title}</h3>
+      <p className="mx-auto mt-2.5 max-w-md text-sm leading-relaxed text-[#a0a0a0]">{description}</p>
     </div>
   );
 }
 
 function ErrorState({ message }) {
-  return <div className="rounded-[20px] border border-red-500/30 bg-[#1b1515] p-5 text-sm text-red-200">{message}</div>;
+  return <div className="rounded-[14px] border border-red-500/25 bg-red-500/[0.06] p-5 text-sm leading-relaxed text-red-200">{message}</div>;
 }
 
 function Skeleton({ lines = 3 }) {
   return (
     <div className="space-y-3">
       {[...Array(lines)].map((_, index) => (
-        <div key={index} className="h-14 animate-pulse rounded-[16px] bg-[#171717]" />
+        <div key={index} className="admin-skeleton h-14 animate-pulse rounded-[12px]" />
       ))}
     </div>
   );
@@ -3767,11 +3772,16 @@ function Skeleton({ lines = 3 }) {
 
 function Toast({ message, type = 'info' }) {
   if (!message) return null;
-  const tone = type === 'error' ? 'border-red-500/40 bg-[#201414] text-red-200' : 'border-white/10 bg-[#191919] text-[#e8e8e8]';
+  const tone = type === 'error'
+    ? 'border-red-500/30 bg-[#171112] text-red-200'
+    : type === 'success'
+      ? 'border-emerald-500/30 bg-[#0f1713] text-emerald-200'
+      : 'border-[#FFC800]/25 bg-[#15130a] text-[#f0e2b0]';
 
   return (
-    <div className={`rounded-[18px] border ${tone} px-4 py-3 text-sm`}>
-      {message}
+    <div className={`admin-fade-in flex items-start gap-2.5 rounded-[12px] border ${tone} px-4 py-3 text-[13px] leading-relaxed`}>
+      <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
+      <span>{message}</span>
     </div>
   );
 }
@@ -3780,9 +3790,9 @@ function AdminPageHeader({ eyebrow, title, meta, actions }) {
   return (
     <div className="mb-5 flex flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8d8d8d]">{eyebrow}</p>}
-        <h2 className="mt-1.5 text-2xl font-black uppercase leading-[0.95] tracking-[-0.03em] text-white sm:text-3xl">{title}</h2>
-        {meta && <p className="mt-1.5 text-[13px] text-[#a0a0a0]">{meta}</p>}
+        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">{eyebrow}</p>}
+        <h2 className="mt-2 text-3xl font-black uppercase leading-[0.95] tracking-[-0.04em] text-white sm:text-4xl">{title}</h2>
+        {meta && <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#a0a0a0]">{meta}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -3791,29 +3801,29 @@ function AdminPageHeader({ eyebrow, title, meta, actions }) {
 
 function AdminKpi({ icon: Icon, label, value, sub }) {
   return (
-    <div className="rounded-[20px] border border-white/10 bg-[#111111] p-4 transition hover:border-white/20">
+    <div className="rounded-[14px] border border-white/[0.08] bg-[#0d0d0d] p-4 transition hover:border-white/[0.16]">
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">{label}</p>
+        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">{label}</p>
         {Icon && (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/30 bg-[#FFC800]/10 text-[#FFC800]" aria-hidden="true">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[#FFC800]/25 bg-[#FFC800]/[0.08] text-[#FFC800]" aria-hidden="true">
             <Icon size={14} />
           </span>
         )}
       </div>
-      <p className="mt-2 truncate text-2xl font-black tracking-[-0.04em] text-white">{value}</p>
-      {sub && <p className="mt-1 truncate text-xs text-[#a0a0a0]">{sub}</p>}
+      <p className="mt-2.5 truncate text-[26px] font-black leading-none tracking-[-0.03em] text-white">{value}</p>
+      {sub && <p className="mt-1.5 truncate text-xs text-[#8d8d8d]">{sub}</p>}
     </div>
   );
 }
 
 function AdminCard({ eyebrow, title, action, children, className = '' }) {
   return (
-    <section className={`rounded-[20px] border border-white/10 bg-[#111111] p-4 sm:p-5 ${className}`}>
+    <section className={`rounded-[14px] border border-white/[0.08] bg-[#0d0d0d] p-4 sm:p-5 ${className}`}>
       {(eyebrow || title || action) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">{eyebrow}</p>}
-            {title && <h3 className="mt-1 text-lg font-bold text-white">{title}</h3>}
+            {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">{eyebrow}</p>}
+            {title && <h3 className="mt-1 text-[15px] font-bold tracking-[-0.01em] text-white">{title}</h3>}
           </div>
           {action}
         </div>
@@ -3878,18 +3888,18 @@ function AdminPage({ initialSection }) {
 
   const renderSidebarBody = () => (
     <>
-      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5 px-2 py-1.5" aria-label="AJ SPORTS admin home">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFC800] text-xs font-black text-black">A</span>
+      <Link to="/admin" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5 rounded-[12px] px-2 py-1.5 transition hover:bg-white/[0.04]" aria-label="AJ SPORTS admin home">
+        <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#FFC800] text-xs font-black text-black shadow-[0_0_20px_rgba(255,200,0,0.25)]">A</span>
         <span className="leading-tight">
-          <span className="block text-sm font-black uppercase tracking-[0.28em] text-white">AJ Sports</span>
-          <span className="block text-[10px] uppercase tracking-[0.24em] text-[#8d8d8d]">Control Center</span>
+          <span className="block text-sm font-black uppercase tracking-[0.24em] text-white">AJ Sports</span>
+          <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.28em] text-[#8d8d8d]">Control Center</span>
         </span>
       </Link>
 
       <div className="mt-5 space-y-5">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">{group.label}</p>
+            <p className="px-3 pb-1.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-[#6f6f6f]">{group.label}</p>
             <nav aria-label={group.label} className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
@@ -3900,9 +3910,8 @@ function AdminPage({ initialSection }) {
                     type="button"
                     onClick={() => setSection(item.id)}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`flex w-full items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
-                      isActive ? 'bg-[#FFC800] text-black' : 'text-[#a8a8a8] hover:bg-white/5 hover:text-white'
-                    }`}
+                    data-active={isActive}
+                    className="admin-nav-item flex w-full items-center gap-2.5 rounded-[10px] py-2.5 pl-4 pr-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#a8a8a8] hover:bg-white/[0.04] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60"
                   >
                     <Icon size={15} />
                     <span>{item.label}</span>
@@ -3915,7 +3924,7 @@ function AdminPage({ initialSection }) {
       </div>
 
       <div className="mt-auto pt-5">
-        <div className="rounded-[18px] border border-white/10 bg-[#101010] p-3">
+        <div className="rounded-[14px] border border-white/[0.08] bg-[#0d0d0d] p-3">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 text-xs font-black text-[#FFC800]" aria-hidden="true">
               {adminInitials}
@@ -4907,7 +4916,8 @@ function AdminPage({ initialSection }) {
           {toast && <div><Toast message={toast} /></div>}
           {formError && <div><Toast message={formError} type="error" /></div>}
 
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid items-start gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
+            <div className="min-w-0 space-y-4 lg:order-2">
             <AdminCard className="admin-product-main">
               <div className="space-y-4">
                 <div>
@@ -4926,7 +4936,7 @@ function AdminPage({ initialSection }) {
                           <Plus size={12} aria-hidden="true" /> Add new brand
                         </button>
                       ) : (
-                        <div className="mt-2 rounded-[12px] border border-white/12 bg-[#141414] p-3" role="dialog" aria-label="Add new brand">
+                        <div className="admin-pop mt-2 rounded-[14px] border border-white/[0.08] bg-[#101010] p-3" role="dialog" aria-label="Add new brand">
                           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Add brand</p>
                           <label className="mt-2 block">
                             <span className="mb-1.5 block text-xs text-[#d4d4d4]">Brand name</span>
@@ -5192,10 +5202,9 @@ function AdminPage({ initialSection }) {
               </div>
             </AdminCard>
 
-          <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
             <AdminCard eyebrow="Publishing" title="Status & visibility">
               <FormField label="Status"><select value={productForm.status} onChange={(event) => setProductForm({ ...productForm, status: event.target.value })} className="w-full kicks-field text-white"><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="ARCHIVED">ARCHIVED</option></select></FormField>
-              <div className="mt-3 grid gap-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                 <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#d5d5d5]">
                   <input type="checkbox" checked={productForm.featured} onChange={(event) => setProductForm({ ...productForm, featured: event.target.checked })} className="h-4 w-4 accent-[#FFC800]" /> Featured
                 </label>
@@ -5207,7 +5216,9 @@ function AdminPage({ initialSection }) {
                 </label>
               </div>
             </AdminCard>
+          </div>
 
+          <aside className="admin-scroll min-w-0 space-y-4 lg:order-1 lg:sticky lg:top-24 lg:self-start">
             <AdminCard eyebrow="Media" title="Product media">
               <label
                 htmlFor="admin-product-images"
@@ -6846,18 +6857,18 @@ function AdminPage({ initialSection }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:py-8 lg:px-8">
+    <div className="admin-shell mx-auto w-full max-w-[1500px] px-4 py-6 sm:py-8 lg:px-8">
       <PageMeta title="Admin | AJ SPORTS" description="AJ SPORTS administrator dashboard" />
 
       <div className="grid items-start gap-5 xl:grid-cols-[232px_minmax(0,1fr)]">
-        <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[22px] border border-white/10 bg-[#0c0c0c] p-3 xl:flex">
+        <aside className="admin-scroll sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-3 xl:flex">
           {renderSidebarBody()}
         </aside>
 
         {drawerOpen && (
-          <div className="fixed inset-0 z-[70] xl:hidden">
-            <div className="absolute inset-0 bg-black/70" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
-            <aside className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col overflow-y-auto border-r border-white/10 bg-[#0c0c0c] p-4" role="dialog" aria-modal="true" aria-label="Admin menu">
+          <div className="admin-fade-in fixed inset-0 z-[70] xl:hidden">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
+            <aside className="admin-drawer-in admin-scroll absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col overflow-y-auto rounded-r-[16px] border-r border-white/[0.08] bg-[#0b0b0b] p-4" role="dialog" aria-modal="true" aria-label="Admin menu">
               <div className="mb-2 flex items-center justify-end">
                 <button
                   type="button"
@@ -6874,7 +6885,7 @@ function AdminPage({ initialSection }) {
         )}
 
         <div className="min-w-0">
-          <div className="mb-5 flex items-center gap-2.5">
+          <div className="mb-5 flex items-center gap-2.5 rounded-[14px] border border-white/[0.08] bg-[#0d0d0d] px-3.5 py-3 sm:px-4">
             <span className="shrink-0 xl:hidden">
               <button
                 type="button"
@@ -6921,7 +6932,7 @@ function AdminPage({ initialSection }) {
                   {adminInitials}
                 </button>
                 {menuOpen && (
-                  <div role="menu" aria-label="Admin account" className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-[18px] border border-white/10 bg-[#111111] p-2 shadow-2xl">
+                  <div role="menu" aria-label="Admin account" className="admin-pop absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-[14px] border border-white/[0.08] bg-[#101010] p-2 shadow-2xl shadow-black/60">
                     <div className="px-3 py-2.5">
                       <p className="truncate text-sm font-bold text-white">{adminName}</p>
                       <p className="truncate text-xs text-[#8d8d8d]">{user?.email || ''}</p>
