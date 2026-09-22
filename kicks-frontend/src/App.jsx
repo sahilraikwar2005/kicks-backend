@@ -5077,11 +5077,11 @@ function AdminPage({ initialSection }) {
                         <button
                           type="button"
                           onClick={applyColorToAll}
-                          className="inline-flex h-[30px] items-center rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
+                          className="inline-flex h-[30px] shrink-0 items-center whitespace-nowrap rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
                         >
                           Apply color to all
                         </button>
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
                           <input
                             type="number"
                             min="0"
@@ -5089,12 +5089,12 @@ function AdminPage({ initialSection }) {
                             onChange={(event) => setBulkStock(event.target.value)}
                             placeholder="Qty"
                             aria-label="Stock quantity for all variants"
-                            className="kicks-field kicks-field-sm w-16"
+                            className="kicks-field kicks-field-sm w-16 shrink-0"
                           />
                           <button
                             type="button"
                             onClick={() => { applyStockToAll(bulkStock); setBulkStock(''); }}
-                            className="inline-flex h-[30px] items-center rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
+                            className="inline-flex h-[30px] shrink-0 items-center whitespace-nowrap rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
                           >
                             Set stock for all
                           </button>
