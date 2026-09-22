@@ -46,6 +46,8 @@ import { colorKey, dedupeColors, distinctSizes, normalizeColorName, syncMatrixRo
 import { NEUTRAL_PRODUCT_IMAGE } from './components/ui/productImage';
 import { cartLineImage } from './utils/productGallery';
 import { addressesApi } from './api/addresses.api';
+import { SearchableCombobox, PincodeField } from './components/ui/AddressFields';
+import { INDIA_STATES, citySuggestions, pincodeStateConflictMessage } from './data/indiaLocations';
 import { adminApi } from './api/admin.api';
 import { authApi } from './api/auth.api';
 import { blogApi } from './api/blog.api';
@@ -996,6 +998,7 @@ function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [pinLookup, setPinLookup] = useState({ status: 'idle', result: null });
 
   const [addressForm, setAddressForm] = useState({
     firstName: '',
@@ -1059,6 +1062,7 @@ function CheckoutPage() {
         setSelectedAddressId(nextAddress._id || nextAddress.id || '');
       }
       setShowAddressForm(false);
+      setPinLookup({ status: 'idle', result: null });
       setAddressForm({
         firstName: '',
         lastName: '',
@@ -1149,6 +1153,27 @@ function CheckoutPage() {
     event.preventDefault();
     if (!addressForm.firstName || !addressForm.lastName || !addressForm.phone || !addressForm.addressLine1 || !addressForm.city || !addressForm.state || !addressForm.postalCode) {
       showToast('Please complete the required address fields.', 'error');
+      return;
+    }
+    if (!/^(\+91[\s-]?|91[\s-]?)?[6-9]\d{9}$/.test(addressForm.phone.trim())) {
+      showToast('Enter a valid 10-digit mobile number.', 'error');
+      return;
+    }
+    if (!/^[1-9][0-9]{5}$/.test(addressForm.postalCode.trim())) {
+      showToast('Enter a valid 6-digit PIN code.', 'error');
+      return;
+    }
+    if (pinLookup.status === 'invalid') {
+      showToast('This pincode does not appear to exist. Please check the number.', 'error');
+      return;
+    }
+    if (pinLookup.status === 'checking') {
+      showToast('Please wait while the pincode is being verified.', 'info');
+      return;
+    }
+    const conflict = pincodeStateConflictMessage(pinLookup, addressForm.state);
+    if (conflict) {
+      showToast(conflict, 'error');
       return;
     }
 
@@ -1253,9 +1278,34 @@ function CheckoutPage() {
                 <input value={addressForm.phone} onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))} className="kicks-field text-white outline-none md:col-span-2" placeholder="Phone" />
                 <input value={addressForm.addressLine1} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine1: event.target.value }))} className="kicks-field text-white outline-none md:col-span-2" placeholder="Address line 1" />
                 <input value={addressForm.addressLine2} onChange={(event) => setAddressForm((current) => ({ ...current, addressLine2: event.target.value }))} className="kicks-field text-white outline-none md:col-span-2" placeholder="Address line 2 (optional)" />
-                <input value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} className="kicks-field text-white outline-none" placeholder="City" />
-                <input value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} className="kicks-field text-white outline-none" placeholder="State" />
-                <input value={addressForm.postalCode} onChange={(event) => setAddressForm((current) => ({ ...current, postalCode: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Postal code" />
+                <SearchableCombobox
+                  id="checkout-city"
+                  value={addressForm.city}
+                  onChange={(next) => setAddressForm((current) => ({ ...current, city: next }))}
+                  options={citySuggestions(addressForm.state, pinLookup.result?.city)}
+                  placeholder="City"
+                />
+                <SearchableCombobox
+                  id="checkout-state"
+                  value={addressForm.state}
+                  onChange={(next) => setAddressForm((current) => ({ ...current, state: next }))}
+                  options={INDIA_STATES}
+                  placeholder="State"
+                />
+                <PincodeField
+                  id="checkout-postalCode"
+                  label=""
+                  value={addressForm.postalCode}
+                  onChange={(next) => setAddressForm((current) => ({ ...current, postalCode: next }))}
+                  onLookup={setPinLookup}
+                  onVerified={(found) => {
+                    setAddressForm((current) => ({
+                      ...current,
+                      state: current.state || found?.state || current.state,
+                      city: current.city || found?.city || current.city,
+                    }));
+                  }}
+                />
                 <input value={addressForm.country} onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))} className="kicks-field text-white outline-none" placeholder="Country" />
                 <div className="md:col-span-2 flex justify-end">
                   <button type="submit" disabled={addressCreateMutation.isPending} className="kicks-btn kicks-btn-primary disabled:cursor-wait disabled:opacity-60">
@@ -2090,18 +2140,18 @@ function AccountAddressesSection() {
   const addressSchema = z.object({
     firstName: z.string().min(2, 'First name required'),
     lastName: z.string().min(2, 'Last name required'),
-    phone: z.string().min(8, 'Valid phone required'),
+    phone: z.string().regex(/^(\+91[\s-]?|91[\s-]?)?[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
     addressLine1: z.string().min(3, 'Address line 1 required'),
     addressLine2: z.string().optional().or(z.literal('')),
     landmark: z.string().optional().or(z.literal('')),
     city: z.string().min(2, 'City required'),
     state: z.string().min(2, 'State required'),
-    postalCode: z.string().min(3, 'Postal code required'),
+    postalCode: z.string().regex(/^[1-9][0-9]{5}$/, 'Enter a valid 6-digit PIN code'),
     country: z.string().default('India'),
     isDefault: z.boolean().default(false),
   });
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, reset, setValue, watch, getValues, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(addressSchema),
     defaultValues: {
       firstName: '',
@@ -2117,6 +2167,13 @@ function AccountAddressesSection() {
       isDefault: false,
     },
   });
+
+  // Verified-pincode lookup state: { status, result }. The verified pincode
+  // is the source of truth for state; conflicts must be corrected.
+  const [pinLookup, setPinLookup] = useState({ status: 'idle', result: null });
+  const watchedState = watch('state');
+  const watchedCity = watch('city');
+  const watchedPostalCode = watch('postalCode');
 
   const addresses = unwrapPayload(data)?.addresses ?? [];
 
@@ -2174,10 +2231,12 @@ function AccountAddressesSection() {
     });
     setIsAdding(false);
     setEditingAddressId(null);
+    setPinLookup({ status: 'idle', result: null });
   };
 
   const handleEdit = (address) => {
     setIsAdding(true);
+    setPinLookup({ status: 'idle', result: null });
     setEditingAddressId(address._id || address.id);
     setValue('firstName', address.firstName || '');
     setValue('lastName', address.lastName || '');
@@ -2193,6 +2252,21 @@ function AccountAddressesSection() {
   };
 
   const onSubmit = (values) => {
+    if (pinLookup.status === 'invalid') {
+      setError('postalCode', { type: 'manual', message: 'This pincode does not appear to exist. Please check the number.' });
+      showToast('Please fix the highlighted pincode.', 'error');
+      return;
+    }
+    if (pinLookup.status === 'checking') {
+      showToast('Please wait while the pincode is being verified.', 'info');
+      return;
+    }
+    const conflict = pincodeStateConflictMessage(pinLookup, values.state);
+    if (conflict) {
+      setError('state', { type: 'manual', message: conflict });
+      showToast('Pincode and state do not match.', 'error');
+      return;
+    }
     if (editingAddressId) {
       updateMutation.mutate({ id: editingAddressId, payload: values });
     } else {
@@ -2271,24 +2345,41 @@ function AccountAddressesSection() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs text-[#c0c0c0]">City *</label>
-                <input {...register('city')} placeholder="City" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
-                {errors.city && <p className="mt-1 text-xs text-red-300">{errors.city.message}</p>}
-              </div>
-              <div>
-                <label className="mb-2 block text-xs text-[#c0c0c0]">State *</label>
-                <input {...register('state')} placeholder="State" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
-                {errors.state && <p className="mt-1 text-xs text-red-300">{errors.state.message}</p>}
-              </div>
+              <SearchableCombobox
+                id="account-city"
+                label="City"
+                required
+                value={watchedCity}
+                onChange={(next) => setValue('city', next, { shouldValidate: true })}
+                options={citySuggestions(watchedState, pinLookup.result?.city)}
+                placeholder="City"
+                error={errors.city?.message}
+                hint={pinLookup.result?.city ? `Pincode city: ${pinLookup.result.city}` : ''}
+              />
+              <SearchableCombobox
+                id="account-state"
+                label="State"
+                required
+                value={watchedState}
+                onChange={(next) => setValue('state', next, { shouldValidate: true })}
+                options={INDIA_STATES}
+                placeholder="State"
+                error={errors.state?.message}
+              />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs text-[#c0c0c0]">Postal / PIN Code *</label>
-                <input {...register('postalCode')} placeholder="PIN Code" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
-                {errors.postalCode && <p className="mt-1 text-xs text-red-300">{errors.postalCode.message}</p>}
-              </div>
+              <PincodeField
+                id="account-postalCode"
+                value={watchedPostalCode}
+                onChange={(next) => setValue('postalCode', next, { shouldValidate: true })}
+                onLookup={setPinLookup}
+                onVerified={(found) => {
+                  if (found?.state && !getValues('state')) setValue('state', found.state, { shouldValidate: true });
+                  if (found?.city && !getValues('city')) setValue('city', found.city, { shouldValidate: true });
+                }}
+                error={errors.postalCode?.message}
+              />
               <div>
                 <label className="mb-2 block text-xs text-[#c0c0c0]">Country *</label>
                 <input {...register('country')} placeholder="Country" className="w-full kicks-field text-sm text-white outline-none focus:border-white/30" />
@@ -2631,11 +2722,29 @@ function AccountPage({ initialTab }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [kbOpen, setKbOpen] = useState(false);
   const activeTab = searchParams.get('tab') || initialTab || 'overview';
 
   const setTab = (tab) => {
     setSearchParams(tab === 'overview' ? {} : { tab });
   };
+
+  // Hide the mobile bottom nav while the keyboard is open so forms stay usable.
+  useEffect(() => {
+    const onFocusIn = (event) => {
+      const target = event.target;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+        setKbOpen(true);
+      }
+    };
+    const onFocusOut = () => setKbOpen(false);
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
 
   const confirmLogout = async () => {
     setLoggingOut(true);
@@ -2702,9 +2811,12 @@ function AccountPage({ initialTab }) {
         </div>
       </div>
 
-      {/* Mobile pill navigation */}
-      <div className="mb-4 lg:hidden">
-        <nav aria-label="Account sections" className="flex gap-2 overflow-x-auto pb-1">
+      {/* Mobile bottom navigation (replaces the scrollable pill row) */}
+      <nav
+        aria-label="Account sections"
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0b0b0b]/92 backdrop-blur-md transition-transform duration-200 ease-out lg:hidden ${kbOpen ? 'translate-y-full' : 'translate-y-0'}`}
+      >
+        <div className="grid grid-cols-5" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = validTab === tab.id;
@@ -2714,15 +2826,23 @@ function AccountPage({ initialTab }) {
                 type="button"
                 onClick={() => setTab(tab.id)}
                 aria-current={isActive ? 'page' : undefined}
-                className="kicks-tab"
+                className={`relative flex flex-col items-center gap-1 px-1 pb-2.5 pt-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC800]/60 ${
+                  isActive ? 'text-white' : 'text-[#7d7d7d] active:text-white'
+                }`}
               >
-                <Icon size={13} />
-                <span>{tab.label}</span>
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-x-8 top-0 h-[2px] rounded-full transition ${isActive ? 'bg-[#FFC800] shadow-[0_0_8px_rgba(255,200,0,0.7)]' : 'bg-transparent'}`}
+                />
+                <Icon size={19} aria-hidden="true" className={isActive ? 'text-[#FFC800]' : ''} />
+                <span className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${isActive ? 'text-white' : ''}`}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}
-        </nav>
-      </div>
+        </div>
+      </nav>
 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Desktop sidebar */}
@@ -2801,6 +2921,9 @@ function AccountPage({ initialTab }) {
           <LogOut size={16} /> Log out
         </button>
       </div>
+
+      {/* Spacer so page content is never hidden behind the fixed bottom nav */}
+      <div aria-hidden="true" className="h-[76px] lg:hidden" />
 
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="presentation" onClick={() => { if (!loggingOut) setShowLogoutConfirm(false); }}>
@@ -2972,26 +3095,19 @@ function RegisterPage() {
   const onSubmit = async (values) => {
     setFormError('');
     // Browser autofill can fill the DOM without firing input events, leaving
-    // RHF state stale. Re-sync live DOM values before validating.
-    const liveValues = { ...values };
-    try {
-      const domByField = {
-        fullName: 'register-fullname',
-        email: 'register-email',
-        password: 'password',
-        confirmPassword: 'confirmPassword',
-      };
-      for (const [field, id] of Object.entries(domByField)) {
-        const input = typeof document !== 'undefined' ? document.getElementById(id) : null;
-        const domValue = input && typeof input.value === 'string' ? input.value : '';
-        if (domValue !== liveValues[field]) {
-          setValue(field, domValue, { shouldDirty: true });
-          liveValues[field] = domValue;
-        }
-      }
-    } catch {
-      // Fall back to RHF state if the DOM cannot be read.
-    }
+    // the captured RHF submit object stale. Build fresh live values from the
+    // DOM and use them for validation and the API payload below.
+    const liveValues = {
+      ...values,
+      fullName: document.getElementById('register-fullname')?.value ?? values.fullName,
+      email: document.getElementById('register-email')?.value ?? values.email,
+      password: document.getElementById('password')?.value ?? values.password,
+      confirmPassword: document.getElementById('confirmPassword')?.value ?? values.confirmPassword,
+    };
+    setValue('fullName', liveValues.fullName, { shouldDirty: true });
+    setValue('email', liveValues.email, { shouldDirty: true });
+    setValue('password', liveValues.password, { shouldDirty: true });
+    setValue('confirmPassword', liveValues.confirmPassword, { shouldDirty: true });
     const parsed = registerEmailSchema.safeParse(liveValues);
     if (!parsed.success) {
       parsed.error.issues.forEach((issue) => {
@@ -3398,18 +3514,18 @@ function AddressBookPage() {
   const addressSchema = z.object({
     firstName: z.string().min(2, 'First name required'),
     lastName: z.string().min(2, 'Last name required'),
-    phone: z.string().min(8, 'Phone required'),
+    phone: z.string().regex(/^(\+91[\s-]?|91[\s-]?)?[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
     addressLine1: z.string().min(3, 'Address required'),
     addressLine2: z.string().optional().or(z.literal('')),
     landmark: z.string().optional().or(z.literal('')),
     city: z.string().min(2, 'City required'),
     state: z.string().min(2, 'State required'),
-    postalCode: z.string().min(3, 'Postal code required'),
+    postalCode: z.string().regex(/^[1-9][0-9]{5}$/, 'Enter a valid 6-digit PIN code'),
     country: z.string().default('India'),
     isDefault: z.boolean().default(false),
   });
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, reset, setValue, watch, getValues, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(addressSchema),
     defaultValues: {
       firstName: '',
@@ -3426,11 +3542,31 @@ function AddressBookPage() {
     },
   });
 
+  const [pinLookup, setPinLookup] = useState({ status: 'idle', result: null });
+  const watchedState = watch('state');
+  const watchedCity = watch('city');
+  const watchedPostalCode = watch('postalCode');
+
+  const onSubmitAddress = (values) => {
+    if (pinLookup.status === 'invalid') {
+      setError('postalCode', { type: 'manual', message: 'This pincode does not appear to exist. Please check the number.' });
+      return;
+    }
+    if (pinLookup.status === 'checking') return;
+    const conflict = pincodeStateConflictMessage(pinLookup, values.state);
+    if (conflict) {
+      setError('state', { type: 'manual', message: conflict });
+      return;
+    }
+    createMutation.mutate(values);
+  };
+
   const createMutation = useMutation({
     mutationFn: (payload) => addressesApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['addresses'] });
       reset();
+      setPinLookup({ status: 'idle', result: null });
     },
   });
 
@@ -3453,7 +3589,7 @@ function AddressBookPage() {
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8">
           <p className="kicks-eyebrow">Address book</p>
           <h1 className="mt-4 kicks-section-title">Add address</h1>
-          <form onSubmit={handleSubmit((values) => createMutation.mutate(values))} className="mt-8 space-y-4">
+          <form onSubmit={handleSubmit(onSubmitAddress)} className="mt-8 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div><input {...register('firstName')} placeholder="First name" className="w-full kicks-field text-white" />{errors.firstName && <p className="mt-2 text-sm text-red-300">{errors.firstName.message}</p>}</div>
               <div><input {...register('lastName')} placeholder="Last name" className="w-full kicks-field text-white" />{errors.lastName && <p className="mt-2 text-sm text-red-300">{errors.lastName.message}</p>}</div>
@@ -3463,11 +3599,36 @@ function AddressBookPage() {
             <input {...register('addressLine2')} placeholder="Address line 2 (optional)" className="w-full kicks-field text-white" />
             <input {...register('landmark')} placeholder="Landmark (optional)" className="w-full kicks-field text-white" />
             <div className="grid gap-4 md:grid-cols-2">
-              <input {...register('city')} placeholder="City" className="w-full kicks-field text-white" />
-              <input {...register('state')} placeholder="State" className="w-full kicks-field text-white" />
+              <SearchableCombobox
+                id="book-city"
+                value={watchedCity}
+                onChange={(next) => setValue('city', next, { shouldValidate: true })}
+                options={citySuggestions(watchedState, pinLookup.result?.city)}
+                placeholder="City"
+                error={errors.city?.message}
+              />
+              <SearchableCombobox
+                id="book-state"
+                value={watchedState}
+                onChange={(next) => setValue('state', next, { shouldValidate: true })}
+                options={INDIA_STATES}
+                placeholder="State"
+                error={errors.state?.message}
+              />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <input {...register('postalCode')} placeholder="Postal code" className="w-full kicks-field text-white" />
+              <PincodeField
+                id="book-postalCode"
+                label=""
+                value={watchedPostalCode}
+                onChange={(next) => setValue('postalCode', next, { shouldValidate: true })}
+                onLookup={setPinLookup}
+                onVerified={(found) => {
+                  if (found?.state && !getValues('state')) setValue('state', found.state, { shouldValidate: true });
+                  if (found?.city && !getValues('city')) setValue('city', found.city, { shouldValidate: true });
+                }}
+                error={errors.postalCode?.message}
+              />
               <input {...register('country')} placeholder="Country" className="w-full kicks-field text-white" />
             </div>
             <label className="flex items-center gap-3 text-sm text-[#d3d3d3]"><input type="checkbox" {...register('isDefault')} className="h-4 w-4" /> Set as default</label>
@@ -3675,22 +3836,22 @@ function CmsPage() {
 
 function DataTable({ columns = [], rows = [], emptyMessage = 'No records found.' }) {
   if (!rows.length) {
-    return <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">{emptyMessage}</div>;
+    return <div className="rounded-[14px] border border-dashed border-white/15 bg-[#0d0d0d] p-8 text-center text-sm text-[#a0a0a0]">{emptyMessage}</div>;
   }
 
   return (
-    <div className="overflow-x-auto rounded-[22px] border border-white/10 bg-[#111111]">
+    <div className="admin-scroll overflow-x-auto rounded-[14px] border border-white/[0.08] bg-[#0d0d0d]">
       <table className="min-w-full text-left text-[13px] text-[#d8d8d8]">
-        <thead className="bg-[#171717] text-[10px] uppercase tracking-[0.22em] text-[#9a9a9a]">
+        <thead>
           <tr>
             {columns.map((column) => (
-              <th key={column.key} className="px-3 py-2.5 font-medium">{column.label}</th>
+              <th key={column.key} className="px-3 py-2.5 font-semibold">{column.label}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={row.id || row._id || rowIndex} className="border-t border-white/10 transition hover:bg-white/[0.02]">
+            <tr key={row.id || row._id || rowIndex}>
               {columns.map((column) => (
                 <td key={`${rowIndex}-${column.key}`} className="px-3 py-2.5 align-top">
                   {column.render ? column.render(row) : row[column.key] ?? '—'}
@@ -3815,7 +3976,7 @@ function ProductInventoryDetail({
           { label: 'Low', value: String(stats.low) },
           { label: 'Out', value: String(stats.out) },
         ].map((card) => (
-          <div key={card.label} className="rounded-[12px] border border-white/10 bg-[#141414] px-3 py-2.5">
+          <div key={card.label} className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] px-3 py-2.5">
             <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">{card.label}</p>
             <p className="mt-0.5 text-xl font-black text-white">{card.value}</p>
           </div>
@@ -3899,7 +4060,7 @@ function ProductInventoryDetail({
               const state = variantState(variant);
               const historyOpen = String(movementsVariantId) === String(variant._id);
               return (
-                <div key={variant._id} className="rounded-[14px] border border-white/10 bg-[#141414] p-3">
+                <div key={variant._id} className="rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-bold text-white">
                       {variant.size} <span className="font-medium text-[#a8a8a8]">• {variant.color}</span>
@@ -4223,7 +4384,7 @@ function AdminPage({ initialSection }) {
           <AdminKpi icon={ShoppingBag} label="Products" value={metrics.totalProducts ?? '—'} sub="Catalog" />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <AdminCard eyebrow="Order pipeline" title="Live status distribution">
             {totalOrders === 0 ? (
               <p className="text-sm text-[#a0a0a0]">No orders in the pipeline yet.</p>
@@ -4268,7 +4429,7 @@ function AdminPage({ initialSection }) {
                   const variant = product.variants?.[0] || {};
                   const stock = Number(variant.stock ?? 0);
                   return (
-                    <div key={product._id} className="flex items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-[#141414] px-4 py-3">
+                    <div key={product._id} className="flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-white">{product.name}</div>
                         <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">SKU {variant.sku || '—'}</div>
@@ -4302,7 +4463,7 @@ function AdminPage({ initialSection }) {
               <p className="text-sm text-[#a0a0a0]">No recent orders available.</p>
             ) : (
               <>
-                <div className="hidden overflow-x-auto md:block">
+                <div className="admin-scroll hidden overflow-x-auto md:block">
                   <table className="min-w-full text-left text-sm text-[#d8d8d8]">
                     <thead>
                       <tr className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">
@@ -4326,7 +4487,7 @@ function AdminPage({ initialSection }) {
                 </div>
                 <div className="space-y-3 md:hidden">
                   {recentOrders.slice(0, 6).map((order) => (
-                    <div key={order._id || order.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-[#141414] px-4 py-3">
+                    <div key={order._id || order.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-white">{order.orderNumber || order._id}</div>
                         <div className="mt-0.5 text-xs text-[#a0a0a0]">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'} • {formatMoney(order.grandTotal || 0)}</div>
@@ -5404,7 +5565,7 @@ function AdminPage({ initialSection }) {
 
                       <div className="mt-2.5 space-y-2 md:hidden">
                         {productForm.variants.map((row) => (
-                          <div key={row.key} className="rounded-[12px] border border-white/10 bg-[#141414] p-2.5">
+                          <div key={row.key} className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-2.5">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-sm font-bold text-white">{row.size} <span className="font-medium text-[#a8a8a8]">• {row.color || 'No color'}</span></p>
                               <button type="button" onClick={() => removeVariantRow(row.key)} aria-label={`Remove ${row.size} variant`} title="Remove variant" className="inline-flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-lg border border-red-500/30 text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-400/60">
@@ -5563,7 +5724,7 @@ function AdminPage({ initialSection }) {
                       const others = productForm.colors.filter((entry) => colorKey(entry) !== colorKey(color));
                       const inputId = `admin-color-images-${colorKey(color) || 'color'}`;
                       return (
-                        <div key={colorKey(color)} className="rounded-[12px] border border-white/10 bg-[#141414] p-2.5">
+                        <div key={colorKey(color)} className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-2.5">
                           <div className="flex items-center justify-between gap-2">
                             <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-white">{color}</p>
                             <label
@@ -5721,7 +5882,7 @@ function AdminPage({ initialSection }) {
                 {filteredProducts.length === 0 ? (
                   <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No products match the current filters.</div>
                 ) : filteredProducts.map((row) => (
-                  <div key={row._id} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#141414] p-3">
+                  <div key={row._id} className="flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-white/[0.02] p-3">
                     {row.images?.[0] ? (
                       <img src={row.images[0]} alt={row.name || 'Product'} className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
                     ) : (
@@ -6003,7 +6164,7 @@ function AdminPage({ initialSection }) {
                 {filteredProducts.map((product) => {
                   const stats = productStats(product);
                   return (
-                    <div key={product._id} className="flex items-center gap-3 rounded-[16px] border border-white/10 bg-[#141414] p-3 transition hover:border-white/20">
+                    <div key={product._id} className="flex items-center gap-3 rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-3 transition hover:border-white/20">
                       {productImage(product, 'h-14 w-14')}
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-white">{product.name}</p>
@@ -6044,7 +6205,7 @@ function AdminPage({ initialSection }) {
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">Offline sale</p>
               <h3 className="mt-1.5 text-lg font-bold text-white">{saleTarget.product?.name}</h3>
               <p className="mt-1 text-xs text-[#a0a0a0]">{saleTarget.variant?.color} / {saleTarget.variant?.size} • Current stock {getVariantStock(saleTarget.variant)}</p>
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-[#141414] p-3">
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3">
                 <span className="text-xs uppercase tracking-[0.16em] text-[#8d8d8d]">Quantity sold</span>
                 <span className="inline-flex items-center gap-2">
                   <button type="button" onClick={() => setSaleQty((qty) => Math.max(1, Math.floor(Number(qty) || 1) - 1))} aria-label="Decrease quantity" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 text-lg text-white transition hover:border-white/35">−</button>
@@ -6098,7 +6259,7 @@ function AdminPage({ initialSection }) {
                     ))}
                   </div>
                 )}
-                <div className="flex items-center justify-between gap-3 rounded-[14px] border border-white/10 bg-[#141414] p-3">
+                <div className="flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3">
                   <span className="text-xs uppercase tracking-[0.16em] text-[#8d8d8d]">Quantity</span>
                   <span className="inline-flex items-center gap-2">
                     <button type="button" onClick={() => setAdjustQty((qty) => Math.max(1, Math.floor(Number(qty) || 1) - 1))} aria-label="Decrease quantity" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 text-lg text-white transition hover:border-white/35">−</button>
@@ -6243,20 +6404,20 @@ function AdminPage({ initialSection }) {
             )}
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+              <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-4">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Status</p>
                 <div className="mt-2"><StatusBadge status={expandedOrder.status} /></div>
                 <p className="mt-3 text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Payment</p>
                 <div className="mt-2"><StatusBadge status={expandedOrder.paymentStatus} /></div>
                 <p className="mt-3 text-xs text-[#8d8d8d]">Placed {expandedOrder.createdAt ? new Date(expandedOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</p>
               </div>
-              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+              <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-4">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Customer</p>
                 <p className="mt-2 truncate text-sm font-semibold text-white">{`${expandedOrder.customerSnapshot?.firstName || ''} ${expandedOrder.customerSnapshot?.lastName || ''}`.trim() || '—'}</p>
                 <p className="mt-1 truncate text-xs text-[#a0a0a0]">{expandedOrder.customerSnapshot?.email || '—'}</p>
                 {expandedOrder.customerSnapshot?.phone && <p className="mt-1 text-xs text-[#a0a0a0]">{expandedOrder.customerSnapshot.phone}</p>}
               </div>
-              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+              <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-4">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Ship to</p>
                 <p className="mt-2 text-xs leading-relaxed text-[#d2d2d2]">
                   {[expandedOrder.shippingAddress?.firstName, expandedOrder.shippingAddress?.lastName].filter(Boolean).join(' ') || '—'}<br />
@@ -6264,7 +6425,7 @@ function AdminPage({ initialSection }) {
                   {[expandedOrder.shippingAddress?.city, expandedOrder.shippingAddress?.state, expandedOrder.shippingAddress?.postalCode].filter(Boolean).join(', ') || ''}
                 </p>
               </div>
-              <div className="rounded-[16px] border border-white/10 bg-[#141414] p-4">
+              <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-4">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Amounts</p>
                 <div className="mt-2 space-y-1.5 text-xs text-[#d2d2d2]">
                   <div className="flex justify-between gap-3"><span>Subtotal</span><span className="text-white">{formatMoney(expandedOrder.subtotal || 0)}</span></div>
@@ -6278,7 +6439,7 @@ function AdminPage({ initialSection }) {
             {Array.isArray(expandedOrder.items) && expandedOrder.items.length > 0 && (
               <div className="mt-4 space-y-2.5">
                 {expandedOrder.items.map((item, index) => (
-                  <div key={item._id || item.variantId || index} className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-[#141414] p-3">
+                  <div key={item._id || item.variantId || index} className="flex items-center gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3">
                     {item.image && <img src={item.image} alt={item.name || item.productName || 'Product'} className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-white">{item.name || item.productName || 'Product'}</div>
@@ -6316,7 +6477,7 @@ function AdminPage({ initialSection }) {
               {orders.length === 0 ? (
                 <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No orders match the current filter.</div>
               ) : orders.map((row) => (
-                <div key={row._id} className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
+                <div key={row._id} className="rounded-[18px] border border-white/[0.08] bg-white/[0.02] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-white">{row.orderNumber}</div>
@@ -6397,7 +6558,7 @@ function AdminPage({ initialSection }) {
               {filteredUsers.length === 0 ? (
                 <div className="rounded-[20px] border border-dashed border-white/15 bg-[#181818] p-8 text-center text-[#d5d5d5]">No users found.</div>
               ) : filteredUsers.map((row) => (
-                <div key={row._id} className="rounded-[18px] border border-white/10 bg-[#141414] p-4">
+                <div key={row._id} className="rounded-[18px] border border-white/[0.08] bg-white/[0.02] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-white">{row.firstName} {row.lastName}</div>
@@ -6933,7 +7094,7 @@ function AdminPage({ initialSection }) {
       const value = valueFor(field.key);
       if (field.type === 'toggle') {
         return (
-          <div key={field.key} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/10 bg-[#141414] p-4">
+          <div key={field.key} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-white/[0.02] p-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white">{field.label}</p>
               {field.hint && <p className="mt-1 text-xs text-[#8d8d8d]">{field.hint}</p>}
@@ -7025,7 +7186,7 @@ function AdminPage({ initialSection }) {
                     <span className="text-[#8d8d8d]">Role</span>
                     <StatusBadge status={adminUser?.role || 'ADMIN'} />
                   </div>
-                  <p className="rounded-[14px] border border-white/10 bg-[#141414] p-3 text-xs leading-relaxed text-[#8d8d8d]">
+                  <p className="rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3 text-xs leading-relaxed text-[#8d8d8d]">
                     The administrator role cannot be changed here, and no additional admin accounts can be created from this screen.
                   </p>
                 </div>

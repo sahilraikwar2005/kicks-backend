@@ -234,7 +234,7 @@ export default function Navbar() {
                   <Link
                     to="/"
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-[10px] px-4 py-2 text-xs uppercase tracking-[0.18em] text-[#d4d4d4]"
+                    className="rounded-[10px] px-4 py-2 text-xs uppercase tracking-[0.18em] text-[#d4d4d4] transition active:bg-white/10 active:text-white"
                   >
                     Storefront
                   </Link>
@@ -244,7 +244,7 @@ export default function Navbar() {
                       setMobileOpen(false);
                       logout();
                     }}
-                    className="rounded-[10px] px-4 py-2 text-left text-xs uppercase tracking-[0.18em] text-red-200"
+                    className="rounded-[10px] px-4 py-2 text-left text-xs uppercase tracking-[0.18em] text-red-200 transition active:bg-red-500/20"
                   >
                     Log out
                   </button>
@@ -256,7 +256,7 @@ export default function Navbar() {
                     to={item.to}
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
-                      `rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] ${isActive ? 'bg-white text-black' : 'text-[#d4d4d4]'}`
+                      `rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] transition ${isActive ? 'bg-white text-black active:bg-[#e8e8e8]' : 'text-[#d4d4d4] active:bg-white/10 active:text-white'}`
                     }
                   >
                     {item.label}

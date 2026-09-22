@@ -423,6 +423,46 @@ textarea.kicks-field {
   opacity: 0.55;
 }
 
+/* ---------- Press / tap feedback (interaction states only) ---------- */
+/* The browser's default tap highlight flashes light over dark controls while
+   glyphs stay white. These intentional press states keep every tap readable. */
+a,
+button {
+  -webkit-tap-highlight-color: rgba(255, 200, 0, 0.16);
+}
+.kicks-icon-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.kicks-btn:active {
+  transform: scale(0.98);
+}
+.kicks-btn-primary:active {
+  background: #e8e8e8;
+}
+.kicks-btn-secondary:active,
+.kicks-btn-dark:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.kicks-btn-accent:active {
+  background: #ffd233;
+}
+.kicks-btn-danger:active {
+  background: rgba(239, 68, 68, 0.12);
+}
+.kicks-quickadd:active,
+.kicks-tab:active,
+.kicks-pill:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.kicks-wishlist-btn:active {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.65);
+}
+.kicks-bag-btn:active {
+  background: #e8e8e8;
+}
+
 @media (max-width: 640px) {
   .kicks-page-title {
     letter-spacing: -0.03em;

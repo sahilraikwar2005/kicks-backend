@@ -3,6 +3,7 @@ import Cart from '../cart/model.js';
 import Product from '../products/model.js';
 import Address from '../addresses/model.js';
 import User from '../users/model.js';
+import { canonicalState, isIndianPincodeFormat } from '../addresses/indiaLocations.js';
 import { adminSettingsService } from '../admin/settings.service.js';
 import {
   sendOrderConfirmationEmail,
@@ -36,6 +37,24 @@ const assertValidOrderTransition = (currentStatus, nextStatus) => {
     error.statusCode = 409;
     throw error;
   }
+};
+
+// Re-validate the shipping address at order time. Frontend checks are not
+// sufficient: malformed data must never reach order creation.
+const assertOrderAddress = (address) => {
+  const fail = (message) => {
+    const error = new Error(message);
+    error.statusCode = 400;
+    throw error;
+  };
+  if (!address) fail('A valid shipping address is required');
+  for (const field of ['firstName', 'lastName', 'phone', 'addressLine1', 'city', 'state', 'postalCode']) {
+    if (!String(address[field] || '').trim()) fail(`Shipping address ${field} is required`);
+  }
+  const digits = String(address.phone || '').replace(/\D/g, '');
+  if (digits.length < 10 || digits.length > 13) fail('Shipping address phone is invalid');
+  if (!isIndianPincodeFormat(address.postalCode)) fail('Shipping address PIN code is invalid');
+  if (!canonicalState(address.state)) fail('Shipping address state is invalid');
 };
 
 // Order-item image snapshot helper. Mirrors the storefront gallery priority
@@ -82,6 +101,7 @@ export const orderService = {
 
     const address = await Address.findOne({ _id: payload.addressId, user: userId }).lean();
     if (!address) { const error = new Error('A valid shipping address is required'); error.statusCode = 400; throw error; }
+    assertOrderAddress(address);
     const customer = await User.findById(userId).select('firstName lastName email phone').lean();
     const productIds = cart.items.map((item) => item.productId);
     const products = await Product.find({ _id: { $in: productIds } });
