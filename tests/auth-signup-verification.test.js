@@ -22,6 +22,7 @@ const originalSendMail = transporter.sendMail;
 
 let mailOutbox = [];
 let captchaMode = 'valid';
+let fetchCalls = [];
 
 const server = app.listen(0);
 await new Promise((resolve) => server.once('listening', resolve));
@@ -32,15 +33,18 @@ test.before(async () => {
   process.env.RECAPTCHA_SECRET_KEY = 'test-secret-key';
   env.smtpUser = 'mock-user@example.com';
   env.smtpPassword = 'mock-password';
-  globalThis.fetch = async () => ({
-    ok: true,
-    json: async () => {
-      if (captchaMode === 'valid') return { success: true };
-      if (captchaMode === 'expired') return { success: false, 'error-codes': ['timeout-or-duplicate'] };
-      if (captchaMode === 'invalid') return { success: false, 'error-codes': ['invalid-input-response'] };
-      throw new Error('provider down');
-    },
-  });
+  globalThis.fetch = async (url) => {
+    fetchCalls.push(String(url));
+    return {
+      ok: true,
+      json: async () => {
+        if (captchaMode === 'valid') return { success: true };
+        if (captchaMode === 'expired') return { success: false, 'error-codes': ['timeout-or-duplicate'] };
+        if (captchaMode === 'invalid') return { success: false, 'error-codes': ['invalid-input-response'] };
+        throw new Error('provider down');
+      },
+    };
+  };
   transporter.sendMail = async (mailOptions) => {
     mailOutbox.push(mailOptions);
     return { messageId: `mock-${Date.now()}` };
@@ -51,6 +55,7 @@ test.after(async () => {
   globalThis.fetch = originalFetch;
   transporter.sendMail = originalSendMail;
   delete process.env.RECAPTCHA_SECRET_KEY;
+  delete process.env.CAPTCHA_ENABLED;
   await User.deleteMany({ email: /otp-test/i });
   await RegistrationRequest.deleteMany({ email: /otp-test/i });
   await new Promise((resolve, reject) => {
@@ -61,7 +66,9 @@ test.after(async () => {
 
 test.beforeEach(() => {
   mailOutbox = [];
+  fetchCalls = [];
   captchaMode = 'valid';
+  delete process.env.CAPTCHA_ENABLED;
 });
 
 const uniq = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -112,6 +119,7 @@ test('CAPTCHA provider failure is handled without leaking details', async () => 
 });
 
 test('registration without CAPTCHA is rejected before any account work', async () => {
+  process.env.CAPTCHA_ENABLED = 'true';
   await assert.rejects(
     () => registrationService.startRegistration({
       name: 'No Captcha', email: testEmail(), password: 'Password123!', captchaToken: '',
@@ -119,6 +127,58 @@ test('registration without CAPTCHA is rejected before any account work', async (
     (error) => error.statusCode === 400,
   );
   assert.equal(await RegistrationRequest.countDocuments({ firstName: 'No Captcha' }), 0);
+});
+
+test('CAPTCHA disabled → registration allowed without token and provider never called', async () => {
+  delete process.env.CAPTCHA_ENABLED;
+  const email = testEmail();
+  const result = await registrationService.startRegistration({
+    name: 'No Captcha Needed',
+    email,
+    password: 'Password123!',
+    confirmPassword: 'Password123!',
+  });
+  assert.ok(result.identifier.includes('@'));
+  assert.equal(fetchCalls.filter((url) => url.includes('recaptcha')).length, 0);
+  const pending = await RegistrationRequest.findOne({ email });
+  await RegistrationRequest.deleteOne({ _id: pending._id });
+});
+
+test('CAPTCHA disabled → full email OTP flow still creates CUSTOMER', async () => {
+  delete process.env.CAPTCHA_ENABLED;
+  const email = testEmail();
+  await registrationService.startRegistration({
+    name: 'Flag Off User',
+    email,
+    password: 'Password123!',
+  });
+  const code = mailOutbox[mailOutbox.length - 1].html.match(/(\d{6})/)[1];
+  const result = await registrationService.verifyOtp({ identifier: email, code });
+  assert.equal(result.user.role, 'CUSTOMER');
+  assert.equal(fetchCalls.filter((url) => url.includes('recaptcha')).length, 0);
+  await User.deleteOne({ _id: result.user.id });
+  await RegistrationRequest.deleteMany({ email });
+});
+
+test('CAPTCHA enabled → missing token rejected, valid token accepted end-to-end', async () => {
+  process.env.CAPTCHA_ENABLED = 'true';
+  const email = testEmail();
+  await assert.rejects(
+    () => registrationService.startRegistration({ name: 'Flag On User', email, password: 'Password123!' }),
+    (error) => error.statusCode === 400,
+  );
+  await registrationService.startRegistration({
+    name: 'Flag On User',
+    email,
+    password: 'Password123!',
+    captchaToken: 'test-captcha-token',
+  });
+  assert.ok(fetchCalls.some((url) => url.includes('recaptcha')));
+  const code = mailOutbox[mailOutbox.length - 1].html.match(/(\d{6})/)[1];
+  const result = await registrationService.verifyOtp({ identifier: email, code });
+  assert.equal(result.user.email, email.toLowerCase());
+  await User.deleteOne({ _id: result.user.id });
+  await RegistrationRequest.deleteMany({ email });
 });
 
 // ---------- helpers ----------
@@ -307,6 +367,7 @@ test('expired pending registrations are rejected and TTL-cleaned', async () => {
 });
 
 test('route: POST /auth/register without CAPTCHA token returns 400', async () => {
+  process.env.CAPTCHA_ENABLED = 'true';
   const response = await originalFetch(`${apiBase}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

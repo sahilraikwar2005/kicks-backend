@@ -43,6 +43,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from './api/client';
 import { colorKey, dedupeColors, distinctSizes, normalizeColorName, syncMatrixRows } from './utils/variantMatrix';
+import { NEUTRAL_PRODUCT_IMAGE } from './components/ui/productImage';
 import { addressesApi } from './api/addresses.api';
 import { adminApi } from './api/admin.api';
 import { authApi } from './api/auth.api';
@@ -100,6 +101,7 @@ function getRegistrationErrorMessage(error) {
 }
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
+const CAPTCHA_ENABLED = import.meta.env.VITE_CAPTCHA_ENABLED === 'true' && RECAPTCHA_SITE_KEY !== '';
 
 let recaptchaScriptPromise = null;
 
@@ -741,10 +743,14 @@ function WishlistPage() {
                     className="block"
                   >
                     <img
-                      src={product?.images?.[0]}
+                      src={product?.images?.[0] || NEUTRAL_PRODUCT_IMAGE}
                       alt={product?.name || 'Saved product'}
                       className="h-40 w-full object-cover transition duration-500 hover:scale-105 sm:h-56 lg:h-64"
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE;
+                      }}
                     />
                   </Link>
 
@@ -889,7 +895,7 @@ function CartPage() {
     onError: (error) => showToast(error?.message || 'Unable to clear your cart.', 'error'),
   });
 
-  const cartImageFallback = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
+  const cartImageFallback = NEUTRAL_PRODUCT_IMAGE;
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
@@ -1253,12 +1259,12 @@ function CheckoutPage() {
             {items.map((item) => {
               const product = item.product || (typeof item.productId === 'object' ? item.productId : {}) || {};
               const productName = product?.name || 'Product';
-              const image = product?.images?.[0] || item?.variant?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
+              const image = product?.images?.[0] || item?.variant?.images?.[0] || NEUTRAL_PRODUCT_IMAGE;
               const unitPrice = Number(item.unitPrice || item.price || 0);
               const lineTotal = unitPrice * Number(item.quantity || 0);
               return (
                 <div key={item.variantId || item._id || item.id} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#181818] p-3">
-                  <img src={image} alt={productName} className="h-16 w-16 rounded-[14px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'; }} />
+                  <img src={image} alt={productName} className="h-16 w-16 rounded-[14px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-white">{productName}</div>
                     <div className="mt-1 text-xs text-[#d3d3d3]">{product?.brand?.name || 'KICKS'} • {item.size || item.variant?.size || 'N/A'} • {item.color || item.variant?.color || 'N/A'}</div>
@@ -1618,12 +1624,12 @@ function OrderDetailPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-white sm:text-2xl">Products</h2>
             {items.map((item) => {
-              const image = item.product?.images?.[0] || item.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
+              const image = item.product?.images?.[0] || item.image || NEUTRAL_PRODUCT_IMAGE;
               const unitPrice = Number(item.unitPrice || item.finalPrice || 0);
               const lineTotal = Number(unitPrice * Number(item.quantity || 1));
               return (
                 <div key={item._id || item.variantId || item.productId} className="flex flex-col gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:flex-row md:items-center">
-                  <img src={image} alt={item.productName || 'Ordered product'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'; }} />
+                  <img src={image} alt={item.productName || 'Ordered product'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-white">{item.productName || item.name || 'KICKS product'}</h3>
                     <p className="mt-1 text-sm text-[#a8a8a8]">{item.size || 'Size N/A'} • {item.color || 'Color N/A'}</p>
@@ -2676,7 +2682,7 @@ function RegisterPage() {
   });
 
   useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY || !captchaBoxRef.current || phase !== 'form' || captchaWidgetId !== null) return undefined;
+    if (!CAPTCHA_ENABLED || !captchaBoxRef.current || phase !== 'form' || captchaWidgetId !== null) return undefined;
     let cancelled = false;
     loadRecaptchaScript().then(() => {
       if (cancelled || !window.grecaptcha) return;
@@ -2730,12 +2736,7 @@ function RegisterPage() {
       showToast('Please check the highlighted fields.', 'error');
       return;
     }
-    if (!RECAPTCHA_SITE_KEY) {
-      setCaptchaError('Account verification is currently unavailable. Please try again later.');
-      showToast('Account verification is currently unavailable.', 'error');
-      return;
-    }
-    if (!captchaToken) {
+    if (CAPTCHA_ENABLED && !captchaToken) {
       setCaptchaError('Please complete the "I\'m not a robot" check.');
       showToast('Please complete the CAPTCHA.', 'error');
       return;
@@ -2747,7 +2748,7 @@ function RegisterPage() {
       email: data.email.trim(),
       password: data.password,
       confirmPassword: data.confirmPassword,
-      captchaToken,
+      ...(CAPTCHA_ENABLED ? { captchaToken } : {}),
     };
 
     setSubmitting(true);
@@ -2875,19 +2876,15 @@ function RegisterPage() {
             <PasswordField label="Password" name="password" register={register} error={errors.password?.message} placeholder="Create a password (min 8 characters)" />
             <PasswordField label="Confirm password" name="confirmPassword" register={register} error={errors.confirmPassword?.message} placeholder="Repeat your password" />
 
-            <div>
-              <p className="mb-2 block text-sm text-[#d5d5d5]">Security check</p>
-              {!RECAPTCHA_SITE_KEY ? (
-                <p role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-xs leading-relaxed text-red-200">
-                  Account verification is currently unavailable. Please try again later.
-                </p>
-              ) : (
+            {CAPTCHA_ENABLED && (
+              <div>
+                <p className="mb-2 block text-sm text-[#d5d5d5]">Security check</p>
                 <div className="overflow-x-auto rounded-[14px] border border-white/10 bg-[#181818] p-3">
                   <div ref={captchaBoxRef} aria-label="I'm not a robot verification" />
                 </div>
-              )}
-              {captchaError && <p role="alert" className="mt-2 text-sm text-red-300">{captchaError}</p>}
-            </div>
+                {captchaError && <p role="alert" className="mt-2 text-sm text-red-300">{captchaError}</p>}
+              </div>
+            )}
 
             {formError && <p role="alert" className="rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{formError}</p>}
 
@@ -4586,7 +4583,12 @@ function AdminPage({ initialSection }) {
         setIsFormOpen(false);
         setPage(1);
         setSessionUploadIds([]);
-        await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['admin-products'] }),
+          queryClient.invalidateQueries({ queryKey: ['products-list'] }),
+          queryClient.invalidateQueries({ queryKey: ['featured-products'] }),
+          queryClient.invalidateQueries({ queryKey: ['product-detail'] }),
+        ]);
       } catch (error) {
         setToast(error?.message || 'Unable to save product.');
       } finally {
@@ -4694,7 +4696,12 @@ function AdminPage({ initialSection }) {
         await apiClient.delete(`/products/${productId}`);
         setToast('Product archived successfully.');
         setPage(1);
-        await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['admin-products'] }),
+          queryClient.invalidateQueries({ queryKey: ['products-list'] }),
+          queryClient.invalidateQueries({ queryKey: ['featured-products'] }),
+          queryClient.invalidateQueries({ queryKey: ['product-detail'] }),
+        ]);
       } catch (error) {
         setToast(error?.message || 'Unable to archive product.');
       }

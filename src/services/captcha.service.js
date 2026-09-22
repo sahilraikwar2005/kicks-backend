@@ -8,6 +8,13 @@ function captchaError(message, statusCode) {
   return error;
 }
 
+// Feature flag. CAPTCHA enforcement is OFF unless explicitly enabled, so the
+// implementation stays intact and returns by setting CAPTCHA_ENABLED=true
+// together with valid reCAPTCHA keys/domain.
+export function isCaptchaEnabled() {
+  return String(process.env.CAPTCHA_ENABLED || env.captchaEnabled || '').trim().toLowerCase() === 'true';
+}
+
 // Verifies a reCAPTCHA token server-side. Never trust a frontend boolean.
 // Throws 400 for missing/invalid/expired tokens and 503 when the provider
 // cannot be reached or the service is not configured (fail closed).

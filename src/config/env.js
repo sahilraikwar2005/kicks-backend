@@ -70,5 +70,6 @@ export const env = {
   logLevel: process.env.LOG_LEVEL || 'info',
   uploadLimitMb: Number(process.env.UPLOAD_LIMIT_MB) || 5,
   maxRequestBodySize: process.env.MAX_REQUEST_BODY_SIZE || '10mb',
+  captchaEnabled: process.env.CAPTCHA_ENABLED || '',
   recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY || '',
 };

@@ -7,7 +7,7 @@ export const registerSchema = Joi.object({
   email: Joi.string().email({ tlds: false }).lowercase().required(),
   password: Joi.string().min(8).max(128).required(),
   confirmPassword: Joi.string().optional(),
-  captchaToken: Joi.string().min(10).max(4096).required(),
+  captchaToken: Joi.string().min(10).max(4096).optional().allow(''),
 }).unknown(false);
 
 export const verifyOtpSchema = Joi.object({

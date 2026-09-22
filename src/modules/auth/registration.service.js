@@ -5,7 +5,7 @@ import UserSession from './session.model.js';
 import RegistrationRequest from './registration.model.js';
 import { env } from '../../config/env.js';
 import { signAccessToken, signRefreshToken } from '../../utils/jwt.js';
-import { verifyCaptchaToken } from '../../services/captcha.service.js';
+import { verifyCaptchaToken, isCaptchaEnabled } from '../../services/captcha.service.js';
 import { sendOtpEmail, sendWelcomeEmail } from '../../services/email.service.js';
 
 export const OTP_TTL_MS = 10 * 60 * 1000;
@@ -49,6 +49,13 @@ function safeEqualHex(a, b) {
   const right = Buffer.from(String(b || ''), 'hex');
   if (left.length !== right.length || left.length === 0) return false;
   return crypto.timingSafeEqual(left, right);
+}
+
+// Single conditional gate around the existing implementation: when the flag
+// is off, registration proceeds without contacting the CAPTCHA provider.
+async function verifyCaptchaIfEnabled(captchaToken, requestIp) {
+  if (!isCaptchaEnabled()) return true;
+  return verifyCaptchaToken(captchaToken, requestIp);
 }
 
 export function maskEmail(email) {
@@ -110,7 +117,7 @@ export const registrationService = {
       throw registrationError('An account with this email already exists.', 409);
     }
 
-    await verifyCaptchaToken(captchaToken, requestIp);
+    await verifyCaptchaIfEnabled(captchaToken, requestIp);
 
     const now = new Date();
     const otp = generateOtp();
