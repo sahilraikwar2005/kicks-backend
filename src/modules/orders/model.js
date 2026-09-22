@@ -12,6 +12,10 @@ const orderItemSchema = new mongoose.Schema(
     unitPrice: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     finalPrice: { type: Number, required: true },
+    // Purchased-product image snapshot so Order Details can render the exact
+    // image the customer bought. Empty for legacy orders (frontend falls back
+    // to the populated product image, then to the neutral placeholder).
+    image: { type: String, default: '' },
   },
   { _id: true },
 );

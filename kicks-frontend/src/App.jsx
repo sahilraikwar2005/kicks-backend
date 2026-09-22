@@ -1483,6 +1483,133 @@ function OrdersPage() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Order Details — compact, mobile-first building blocks.
+// Every value below is derived from the order payload; nothing is hardcoded.
+// ---------------------------------------------------------------------------
+
+// Progress tracker steps: Placed → Processing → Shipped → Delivered.
+const ORDER_PROGRESS_STEPS = ['Placed', 'Processing', 'Shipped', 'Delivered'];
+
+// Maps the backend order status onto the tracker index it has reached.
+const orderProgressIndex = (status) => {
+  switch (status) {
+    case 'CONFIRMED':
+    case 'PROCESSING':
+    case 'PACKED':
+      return 1;
+    case 'SHIPPED':
+    case 'OUT_FOR_DELIVERY':
+      return 2;
+    case 'DELIVERED':
+      return 3;
+    default:
+      return 0;
+  }
+};
+
+// Restrained status tones (dot + pill) used by the header badge.
+const ORDER_STATUS_STYLES = {
+  PENDING: { pill: 'border-white/15 bg-white/[0.04] text-[#cfcfcf]', dot: 'bg-[#8d8d8d]' },
+  CONFIRMED: { pill: 'border-[#ffc800]/35 bg-[#ffc800]/10 text-[#ffd45c]', dot: 'bg-[#ffc800]' },
+  PROCESSING: { pill: 'border-[#ffc800]/35 bg-[#ffc800]/10 text-[#ffd45c]', dot: 'bg-[#ffc800]' },
+  PACKED: { pill: 'border-[#ffc800]/35 bg-[#ffc800]/10 text-[#ffd45c]', dot: 'bg-[#ffc800]' },
+  SHIPPED: { pill: 'border-[#7fd4ff]/30 bg-[#7fd4ff]/10 text-[#9adcff]', dot: 'bg-[#7fd4ff]' },
+  OUT_FOR_DELIVERY: { pill: 'border-[#7fd4ff]/30 bg-[#7fd4ff]/10 text-[#9adcff]', dot: 'bg-[#7fd4ff]' },
+  DELIVERED: { pill: 'border-[#7de7b3]/30 bg-[#7de7b3]/10 text-[#9df0c5]', dot: 'bg-[#7de7b3]' },
+  CANCELLED: { pill: 'border-[#ff9a9a]/30 bg-[#ff9a9a]/10 text-[#ffb0b0]', dot: 'bg-[#ff9a9a]' },
+  REFUNDED: { pill: 'border-[#ff9a9a]/30 bg-[#ff9a9a]/10 text-[#ffb0b0]', dot: 'bg-[#ff9a9a]' },
+};
+
+const getOrderStatusStyle = (status) => ORDER_STATUS_STYLES[status] || ORDER_STATUS_STYLES.PENDING;
+
+const humanizeStatus = (value, fallback = '—') => {
+  const text = String(value || '').trim().replace(/_/g, ' ').toLowerCase();
+  if (!text) return fallback;
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+};
+
+// Product image chain: order item snapshot → populated product gallery
+// (color/variant aware) → neutral placeholder.
+const orderItemImage = (item) => {
+  const snapshot = typeof item?.image === 'string' ? item.image.trim() : '';
+  if (snapshot) return snapshot;
+
+  const product = item?.product ?? (typeof item?.productId === 'object' ? item.productId : null);
+  const gallery = cartLineImage({ ...item, product }, '');
+  if (gallery) return gallery;
+
+  const images = Array.isArray(product?.images) ? product.images : [];
+  return images.find(Boolean) || NEUTRAL_PRODUCT_IMAGE;
+};
+
+function OrderSectionLabel({ children }) {
+  return (
+    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8a8a]">
+      {children}
+    </p>
+  );
+}
+
+function OrderStatusBadge({ status }) {
+  const tone = getOrderStatusStyle(status);
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${tone.pill}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`} aria-hidden="true" />
+      {humanizeStatus(status, 'Pending')}
+    </span>
+  );
+}
+
+function OrderProgress({ status }) {
+  const active = status !== 'CANCELLED' && status !== 'REFUNDED';
+  const currentIndex = orderProgressIndex(status);
+  const reached = (index) => active && index <= currentIndex;
+  const lastIndex = ORDER_PROGRESS_STEPS.length - 1;
+
+  return (
+    <ol className="grid grid-cols-4 gap-1" aria-label="Order progress">
+      {ORDER_PROGRESS_STEPS.map((label, index) => {
+        const isDone = active && index < currentIndex;
+        const isCurrent = active && index === currentIndex;
+        const leftFilled = reached(index);
+        const rightFilled = reached(index + 1);
+
+        const dotClass = isCurrent
+          ? 'bg-[#ffc800] shadow-[0_0_0_4px_rgba(255,200,0,0.16)]'
+          : isDone
+            ? 'bg-[#ffc800]/45'
+            : 'bg-white/12';
+
+        const labelClass = isCurrent
+          ? 'font-semibold text-white'
+          : isDone
+            ? 'text-[#c9c9c9]'
+            : 'text-[#6a6a6a]';
+
+        const lineClass = (filled) => (filled ? 'bg-[#ffc800]/45' : 'bg-white/10');
+
+        return (
+          <li
+            key={label}
+            className="flex min-w-0 flex-col items-center gap-2"
+            aria-current={isCurrent ? 'step' : undefined}
+          >
+            <span className="flex w-full items-center" aria-hidden="true">
+              <span className={`h-px flex-1 ${index === 0 ? 'invisible' : lineClass(leftFilled)}`} />
+              <span className={`mx-1 h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`} />
+              <span className={`h-px flex-1 ${index === lastIndex ? 'invisible' : lineClass(rightFilled)}`} />
+            </span>
+            <span className={`text-center text-[9.5px] leading-tight tracking-[0.04em] ${labelClass}`}>
+              {label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function OrderDetailPage() {
   const { id } = useParams();
   const { showToast } = useToast();
@@ -1535,12 +1662,12 @@ function OrderDetailPage() {
 
   if (!id) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
+      <div className="mx-auto w-full max-w-[600px] px-4 pb-10 pt-4 sm:pt-6">
         <PageMeta title="Order details | AJ SPORTS" description="Order details" />
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
-          <h1 className="kicks-section-title">Order not found</h1>
-          <p className="mt-4 text-[#d3d3d3]">We could not find this order.</p>
-          <Link to="/account/orders" className="mt-6 inline-flex kicks-btn kicks-btn-primary">Back to orders</Link>
+        <div className="rounded-2xl border border-white/10 bg-[#111111] p-6 text-center">
+          <h1 className="text-lg font-black uppercase tracking-[-0.02em] text-white">Order not found</h1>
+          <p className="mt-2 text-[13px] text-[#b8b8b8]">We could not find this order.</p>
+          <Link to="/account/orders" className="kicks-btn kicks-btn-primary kicks-btn-sm mt-5">Back to orders</Link>
         </div>
       </div>
     );
@@ -1548,22 +1675,30 @@ function OrderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-        <div className="h-[320px] animate-pulse rounded-[28px] bg-[#111111]" />
+      <div className="mx-auto w-full max-w-[600px] px-4 pb-10 pt-4 sm:pt-6" aria-busy="true">
+        <div className="h-7 w-2/3 animate-pulse rounded-lg bg-[#111111]" />
+        <div className="mt-4 h-[76px] animate-pulse rounded-2xl bg-[#111111]" />
+        <div className="mt-3 h-[44px] animate-pulse rounded-2xl bg-[#111111]" />
+        <div className="mt-4 h-[92px] animate-pulse rounded-2xl bg-[#111111]" />
+        <div className="mt-4 h-[132px] animate-pulse rounded-2xl bg-[#111111]" />
       </div>
     );
   }
 
   if (isError || !order._id) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
+      <div className="mx-auto w-full max-w-[600px] px-4 pb-10 pt-4 sm:pt-6">
         <PageMeta title="Order details | AJ SPORTS" description="Order details" />
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-center">
-          <h1 className="kicks-section-title">Order unavailable</h1>
-          <p className="mt-4 text-[#d3d3d3]">We could not load this order right now.</p>
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/account/orders" className="inline-flex kicks-btn kicks-btn-primary">Back to orders</Link>
-            <Link to="/shop" className="kicks-btn kicks-btn-secondary">Continue shopping</Link>
+        <div className="rounded-2xl border border-white/10 bg-[#111111] p-6 text-center">
+          <h1 className="text-lg font-black uppercase tracking-[-0.02em] text-white">Order unavailable</h1>
+          <p className="mt-2 text-[13px] text-[#b8b8b8]">We could not load this order right now.</p>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <Link to="/account/orders" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+              <span className="min-w-0 truncate leading-[1.45]">Back to orders</span>
+            </Link>
+            <Link to="/shop" className="kicks-btn kicks-btn-primary kicks-btn-sm">
+              <span className="min-w-0 truncate leading-[1.45]">Continue shopping</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -1572,119 +1707,212 @@ function OrderDetailPage() {
 
   const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Today';
   const paymentMethod = order.paymentId ? 'Razorpay' : 'Payment pending';
+  const orderStatus = order.status || 'PENDING';
+  const paymentStatus = order.paymentStatus || 'PENDING';
+  const paymentStatusDot = paymentStatus === 'PAID'
+    ? 'bg-[#7de7b3]'
+    : paymentStatus === 'FAILED'
+      ? 'bg-[#ff9a9a]'
+      : 'bg-[#ffc800]';
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
+    <div className="mx-auto w-full max-w-[600px] px-4 pb-10 pt-4 sm:pt-6">
       <PageMeta title="Order details | AJ SPORTS" description="Order details" />
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="kicks-eyebrow">Order details</p>
-          <h1 className="mt-3 kicks-section-title">{order.orderNumber || order._id || id}</h1>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/account/orders" className="kicks-btn kicks-btn-secondary kicks-btn-sm">Back to orders</Link>
-          {trackingQuery.isLoading ? (
-            <button type="button" disabled className="kicks-btn kicks-btn-secondary kicks-btn-sm">
-              <Loader2 size={15} className="animate-spin" /> Checking tracking...
-            </button>
-          ) : trackingUrl ? (
-            <button type="button" onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary">
-              Track Order <ExternalLink size={15} />
-            </button>
-          ) : (
-            <button type="button" disabled title={trackingQuery.isError ? 'Tracking is temporarily unavailable' : 'Tracking not available yet'} className="kicks-btn kicks-btn-secondary kicks-btn-sm">
-              {trackingQuery.isError ? 'Tracking unavailable' : 'Tracking not available yet'}
-            </button>
-          )}
-          {invoiceUnavailable ? (
-            <button type="button" disabled title="Invoice is not available yet" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
-              Invoice unavailable
-            </button>
-          ) : (
-            <button type="button" onClick={() => invoiceMutation.mutate(order._id || id)} disabled={invoiceMutation.isPending} className="inline-flex items-center gap-2 kicks-btn kicks-btn-secondary kicks-btn-sm disabled:cursor-wait disabled:opacity-60">
-              {invoiceMutation.isPending && <Loader2 size={15} className="animate-spin" />}
-              {invoiceMutation.isPending ? 'Downloading...' : 'Download Invoice'}
-            </button>
-          )}
-          <Link to="/shop" className="inline-flex kicks-btn kicks-btn-primary">Continue shopping</Link>
-        </div>
+
+      {/* Top navigation */}
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <Link
+          to="/account/orders"
+          className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-[#b0b0b0] transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        >
+          <ChevronLeft size={14} aria-hidden="true" />
+          Orders
+        </Link>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white">AJ SPORTS</span>
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Order date</p>
-            <p className="mt-2 text-lg font-semibold text-white">{orderDate}</p>
+      {/* Order header */}
+      <header className="flex items-start justify-between gap-3 pt-4">
+        <div className="min-w-0">
+          <h1 className="break-all text-[22px] font-black leading-[1.1] tracking-[-0.03em] text-white sm:text-[26px]">
+            {order.orderNumber || order._id || id}
+          </h1>
+          <p className="mt-1 text-[11px] tracking-[0.04em] text-[#8d8d8d]">Placed {orderDate}</p>
+        </div>
+        <OrderStatusBadge status={orderStatus} />
+      </header>
+
+      {/* Order progress */}
+      <div className="mt-4 rounded-2xl border border-white/10 bg-[#111111] px-3 py-4 sm:px-5">
+        <OrderProgress status={orderStatus} />
+      </div>
+
+      {/* Invoice + tracking */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {invoiceUnavailable ? (
+          <button
+            type="button"
+            disabled
+            title="Invoice is not available yet"
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm w-full"
+          >
+            <span className="min-w-0 truncate leading-[1.45]">Invoice unavailable</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => invoiceMutation.mutate(order._id || id)}
+            disabled={invoiceMutation.isPending}
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm w-full disabled:cursor-wait disabled:opacity-60"
+          >
+            {invoiceMutation.isPending
+              ? <Loader2 size={14} className="shrink-0 animate-spin" aria-hidden="true" />
+              : <FileText size={14} className="shrink-0" aria-hidden="true" />}
+            <span className="min-w-0 truncate leading-[1.45]">
+              {invoiceMutation.isPending ? 'Downloading...' : 'Download invoice'}
+            </span>
+          </button>
+        )}
+
+        {trackingQuery.isLoading ? (
+          <button type="button" disabled className="kicks-btn kicks-btn-secondary kicks-btn-sm w-full">
+            <Loader2 size={14} className="shrink-0 animate-spin" aria-hidden="true" />
+            <span className="min-w-0 truncate leading-[1.45]">Checking tracking...</span>
+          </button>
+        ) : trackingUrl ? (
+          <button
+            type="button"
+            onClick={() => window.open(trackingUrl, '_blank', 'noopener,noreferrer')}
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm w-full"
+          >
+            <span className="min-w-0 truncate leading-[1.45]">Track order</span>
+            <ExternalLink size={14} className="shrink-0" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            title={trackingQuery.isError ? 'Tracking is temporarily unavailable' : 'Tracking not available yet'}
+            className="kicks-btn kicks-btn-secondary kicks-btn-sm w-full"
+          >
+            <span className="min-w-0 truncate leading-[1.45]">
+              {trackingQuery.isError ? 'Tracking unavailable' : 'Not available yet'}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Payment */}
+      <section className="mt-4" aria-label="Payment">
+        <OrderSectionLabel>Payment</OrderSectionLabel>
+        <div className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/10 bg-[#111111]">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[#8a8a8a]">Status</span>
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-[13px] font-semibold text-white">
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${paymentStatusDot}`} aria-hidden="true" />
+              <span className="truncate">{humanizeStatus(paymentStatus, 'Pending')}</span>
+            </span>
           </div>
-          <div className={`inline-flex rounded-full px-3 py-2 text-xs uppercase tracking-[0.2em] ${statusClasses[order.status] || statusClasses.DEFAULT}`}>
-            {order.status || 'PENDING'}
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[#8a8a8a]">Method</span>
+            <span className="min-w-0 truncate text-[13px] font-semibold text-white">{paymentMethod}</span>
           </div>
         </div>
+      </section>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Order status</p>
-            <p className="mt-4 text-lg font-semibold text-white">{order.status || 'PENDING'}</p>
-          </div>
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Payment status</p>
-            <p className="mt-4 text-lg font-semibold text-white">{order.paymentStatus || 'PENDING'}</p>
-          </div>
-          <div className="rounded-[22px] border border-white/10 bg-[#181818] p-5">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Payment method</p>
-            <p className="mt-4 text-lg font-semibold text-white">{paymentMethod}</p>
-          </div>
-        </div>
+      {/* Product */}
+      <section className="mt-4" aria-label="Product">
+        <OrderSectionLabel>Product</OrderSectionLabel>
+        <div className="space-y-2">
+          {items.map((item) => {
+            const image = orderItemImage(item);
+            const unitPrice = Number(item.unitPrice || item.finalPrice || 0);
+            const quantity = Number(item.quantity || 1);
+            const lineTotal = Number(unitPrice * quantity);
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white sm:text-2xl">Products</h2>
-            {items.map((item) => {
-              const image = item.product?.images?.[0] || item.image || NEUTRAL_PRODUCT_IMAGE;
-              const unitPrice = Number(item.unitPrice || item.finalPrice || 0);
-              const lineTotal = Number(unitPrice * Number(item.quantity || 1));
-              return (
-                <div key={item._id || item.variantId || item.productId} className="flex flex-col gap-4 rounded-[20px] border border-white/10 bg-[#181818] p-4 md:flex-row md:items-center">
-                  <img src={image} alt={item.productName || 'Ordered product'} className="h-24 w-24 rounded-[18px] object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-white">{item.productName || item.name || 'AJ SPORTS product'}</h3>
-                    <p className="mt-1 text-sm text-[#a8a8a8]">{item.size || 'Size N/A'} • {item.color || 'Color N/A'}</p>
-                    <p className="mt-2 text-sm text-[#d3d3d3]">Qty {item.quantity || 1}</p>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-sm text-[#a8a8a8]">{formatMoney(unitPrice)} each</p>
-                    <p className="mt-2 text-lg font-semibold text-white">{formatMoney(lineTotal)}</p>
-                  </div>
+            return (
+              <article
+                key={item._id || item.variantId || item.productId}
+                className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#111111] p-3"
+              >
+                <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#0d0d0d] sm:h-20 sm:w-20">
+                  <img
+                    src={image}
+                    alt={item.productName || 'Ordered product'}
+                    loading="lazy"
+                    className="h-full w-full object-contain"
+                    onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }}
+                  />
                 </div>
-              );
-            })}
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="break-words text-[13px] font-semibold leading-snug text-white sm:text-sm">
+                    {item.productName || item.name || 'AJ SPORTS product'}
+                  </h3>
+                  <p className="mt-1 truncate text-[11px] text-[#8d8d8d]">
+                    {item.size || 'Size N/A'} • {item.color || 'Color N/A'}
+                  </p>
+                  <p className="mt-1 text-[11px] font-medium text-[#c9c9c9]">Qty {quantity}</p>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                  <span className="whitespace-nowrap text-[11px] text-[#8d8d8d]">{formatMoney(unitPrice)} each</span>
+                  <span className="whitespace-nowrap text-[14px] font-bold text-white">{formatMoney(lineTotal)}</span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Totals */}
+      <section className="mt-4" aria-label="Summary">
+        <OrderSectionLabel>Summary</OrderSectionLabel>
+        <div className="rounded-2xl border border-white/10 bg-[#111111] px-4 py-3">
+          <div className="flex items-center justify-between gap-3 py-1 text-[13px]">
+            <span className="text-[#8d8d8d]">Subtotal</span>
+            <span className="text-[#d9d9d9]">{formatMoney(subtotal)}</span>
           </div>
-
-          <div className="space-y-5">
-            <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
-              <h2 className="text-xl font-bold text-white sm:text-2xl">Summary</h2>
-              <div className="mt-5 space-y-3 text-[#d9d9d9]">
-                <div className="flex items-center justify-between gap-4"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
-                <div className="flex items-center justify-between gap-4"><span>Discount</span><span>{formatMoney(discount)}</span></div>
-                <div className="flex items-center justify-between gap-4"><span>Shipping</span><span>{shippingCharge === 0 ? 'Free' : formatMoney(shippingCharge)}</span></div>
-                <div className="flex items-center justify-between gap-4"><span>Tax</span><span>{formatMoney(tax)}</span></div>
-                <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-lg font-semibold text-white"><span>Total</span><span>{formatMoney(total)}</span></div>
-              </div>
-            </div>
-
-            <div className="rounded-[22px] border border-white/10 bg-[#181818] p-6">
-              <h2 className="text-xl font-bold text-white sm:text-2xl">Shipping address</h2>
-              <div className="mt-5 space-y-1 text-[#d9d9d9]">
-                <p className="text-white">{shippingAddress.firstName || ''} {shippingAddress.lastName || ''}</p>
-                <p>{shippingAddress.phone || 'Phone unavailable'}</p>
-                <p>{shippingAddress.addressLine1 || shippingAddress.address || 'Address unavailable'}</p>
-                {shippingAddress.addressLine2 && <p>{shippingAddress.addressLine2}</p>}
-                <p>{[shippingAddress.city, shippingAddress.state, shippingAddress.postalCode].filter(Boolean).join(', ') || 'Location unavailable'}</p>
-                <p>{shippingAddress.country || 'India'}</p>
-              </div>
-            </div>
+          <div className="flex items-center justify-between gap-3 py-1 text-[13px]">
+            <span className="text-[#8d8d8d]">Discount</span>
+            <span className="text-[#d9d9d9]">{formatMoney(discount)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3 py-1 text-[13px]">
+            <span className="text-[#8d8d8d]">Shipping</span>
+            <span className="text-[#d9d9d9]">{shippingCharge === 0 ? 'Free' : formatMoney(shippingCharge)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3 py-1 text-[13px]">
+            <span className="text-[#8d8d8d]">Tax</span>
+            <span className="text-[#d9d9d9]">{formatMoney(tax)}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white">Total</span>
+            <span className="text-[17px] font-black tracking-[-0.02em] text-white">{formatMoney(total)}</span>
           </div>
         </div>
+      </section>
+
+      {/* Shipping information */}
+      <section className="mt-4" aria-label="Shipping information">
+        <OrderSectionLabel>Shipping</OrderSectionLabel>
+        <div className="rounded-2xl border border-white/10 bg-[#111111] px-4 py-3 text-[13px] leading-relaxed text-[#c4c4c4]">
+          <p className="font-semibold text-white">{shippingAddress.firstName || ''} {shippingAddress.lastName || ''}</p>
+          <p className="text-[#8d8d8d]">{shippingAddress.phone || 'Phone unavailable'}</p>
+          <p className="mt-1 break-words">{shippingAddress.addressLine1 || shippingAddress.address || 'Address unavailable'}</p>
+          {shippingAddress.addressLine2 && <p className="break-words">{shippingAddress.addressLine2}</p>}
+          <p className="break-words">{[shippingAddress.city, shippingAddress.state, shippingAddress.postalCode].filter(Boolean).join(', ') || 'Location unavailable'}</p>
+          <p>{shippingAddress.country || 'India'}</p>
+        </div>
+      </section>
+
+      {/* Bottom actions */}
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <Link to="/account/orders" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+          <span className="min-w-0 truncate leading-[1.45]">Back to orders</span>
+        </Link>
+        <Link to="/shop" className="kicks-btn kicks-btn-primary kicks-btn-sm">
+          <span className="min-w-0 truncate leading-[1.45]">Continue shopping</span>
+        </Link>
       </div>
     </div>
   );

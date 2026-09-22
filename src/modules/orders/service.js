@@ -38,6 +38,39 @@ const assertValidOrderTransition = (currentStatus, nextStatus) => {
   }
 };
 
+// Order-item image snapshot helper. Mirrors the storefront gallery priority
+// (variant.images → product.colorImages[color] → product.images[]) so the
+// Order Details page shows the exact image that was purchased.
+const firstImage = (value) => {
+  if (Array.isArray(value)) {
+    return value.find((url) => typeof url === 'string' && url.trim())?.trim() || '';
+  }
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
+};
+
+const colorImage = (product, color) => {
+  const source = product?.colorImages;
+  const wanted = String(color || '').trim().toLowerCase();
+  if (!source || !wanted) return '';
+  if (typeof source.get === 'function') {
+    const direct = firstImage(source.get(color));
+    if (direct) return direct;
+    if (typeof source.entries === 'function') {
+      for (const [name, urls] of source.entries()) {
+        if (String(name || '').trim().toLowerCase() === wanted) return firstImage(urls);
+      }
+    }
+  } else if (typeof source === 'object') {
+    for (const [name, urls] of Object.entries(source)) {
+      if (String(name || '').trim().toLowerCase() === wanted) return firstImage(urls);
+    }
+  }
+  return '';
+};
+
+const resolveItemImage = (product, variant) =>
+  firstImage(variant?.images) || colorImage(product, variant?.color) || firstImage(product?.images) || '';
+
 export const orderService = {
   async createOrderFromCart(userId, payload = {}) {
     const cart = await Cart.findOne({ userId });
@@ -92,6 +125,7 @@ export const orderService = {
         unitPrice: variant.salePrice ?? variant.price,
         discount: 0,
         finalPrice: itemTotal,
+        image: resolveItemImage(product, variant),
       });
     }
 
@@ -133,7 +167,10 @@ export const orderService = {
   },
 
   async getById(userId, orderId) {
-    const order = await Order.findOne({ _id: orderId, user: userId });
+    // Legacy orders have no image snapshot on their items, so expose the
+    // product gallery as a fallback for the Order Details page.
+    const order = await Order.findOne({ _id: orderId, user: userId })
+      .populate('items.productId', 'name images colorImages variants');
     if (!order) {
       const error = new Error('Order not found');
       error.statusCode = 404;
