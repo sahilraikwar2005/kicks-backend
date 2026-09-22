@@ -2532,17 +2532,42 @@ function AccountOrdersSection() {
             return (
               <div key={orderId} className="rounded-[20px] border border-white/10 bg-[#111111] p-5 transition hover:border-white/20">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs uppercase tracking-[0.2em] text-[#8d8d8d]">Order</span>
-                      <span className="font-bold text-white">{order.orderNumber || orderId}</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[#a0a0a0]">
-                      <span>{orderDate}</span>
-                      <span>•</span>
-                      <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
-                      <span>•</span>
-                      <span>{formatMoney(totalAmount)}</span>
+                  <div className="flex min-w-0 items-start gap-3">
+                    {items.length > 0 && (
+                      <div aria-hidden="true" className="flex shrink-0 items-center pt-0.5">
+                        {items.slice(0, 3).map((item, idx) => (
+                          <span
+                            key={item._id || item.variantId || idx}
+                            className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#0d0d0d] sm:h-14 sm:w-14 ${idx > 0 ? '-ml-3' : ''}`}
+                          >
+                            <img
+                              src={orderItemImage(item)}
+                              alt=""
+                              loading="lazy"
+                              className="h-full w-full object-contain"
+                              onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }}
+                            />
+                          </span>
+                        ))}
+                        {items.length > 3 && (
+                          <span className="-ml-3 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-[#1c1c1c] text-[11px] font-bold text-white sm:h-14 sm:w-14">
+                            +{items.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs uppercase tracking-[0.2em] text-[#8d8d8d]">Order</span>
+                        <span className="truncate font-bold text-white">{order.orderNumber || orderId}</span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[#a0a0a0]">
+                        <span>{orderDate}</span>
+                        <span>•</span>
+                        <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+                        <span>•</span>
+                        <span>{formatMoney(totalAmount)}</span>
+                      </div>
                     </div>
                   </div>
 
