@@ -4978,7 +4978,7 @@ function AdminPage({ initialSection }) {
                     type="button"
                     onClick={applyDefaultsToAll}
                     disabled={productForm.variants.length === 0}
-                    className="mt-3 inline-flex h-[34px] items-center rounded-[10px] border border-white/15 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-white/60"
+                    className="mt-2.5 inline-flex h-[30px] items-center rounded-[8px] border border-white/15 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-white/60"
                   >
                     Apply to all sizes
                   </button>
@@ -5014,7 +5014,7 @@ function AdminPage({ initialSection }) {
                     {productForm.colors.map((color) => (
                       <span
                         key={colorKey(color)}
-                        className="inline-flex min-h-[34px] items-center gap-1.5 rounded-[10px] border border-white bg-white py-1 pl-3.5 pr-1.5 text-xs font-semibold text-black"
+                        className="inline-flex min-h-[30px] items-center gap-1.5 rounded-[10px] border border-white bg-white py-1 pl-3.5 pr-1.5 text-xs font-semibold text-black"
                       >
                         {color}
                         <button
@@ -5028,7 +5028,7 @@ function AdminPage({ initialSection }) {
                         </button>
                       </span>
                     ))}
-                    <span className="inline-flex min-h-[34px] items-center gap-1.5">
+                    <span className="inline-flex min-h-[30px] items-center gap-1.5">
                       <input
                         value={colorInput}
                         onChange={(event) => { setColorInput(event.target.value); setFormError(''); }}
@@ -5042,7 +5042,7 @@ function AdminPage({ initialSection }) {
                         onClick={addColor}
                         aria-label="Add color"
                         title="Add color"
-                        className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/15 text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
+                        className="flex h-[30px] w-[30px] items-center justify-center rounded-[10px] border border-white/15 text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
                       >
                         <Plus size={14} />
                       </button>
@@ -5073,11 +5073,11 @@ function AdminPage({ initialSection }) {
                     </p>
                   ) : (
                     <>
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
                           onClick={applyColorToAll}
-                          className="inline-flex h-[32px] items-center rounded-[8px] border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
+                          className="inline-flex h-[30px] items-center rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
                         >
                           Apply color to all
                         </button>
@@ -5089,12 +5089,12 @@ function AdminPage({ initialSection }) {
                             onChange={(event) => setBulkStock(event.target.value)}
                             placeholder="Qty"
                             aria-label="Stock quantity for all variants"
-                            className="kicks-field kicks-field-sm w-20"
+                            className="kicks-field kicks-field-sm w-16"
                           />
                           <button
                             type="button"
                             onClick={() => { applyStockToAll(bulkStock); setBulkStock(''); }}
-                            className="inline-flex h-[34px] items-center rounded-[8px] border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
+                            className="inline-flex h-[30px] items-center rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
                           >
                             Set stock for all
                           </button>

@@ -21,6 +21,12 @@
   --kicks-page-px: clamp(16px, 4vw, 32px);
 }
 
+/* Global 10% density scale-down: sizing, margins, padding and type render at
+   90% across storefront and admin for a simpler, cleaner look. */
+body {
+  zoom: 0.9;
+}
+
 /* ---------- Typography ---------- */
 .kicks-eyebrow {
   font-size: 11px;
@@ -458,16 +464,16 @@ textarea.kicks-field {
   margin-top: 6px;
 }
 .admin-product-form .kicks-field {
-  font-size: 12.5px;
-  min-height: 38px;
+  font-size: 12px;
+  min-height: 36px;
 }
 .admin-product-form textarea.kicks-field {
-  min-height: 84px;
-  font-size: 12.5px;
+  min-height: 76px;
+  font-size: 12px;
 }
 .admin-product-form .kicks-field-sm {
-  min-height: 34px;
-  font-size: 12px;
+  min-height: 30px;
+  font-size: 11.5px;
 }
 .admin-product-form table {
   font-size: 12px;
