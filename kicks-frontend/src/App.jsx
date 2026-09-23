@@ -179,6 +179,7 @@ const PRODUCT_TYPES = {
   SHOES: { label: 'Shoes', sizes: SIZE_SYSTEMS.UK, mode: 'sizes' },
   TSHIRT: { label: 'T-Shirts', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
   LOWER: { label: 'Lower', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
+  SHORTS: { label: 'Shorts', sizes: ['S', 'M', 'L', 'XL'], mode: 'sizes' },
   JERSEY: { label: 'Jerseys', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
   SOCKS: { label: 'Socks', sizes: ['Free Size'], mode: 'sizes' },
   ACCESSORIES: { label: 'Accessories', sizes: ['Free Size'], mode: 'quantity' },

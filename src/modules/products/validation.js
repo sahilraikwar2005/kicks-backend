@@ -20,7 +20,7 @@ export const createProductSchema = Joi.object({
   brand: Joi.string().allow('').optional(),
   category: Joi.string().allow('').optional(),
   gender: Joi.string().valid('MEN', 'WOMEN', 'UNISEX', 'KIDS').optional(),
-  type: Joi.string().valid('SHOES', 'TSHIRT', 'LOWER', 'JERSEY', 'SOCKS', 'ACCESSORIES', 'OTHER').optional(),
+  type: Joi.string().valid('SHOES', 'TSHIRT', 'LOWER', 'SHORTS', 'JERSEY', 'SOCKS', 'ACCESSORIES', 'OTHER').optional(),
   description: Joi.string().allow('').optional(),
   shortDescription: Joi.string().allow('').optional(),
   tags: Joi.array().items(Joi.string()).default([]),
