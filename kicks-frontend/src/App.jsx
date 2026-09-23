@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
@@ -42,7 +42,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from './api/client';
-import { colorKey, dedupeColors, distinctSizes, normalizeColorName, syncMatrixRows } from './utils/variantMatrix';
+import { colorKey, dedupeColors, normalizeColorName } from './utils/variantMatrix';
 import { NEUTRAL_PRODUCT_IMAGE } from './components/ui/productImage';
 import { cartLineImage } from './utils/productGallery';
 import { addressesApi } from './api/addresses.api';
@@ -151,7 +151,11 @@ function ScrollToTop() {
 }
 
 const unwrapPayload = (payload) => payload?.data ?? payload ?? {};
-const formatMoney = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
+const formatMoney = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '₹0';
+  return `₹${amount.toLocaleString('en-IN')}`;
+};
 
 // Size systems/ranges for the admin variant manager. Stored size strings keep
 // the system prefix (e.g. "UK 6") to match the existing catalog + storefront
@@ -165,6 +169,44 @@ const SIZE_SYSTEMS = {
 const detectSizeSystem = (size) => {
   const prefix = String(size || '').trim().split(' ')[0]?.toUpperCase();
   return SIZE_SYSTEMS[prefix] ? prefix : 'UK';
+};
+
+// Simplified business model: ONE PRODUCT = ONE COLOR. Product type drives
+// the size UI (shoe sizes vs apparel sizes vs quantity-only). No backend
+// change needed: type is an optional product field, sizes stay variant rows,
+// and quantity-only products use a single "Free Size" variant.
+const PRODUCT_TYPES = {
+  SHOES: { label: 'Shoes', sizes: SIZE_SYSTEMS.UK, mode: 'sizes' },
+  TSHIRT: { label: 'T-Shirts', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
+  LOWER: { label: 'Lower', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
+  JERSEY: { label: 'Jerseys', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
+  SOCKS: { label: 'Socks', sizes: ['Free Size'], mode: 'sizes' },
+  ACCESSORIES: { label: 'Accessories', sizes: ['Free Size'], mode: 'quantity' },
+  OTHER: { label: 'Other', sizes: ['Free Size'], mode: 'quantity' },
+};
+
+const productTypeOf = (product) => (PRODUCT_TYPES[product?.type] ? product.type : 'SHOES');
+const sizesForType = (type) => PRODUCT_TYPES[type]?.sizes || PRODUCT_TYPES.SHOES.sizes;
+
+// Single display color for a product (all variants share one color in the
+// simplified model; legacy multi-color products show their first color).
+const productColor = (product) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  return String(variants[0]?.color || '').trim();
+};
+
+// Optimized Cloudinary thumbnails for admin lists/cards. Only rewrites
+// delivery URLs (…/upload/…); every other URL passes through untouched so
+// non-Cloudinary images keep working.
+const cloudinaryThumb = (url, width = 160) => {
+  if (typeof url !== 'string' || !url) return url;
+  const marker = '/upload/';
+  const index = url.indexOf(marker);
+  if (index < 0) return url;
+  const after = url.slice(index + marker.length);
+  if (/^(w_|h_|c_|q_|f_|e_)/.test(after)) return url;
+  const size = Math.max(1, Math.floor(Number(width) || 160));
+  return `${url.slice(0, index + marker.length)}w_${size},q_auto,f_auto/${after}`;
 };
 
 // Normalizes persisted product.colorImages into { DisplayName: [urls] }.
@@ -355,22 +397,49 @@ function PasswordField({ label, name, register, error, placeholder = 'Enter pass
 }
 
 function CategoriesPage() {
+  const tiles = [
+    { name: 'Running', image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Lifestyle', image: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Training', image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Basketball', image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Football', image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Skate', image: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Court', image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=800&q=70' },
+    { name: 'Performance', image: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=800&q=70' },
+  ];
+  // Resolve each tile to the real backend category value (same contract as
+  // ShopPage: _id → id → slug). Unmatched tiles fall back to plain /shop so
+  // a missing category can never break the shop query.
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories-tiles'],
+    queryFn: () => apiClient.get('/categories').then((response) => response.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  const categoryOptions = Array.isArray(unwrapPayload(categoriesData)) ? unwrapPayload(categoriesData) : [];
+  const hrefFor = (name) => {
+    const wanted = String(name || '').toLowerCase();
+    const match = categoryOptions.find(
+      (option) => String(option?.name || '').toLowerCase() === wanted || String(option?.slug || '').toLowerCase() === wanted,
+    );
+    const value = match?._id || match?.id || match?.slug;
+    return value ? `/shop?category=${encodeURIComponent(value)}` : '/shop';
+  };
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Categories | AJ SPORTS" description="Browse premium sneaker categories" />
-      <div className="mb-8">
+      <div className="mb-5 sm:mb-8">
         <p className="kicks-eyebrow">Shop all</p>
         <h1 className="mt-3 kicks-section-title">Categories</h1>
       </div>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {['Running', 'Lifestyle', 'Training', 'Basketball', 'Football', 'Skate', 'Court', 'Performance'].map((category) => (
-          <Link key={category} to="/shop" className="rounded-[26px] border border-white/10 bg-[#111111] p-4">
-            <div className="h-64 overflow-hidden rounded-[20px]">
-              <img src="https://images.unsplash.com/photo-1543508282-6319a3e2621f?auto=format&fit=crop&w=1200&q=80" alt={category} className="h-full w-full object-cover" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+        {tiles.map((tile) => (
+          <Link key={tile.name} to={hrefFor(tile.name)} className="rounded-[18px] border border-white/10 bg-[#111111] p-2.5 transition hover:border-white/25 sm:rounded-[22px] sm:p-3.5">
+            <div className="h-32 overflow-hidden rounded-[12px] sm:h-44 sm:rounded-[16px] xl:h-52">
+              <img src={tile.image} alt={tile.name} loading="lazy" className="h-full w-full object-cover" />
             </div>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-xl font-semibold text-white">{category}</span>
-              <ArrowRight size={18} className="text-white" />
+            <div className="flex items-center justify-between gap-2 px-1 pb-0.5 pt-2.5 sm:pt-3">
+              <span className="truncate text-sm font-semibold text-white sm:text-lg">{tile.name}</span>
+              <ArrowRight size={15} className="shrink-0 text-white" aria-hidden="true" />
             </div>
           </Link>
         ))}
@@ -477,65 +546,6 @@ function AuthenticityPage() {
   );
 }
 
-// function WishlistPage() {
-//   const queryClient = useQueryClient();
-//   const { data, isLoading, isError } = useQuery({ queryKey: ['wishlist'], queryFn: () => wishlistApi.getWishlist() });
-//   const removeMutation = useMutation({
-//     mutationFn: (productId) => wishlistApi.removeFromWishlist(productId),
-//     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['wishlist'] }),
-//   });
-
-//   const wishlist = unwrapPayload(data)?.wishlist ?? unwrapPayload(data)?.items ?? unwrapPayload(data)?.products ?? [];
-//   const items = Array.isArray(wishlist) ? wishlist : wishlist.items ?? [];
-
-//   return (
-//     <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-//       <PageMeta title="Wishlist | AJ SPORTS" description="Your saved items" />
-//       <div className="mb-8 flex items-center justify-between gap-4">
-//         <div>
-//           <p className="kicks-eyebrow">Saved</p>
-//           <h1 className="mt-3 kicks-section-title">Wishlist</h1>
-//         </div>
-//         {items.length > 0 && <Link to="/shop" className="kicks-btn kicks-btn-secondary kicks-btn-sm text-sm">Browse styles</Link>}
-//       </div>
-
-//       {isLoading ? (
-//         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-//           {[...Array(4)].map((_, index) => <div key={index} className="h-[280px] animate-pulse rounded-[24px] bg-[#111111]" />)}
-//         </div>
-//       ) : isError ? (
-//         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-8 text-[#d7d7d7]">Unable to load wishlist from the backend.</div>
-//       ) : items.length === 0 ? (
-//         <div className="rounded-[28px] border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:p-12">
-//           <h2 className="text-2xl font-black uppercase tracking-[-0.06em] text-white sm:text-3xl">Your wishlist is empty</h2>
-//           <p className="mt-4 text-[#c3c3c3]">Save the pairs you love to revisit them later.</p>
-//           <Link to="/shop" className="mt-8 inline-flex kicks-btn kicks-btn-primary">Shop now</Link>
-//         </div>
-//       ) : (
-//         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-//           {items.map((item) => {
-//             const product = item.product ?? item;
-//             const productId = product._id || product.id || item.productId;
-//             const price = Number(product?.price || 0);
-//             return (
-//               <div key={productId} className="rounded-[26px] border border-white/10 bg-[#111111] p-4">
-//                 <img src={product?.images?.[0] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'} alt={product?.name || 'Saved product'} className="h-64 w-full rounded-[20px] object-cover" />
-//                 <div className="mt-4 flex items-start justify-between gap-3">
-//                   <div>
-//                     <p className="text-[10px] uppercase tracking-[0.26em] text-[#a3a3a3]">{product?.brand?.name || 'AJ SPORTS'}</p>
-//                     <Link to={`/products/${product?.slug || productId}`} className="mt-2 block text-xl font-medium text-white">{product?.name}</Link>
-//                   </div>
-//                   <button type="button" onClick={() => removeMutation.mutate(productId)} className="rounded-full border border-white/10 p-2 text-white">✕</button>
-//                 </div>
-//                 <div className="mt-4 text-lg font-semibold text-white">{formatMoney(price)}</div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
 function WishlistPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -974,6 +984,9 @@ function CheckoutPage() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [pinLookup, setPinLookup] = useState({ status: 'idle', result: null });
+  // Bumps whenever the address form session ends so the PIN field remounts
+  // with fresh transient verification state (cached lookups are preserved).
+  const [addressSession, setAddressSession] = useState(0);
 
   const [addressForm, setAddressForm] = useState({
     firstName: '',
@@ -1038,6 +1051,7 @@ function CheckoutPage() {
       }
       setShowAddressForm(false);
       setPinLookup({ status: 'idle', result: null });
+      setAddressSession((session) => session + 1);
       setAddressForm({
         firstName: '',
         lastName: '',
@@ -1199,7 +1213,7 @@ function CheckoutPage() {
           <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-white sm:text-2xl">Delivery Address</h2>
-              <button type="button" onClick={() => setShowAddressForm((current) => !current)} className="shrink-0 kicks-btn kicks-btn-secondary kicks-btn-sm transition hover:border-white/30">
+              <button type="button" onClick={() => { if (showAddressForm) { setPinLookup({ status: 'idle', result: null }); setAddressSession((session) => session + 1); } setShowAddressForm((current) => !current); }} className="shrink-0 kicks-btn kicks-btn-secondary kicks-btn-sm transition hover:border-white/30">
                 {showAddressForm ? 'Close form' : 'Add new address'}
               </button>
             </div>
@@ -1268,6 +1282,7 @@ function CheckoutPage() {
                   placeholder="State"
                 />
                 <PincodeField
+                  key={`checkout-pin-${addressSession}`}
                   id="checkout-postalCode"
                   label=""
                   value={addressForm.postalCode}
@@ -3846,7 +3861,9 @@ function ProductInventoryDetail({
   getVariantStock,
   variantState,
   saleBusy,
+  stepBusy,
   onSell,
+  onStep,
   onAdjust,
   movementsVariantId,
   onToggleMovements,
@@ -3956,7 +3973,31 @@ function ProductInventoryDetail({
                         <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-[#a0a0a0]">{variant.sku}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-white">{formatMoney(variant.price)}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-[#d5d5d5]">{variant.salePrice ? formatMoney(variant.salePrice) : '—'}</td>
-                        <td className="px-3 py-2 font-bold text-white">{getVariantStock(variant)}</td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => onStep(variant, -1)}
+                              disabled={getVariantStock(variant) <= 0 || stepBusy === String(variant._id)}
+                              aria-label={`Decrease stock for ${variant.size}`}
+                              className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/15 text-sm leading-none text-white transition hover:border-white/35 disabled:opacity-30"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-8 text-center font-bold text-white" aria-live="polite">
+                              {stepBusy === String(variant._id) ? '…' : getVariantStock(variant)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onStep(variant, 1)}
+                              disabled={stepBusy === String(variant._id)}
+                              aria-label={`Increase stock for ${variant.size}`}
+                              className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/15 text-sm leading-none text-white transition hover:border-white/35 disabled:opacity-30"
+                            >
+                              +
+                            </button>
+                          </span>
+                        </td>
                         <td className="px-3 py-2">{stockPill(state)}</td>
                         <td className="px-3 py-2">
                           <span className="flex items-center justify-end gap-1.5">
@@ -4010,7 +4051,29 @@ function ProductInventoryDetail({
                     <span className="text-[#a0a0a0]">
                       {formatMoney(variant.price)}{variant.salePrice ? ` • Sale ${formatMoney(variant.salePrice)}` : ''}
                     </span>
-                    <span className="text-[#a0a0a0]">Stock <strong className="text-base text-white">{getVariantStock(variant)}</strong></span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onStep(variant, -1)}
+                        disabled={getVariantStock(variant) <= 0 || stepBusy === String(variant._id)}
+                        aria-label={`Decrease stock for ${variant.size}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-white/15 text-base leading-none text-white transition hover:border-white/35 disabled:opacity-30"
+                      >
+                        −
+                      </button>
+                      <span className="min-w-8 text-center text-base font-bold text-white" aria-live="polite">
+                        {stepBusy === String(variant._id) ? '…' : getVariantStock(variant)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onStep(variant, 1)}
+                        disabled={stepBusy === String(variant._id)}
+                        aria-label={`Increase stock for ${variant.size}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-white/15 text-base leading-none text-white transition hover:border-white/35 disabled:opacity-30"
+                      >
+                        +
+                      </button>
+                    </span>
                   </p>
                   <div className="mt-2.5 flex gap-1.5">
                     {renderActions(variant, true)}
@@ -4488,31 +4551,31 @@ function AdminPage({ initialSection }) {
     const [status, setStatus] = useState('');
     const [category, setCategory] = useState('');
     const [brand, setBrand] = useState('');
+    const [typeFilter, setTypeFilter] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [toast, setToast] = useState('');
     const [mediaItems, setMediaItems] = useState([]);
     const [sessionUploadIds, setSessionUploadIds] = useState([]);
-    const [colorSessionUploads, setColorSessionUploads] = useState([]);
-    const [uploadingColor, setUploadingColor] = useState('');
     const [urlInput, setUrlInput] = useState('');
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
     const [savingProduct, setSavingProduct] = useState(false);
     const [formError, setFormError] = useState('');
-    const [bulkStock, setBulkStock] = useState('');
-    const [colorInput, setColorInput] = useState('');
     const [brandDialogOpen, setBrandDialogOpen] = useState(false);
     const [brandName, setBrandName] = useState('');
     const [brandSaving, setBrandSaving] = useState(false);
     const [brandError, setBrandError] = useState('');
     const [dragActive, setDragActive] = useState(false);
+    const [legacyColors, setLegacyColors] = useState([]);
+    const [showAdvanced, setShowAdvanced] = useState(false);
     const [productForm, setProductForm] = useState({
       name: '',
       slug: '',
       brand: '',
       category: '',
       gender: 'UNISEX',
+      type: 'SHOES',
       price: 0,
       salePrice: '',
       status: 'DRAFT',
@@ -4561,6 +4624,7 @@ function AdminPage({ initialSection }) {
 
     const filteredProducts = products.filter((product) => {
       const haystack = `${product.name} ${product.slug} ${product.description || ''}`.toLowerCase();
+      if (typeFilter && productTypeOf(product) !== typeFilter) return false;
       return haystack.includes(search.toLowerCase());
     });
 
@@ -4572,6 +4636,7 @@ function AdminPage({ initialSection }) {
         brand: '',
         category: '',
         gender: 'UNISEX',
+        type: 'SHOES',
         price: 0,
         salePrice: '',
         status: 'DRAFT',
@@ -4587,9 +4652,10 @@ function AdminPage({ initialSection }) {
         colorImages: {},
         variants: [],
       });
+      setLegacyColors([]);
+      setShowAdvanced(false);
       setMediaItems([]);
       setSessionUploadIds([]);
-      setColorSessionUploads([]);
       setUrlInput('');
       setUrlInput('');
       setUploadError('');
@@ -4630,6 +4696,7 @@ function AdminPage({ initialSection }) {
         brand: product.brand?._id || product.brand || '',
         category: product.category?._id || product.category || '',
         gender: product.gender || 'UNISEX',
+        type: PRODUCT_TYPES[product.type] ? product.type : 'SHOES',
         price: product.price || 0,
         salePrice: product.salePrice ?? '',
         status: product.status || 'DRAFT',
@@ -4645,9 +4712,12 @@ function AdminPage({ initialSection }) {
         colorImages: normalizePersistedColorImages(product.colorImages),
         variants: hydrated,
       });
+      // Legacy multi-color products keep working: extra colors are preserved
+      // untouched on save (see saveProduct merge). The editor manages one color.
+      setLegacyColors(dedupeColors((product.variants || []).map((variant) => variant?.color)).slice(1));
+      setShowAdvanced(false);
       setMediaItems(Array.isArray(product.images) ? product.images.filter(Boolean).map((url) => ({ id: makeMediaId(), kind: 'manual', url })) : []);
       setSessionUploadIds([]);
-      setColorSessionUploads([]);
       setUrlInput('');
       setUploadError('');
       setFormError('');
@@ -4689,84 +4759,49 @@ function AdminPage({ initialSection }) {
       return blankVariant({ size, color, price, salePrice });
     };
 
+    // Simplified model: ONE PRODUCT = ONE COLOR. The single color input
+    // drives every variant row; legacy multi-color variants (if any) are
+    // preserved untouched on save (see saveProduct merge).
+    const singleColorName = () => normalizeColorName(productForm.defaultColor) || 'Black';
+
+    const setSingleColor = (name) => {
+      const color = normalizeColorName(name) || 'Black';
+      setProductForm((current) => ({
+        ...current,
+        defaultColor: color,
+        colors: [color],
+        variants: current.variants.map((row) => ({ ...row, color, touched: { ...row.touched, color: true } })),
+      }));
+      setFormError('');
+    };
+
     const toggleSize = (size) => {
-      const colors = productForm.colors.length > 0 ? productForm.colors : [productForm.defaultColor || 'Black'];
-      const rowsForSize = productForm.variants.filter((row) => row.size === size);
-      const missing = colors.filter((color) => !rowsForSize.some((row) => colorKey(row.color) === colorKey(color)));
-      if (rowsForSize.length > 0 && missing.length === 0) {
-        const configured = rowsForSize.filter(isRowConfigured);
-        if (configured.length > 0 && !window.confirm(`Remove ${size} (${configured.length} configured row${configured.length > 1 ? 's' : ''})? Entered stock/price data will be lost.`)) {
+      const color = singleColorName();
+      const existing = productForm.variants.find((row) => row.size === size);
+      if (existing) {
+        if (isRowConfigured(existing) && !window.confirm(`Remove ${size}? Entered stock/price data will be lost.`)) {
           return;
         }
-        const keys = new Set(rowsForSize.map((row) => row.key));
-        setProductForm((current) => ({ ...current, variants: current.variants.filter((row) => !keys.has(row.key)) }));
+        setProductForm((current) => ({ ...current, variants: current.variants.filter((row) => row.size !== size) }));
         setFormError('');
         return;
       }
-      // Add only the missing Size × Color combinations; existing rows keep
-      // their stock, price, sale price and SKU data untouched.
-      const needed = colors.filter((color) => !rowsForSize.some((row) => colorKey(row.color) === colorKey(color)));
-      if (needed.length === 0) return;
-      setProductForm((current) => ({
-        ...current,
-        colors: current.colors.length > 0 ? current.colors : colors,
-        variants: syncMatrixRows({ rows: current.variants, sizes: [size], colors: needed, makeRow: (nextSize, nextColor) => makeMatrixRow(nextSize, nextColor) }),
-      }));
-      setFormError('');
-    };
-
-    const addColor = () => {
-      const name = normalizeColorName(colorInput);
-      if (!name) {
-        setFormError('Enter a color name first.');
-        return;
-      }
-      if (productForm.colors.some((color) => colorKey(color) === colorKey(name))) {
-        setFormError(`Color "${name}" already exists.`);
-        return;
-      }
-      const sizes = distinctSizes(productForm.variants);
       const { price, salePrice } = defaultVariantPrices();
       setProductForm((current) => ({
         ...current,
-        colors: [...current.colors, name],
-        variants: syncMatrixRows({
-          rows: current.variants,
-          sizes,
-          colors: [name],
-          makeRow: (size, color) => blankVariant({ size, color, price, salePrice }),
-        }),
+        colors: [color],
+        variants: [...current.variants, makeMatrixRow(size, color)].map((row) => (
+          row.size === size && !row.price ? { ...row, price, salePrice } : row
+        )),
       }));
-      setColorInput('');
       setFormError('');
     };
 
-    const removeColor = (name) => {
-      const rowsForColor = productForm.variants.filter((row) => colorKey(row.color) === colorKey(name));
-      const configured = rowsForColor.filter(isRowConfigured);
-      const galleryCount = (productForm.colorImages?.[name] || []).length;
-      if ((configured.length > 0 || galleryCount > 0) && !window.confirm(`Remove color "${name}" (${configured.length} configured row${configured.length > 1 ? 's' : ''}${galleryCount > 0 ? `, ${galleryCount} galler${galleryCount > 1 ? 'ies' : 'y'} image${galleryCount > 1 ? 's' : ''}` : ''})? Entered data will be lost.`)) {
-        return;
-      }
-      const keys = new Set(rowsForColor.map((row) => row.key));
-      const staleUploads = colorSessionUploads.filter((item) => colorKey(item.color) === colorKey(name) && item.publicId);
-      setProductForm((current) => {
-        const nextColorImages = { ...current.colorImages };
-        for (const key of Object.keys(nextColorImages)) {
-          if (colorKey(key) === colorKey(name)) delete nextColorImages[key];
-        }
-        return {
-          ...current,
-          colors: current.colors.filter((color) => colorKey(color) !== colorKey(name)),
-          colorImages: nextColorImages,
-          variants: current.variants.filter((row) => !keys.has(row.key)),
-        };
-      });
-      if (staleUploads.length > 0) {
-        setColorSessionUploads((entries) => entries.filter((item) => colorKey(item.color) !== colorKey(name)));
-        Promise.allSettled(staleUploads.map((item) => deleteStoredUpload(item.publicId)));
-      }
-      setFormError('');
+    const stepStock = (key, delta) => {
+      const row = productForm.variants.find((entry) => entry.key === key);
+      if (!row) return;
+      const stock = Math.max(0, Math.floor(Number(row.stock || 0)) + delta);
+      updateVariant(key, { stock }, ['stock']);
     };
 
     const removeVariantRow = (key) => {
@@ -4792,34 +4827,6 @@ function AdminPage({ initialSection }) {
         })),
       }));
       setToast('Default price applied to all sizes.');
-    };
-
-    const applyColorToAll = () => {
-      const color = String(productForm.defaultColor || '').trim();
-      if (!color) {
-        setFormError('Enter a default color first.');
-        return;
-      }
-      setProductForm((current) => ({
-        ...current,
-        colors: [normalizeColorName(color)],
-        variants: current.variants.map((row) => ({ ...row, color, touched: { ...row.touched, color: true } })),
-      }));
-      setFormError('');
-      setToast(`Color "${color}" applied to all variants.`);
-    };
-
-    const applyStockToAll = (value) => {
-      const stock = Math.floor(Number(value));
-      if (!Number.isFinite(stock) || stock < 0) {
-        setFormError('Enter a valid stock quantity (0 or more).');
-        return;
-      }
-      setProductForm((current) => ({
-        ...current,
-        variants: current.variants.map((row) => ({ ...row, stock, touched: { ...row.touched, stock: true } })),
-      }));
-      setFormError('');
     };
 
     const saveBrand = async () => {
@@ -4938,12 +4945,53 @@ function AdminPage({ initialSection }) {
       setSavingProduct(true);
       try {
         const slug = productForm.slug || slugifyText(productForm.name);
+        const singleColor = singleColorName();
+        const editedVariants = productForm.variants.map((row) => ({
+          sku: skuByKey[row.key] || buildVariantSku({ brand: formBrandName, model: productForm.name, color: row.color, size: row.size }),
+          size: String(row.size || '').trim(),
+          color: String(row.color || '').trim(),
+          price: Number(row.price || 0),
+          salePrice: row.salePrice === '' || row.salePrice === null || row.salePrice === undefined ? null : Number(row.salePrice),
+          stock: Math.max(0, Math.floor(Number(row.stock || 0))),
+          images: Array.isArray(row.images) ? row.images.filter(Boolean) : [],
+        }));
+        const editedColorKeys = new Set(editedVariants.map((variant) => colorKey(variant.color)));
+        // Legacy preservation: server variants in other colors pass through
+        // untouched with their stored SKUs, stock, prices and images, so
+        // editing a legacy multi-color product can never delete data.
+        const preservedVariants = editingProduct && Array.isArray(editingProduct.variants)
+          ? editingProduct.variants
+            .filter((variant) => ![...editedColorKeys].some((key) => key === colorKey(variant?.color)))
+            .map((variant) => ({
+              sku: variant.sku,
+              size: variant.size,
+              color: variant.color,
+              price: Number(variant.price ?? 0),
+              salePrice: variant.salePrice ?? null,
+              stock: Number(variant.stock ?? 0),
+              images: Array.isArray(variant.images) ? variant.images.filter(Boolean) : [],
+            }))
+          : [];
+        const cleanGallery = (urls) => (Array.isArray(urls) ? urls : []).filter((url) => typeof url === 'string' && url.trim());
+        const editedGalleries = Object.fromEntries(
+          Object.entries(productForm.colorImages || {})
+            .filter(([color]) => colorKey(color) === colorKey(singleColor))
+            .map(([color, urls]) => [String(color || '').trim(), cleanGallery(urls)])
+            .filter(([, urls]) => urls.length > 0),
+        );
+        const serverGalleries = editingProduct ? normalizePersistedColorImages(editingProduct.colorImages) : {};
+        const preservedGalleries = Object.fromEntries(
+          Object.entries(serverGalleries)
+            .filter(([color, urls]) => cleanGallery(urls).length > 0 && ![...editedColorKeys].some((key) => key === colorKey(color)))
+            .map(([color, urls]) => [String(color || '').trim(), cleanGallery(urls)]),
+        );
         const payload = {
           name: productForm.name.trim(),
           slug,
           brand: productForm.brand || undefined,
           category: productForm.category || undefined,
           gender: productForm.gender,
+          type: PRODUCT_TYPES[productForm.type] ? productForm.type : 'SHOES',
           price: Number(productForm.price || 0),
           salePrice: productForm.salePrice === '' || productForm.salePrice === null || productForm.salePrice === undefined
             ? null
@@ -4956,20 +5004,8 @@ function AdminPage({ initialSection }) {
           description: productForm.description,
           tags: productForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
           images: mediaItems.map((item) => item.url).filter(Boolean),
-          colorImages: Object.fromEntries(
-            Object.entries(productForm.colorImages || {})
-              .map(([color, urls]) => [String(color || '').trim(), (Array.isArray(urls) ? urls : []).filter((url) => typeof url === 'string' && url.trim())])
-              .filter(([, urls]) => urls.length > 0),
-          ),
-          variants: productForm.variants.map((row) => ({
-            sku: skuByKey[row.key] || buildVariantSku({ brand: formBrandName, model: productForm.name, color: row.color, size: row.size }),
-            size: String(row.size || '').trim(),
-            color: String(row.color || '').trim(),
-            price: Number(row.price || 0),
-            salePrice: row.salePrice === '' || row.salePrice === null || row.salePrice === undefined ? null : Number(row.salePrice),
-            stock: Math.max(0, Math.floor(Number(row.stock || 0))),
-            images: Array.isArray(row.images) ? row.images.filter(Boolean) : [],
-          })),
+          colorImages: { ...preservedGalleries, ...editedGalleries },
+          variants: [...editedVariants, ...preservedVariants],
         };
 
         if (editingProduct) {
@@ -4982,7 +5018,6 @@ function AdminPage({ initialSection }) {
         setIsFormOpen(false);
         setPage(1);
         setSessionUploadIds([]);
-        setColorSessionUploads([]);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['admin-products'] }),
           queryClient.invalidateQueries({ queryKey: ['products-list'] }),
@@ -4999,11 +5034,8 @@ function AdminPage({ initialSection }) {
     const cleanupSessionUploads = async () => {
       const stale = mediaItems.filter((item) => item.kind === 'upload' && item.publicId && sessionUploadIds.includes(item.id));
       setSessionUploadIds([]);
-      const staleColorUploads = colorSessionUploads.filter((item) => item.publicId);
-      setColorSessionUploads([]);
       await Promise.allSettled([
         ...stale.map((item) => apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`)),
-        ...staleColorUploads.map((item) => apiClient.delete(`/uploads/images/${encodeURIComponent(item.publicId)}`)),
       ]);
     };
 
@@ -5093,133 +5125,6 @@ function AdminPage({ initialSection }) {
       });
     };
 
-    const validateImageFiles = (files) => {
-      const list = Array.from(files || []);
-      const valid = [];
-      for (const file of list) {
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-          setUploadError(`Unsupported file type: ${file.name || 'file'}. Use JPG, PNG or WebP.`);
-          continue;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-          setUploadError(`"${file.name || 'file'}" exceeds the 5 MB limit.`);
-          continue;
-        }
-        valid.push(file);
-      }
-      return valid;
-    };
-
-    // Uploads one File to Cloudinary via the existing endpoint. Each file is
-    // uploaded exactly once per call; the caller decides where the URL lands.
-    const uploadSingleImage = async (file) => {
-      const form = new FormData();
-      form.append('image', file);
-      // NOTE: apiClient defaults to Content-Type: application/json, which makes
-      // axios JSON-stringify FormData (file never leaves the browser) and multer
-      // then sees no file -> backend 400 "Invalid upload file". Strip the header
-      // for this request only so the browser sets multipart/form-data + boundary.
-      const response = await apiClient.post('/uploads/images', form, {
-        transformRequest: [
-          (data, headers) => {
-            if (headers && typeof headers.delete === 'function') headers.delete('Content-Type');
-            else if (headers) delete headers['Content-Type'];
-            return data;
-          },
-        ],
-      });
-      const uploaded = unwrapPayload(response.data) ?? {};
-      if (!uploaded.url) throw new Error(`Upload failed for "${file.name || 'file'}". Choose the file again to retry.`);
-      return { url: uploaded.url, publicId: uploaded.publicId || '' };
-    };
-
-    const deleteStoredUpload = async (publicId) => {
-      if (!publicId) return;
-      try {
-        await apiClient.delete(`/uploads/images/${encodeURIComponent(publicId)}`);
-      } catch {
-        setUploadError('Removed from the product, but the uploaded file could not be deleted from storage.');
-      }
-    };
-
-    const uploadColorImages = async (color, files) => {
-      const valid = validateImageFiles(files);
-      if (valid.length === 0 || uploading) return;
-      setUploadError('');
-      setUploading(true);
-      setUploadingColor(color);
-      try {
-        for (const file of valid) {
-          const uploaded = await uploadSingleImage(file);
-          setColorSessionUploads((entries) => [...entries, { color, url: uploaded.url, publicId: uploaded.publicId }]);
-          setProductForm((current) => ({
-            ...current,
-            colorImages: {
-              ...current.colorImages,
-              [color]: [...(current.colorImages?.[color] || []), uploaded.url],
-            },
-          }));
-        }
-      } catch (error) {
-        setUploadError(getUploadErrorMessage(error));
-      } finally {
-        setUploading(false);
-        setUploadingColor('');
-      }
-    };
-
-    const forgetColorSessionUpload = (color, url) => {
-      const entry = colorSessionUploads.find((item) => item.color === color && item.url === url);
-      if (entry?.publicId) {
-        setColorSessionUploads((entries) => entries.filter((item) => !(item.color === color && item.url === url)));
-        return deleteStoredUpload(entry.publicId);
-      }
-      return Promise.resolve();
-    };
-
-    const removeColorImage = (color, index) => {
-      const urls = productForm.colorImages?.[color] || [];
-      const url = urls[index];
-      if (!url) return;
-      setProductForm((current) => ({
-        ...current,
-        colorImages: { ...current.colorImages, [color]: (current.colorImages?.[color] || []).filter((_, position) => position !== index) },
-      }));
-      forgetColorSessionUpload(color, url);
-    };
-
-    const moveColorImage = (color, index, direction) => {
-      setProductForm((current) => {
-        const urls = [...(current.colorImages?.[color] || [])];
-        const next = index + direction;
-        if (index < 0 || next < 0 || next >= urls.length) return current;
-        [urls[index], urls[next]] = [urls[next], urls[index]];
-        return { ...current, colorImages: { ...current.colorImages, [color]: urls } };
-      });
-    };
-
-    const moveColorImageTo = (fromColor, index, toColor) => {
-      if (!toColor || colorKey(fromColor) === colorKey(toColor)) return;
-      const url = (productForm.colorImages?.[fromColor] || [])[index];
-      if (!url) return;
-      setProductForm((current) => {
-        const source = [...(current.colorImages?.[fromColor] || [])];
-        const [moved] = source.splice(index, 1);
-        if (!moved) return current;
-        return {
-          ...current,
-          colorImages: {
-            ...current.colorImages,
-            [fromColor]: source,
-            [toColor]: [...(current.colorImages?.[toColor] || []), moved],
-          },
-        };
-      });
-      setColorSessionUploads((entries) => entries.map((item) => (
-        item.color === fromColor && item.url === url ? { ...item, color: toColor } : item
-      )));
-    };
-
     const deleteProduct = async (productId, productName) => {
       if (!window.confirm(`Archive "${productName || 'this product'}"? It will be hidden from the storefront.`)) return;
       try {
@@ -5267,9 +5172,15 @@ function AdminPage({ initialSection }) {
           <div className="grid items-start gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
             <div className="min-w-0 space-y-4 lg:order-2">
             <AdminCard className="admin-product-main">
+              {legacyColors.length > 0 && (
+                <p className="mb-4 rounded-[12px] border border-[#FFC800]/30 bg-[#FFC800]/[0.06] p-3 text-xs leading-relaxed text-[#f3d87d]">
+                  Legacy multi-color product — you are editing <strong className="text-white">{singleColorName()}</strong>. Variants
+                  in {legacyColors.join(', ')} are preserved untouched on save. Create a separate product for another color.
+                </p>
+              )}
               <div className="space-y-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Product information</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Step 2 — Product information</p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <FormField label="Name"><input value={productForm.name} onChange={(event) => setProductForm({ ...productForm, name: event.target.value })} className="w-full kicks-field text-white" /></FormField>
                     <FormField label="Slug"><input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} className="w-full kicks-field text-white" placeholder="auto-generated from name" /></FormField>
@@ -5322,6 +5233,14 @@ function AdminPage({ initialSection }) {
                       )}
                     </div>
                     <FormField label="Category"><select value={productForm.category} onChange={(event) => setProductForm({ ...productForm, category: event.target.value })} className="w-full kicks-field text-white"><option value="">Select category</option>{categories.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}</select></FormField>
+                    <FormField label="Product type">
+                      <select value={PRODUCT_TYPES[productForm.type] ? productForm.type : 'SHOES'} onChange={(event) => setProductForm({ ...productForm, type: event.target.value, sizeSystem: 'UK' })} className="w-full kicks-field text-white">
+                        {Object.entries(PRODUCT_TYPES).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
+                      </select>
+                    </FormField>
+                    <FormField label="Color" hint="One product = one color. Another color needs a separate product.">
+                      <input value={productForm.defaultColor} onChange={(event) => setSingleColor(event.target.value)} placeholder="White" className="w-full kicks-field text-white" />
+                    </FormField>
                     <FormField label="Gender"><select value={productForm.gender} onChange={(event) => setProductForm({ ...productForm, gender: event.target.value })} className="w-full kicks-field text-white"><option value="UNISEX">UNISEX</option><option value="MEN">MEN</option><option value="WOMEN">WOMEN</option><option value="KIDS">KIDS</option></select></FormField>
                   </div>
                 </div>
@@ -5344,72 +5263,38 @@ function AdminPage({ initialSection }) {
 
                 <div className="border-t border-white/10 pt-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Variants</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Step 3 — Size & stock</p>
                     {productForm.variants.length > 0 && (
                       <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#a8a8a8]">
-                        {productForm.variants.length} variant{productForm.variants.length === 1 ? '' : 's'} • Total stock {totalVariantStock}
+                        {productForm.variants.length} size{productForm.variants.length === 1 ? '' : 's'} • Total stock {totalVariantStock}
                       </span>
                     )}
                   </div>
 
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <FormField label="Size system">
-                      <select
-                        value={productForm.sizeSystem}
-                        onChange={(event) => setProductForm({ ...productForm, sizeSystem: event.target.value })}
-                        className="w-full kicks-field text-white"
-                      >
-                        {Object.keys(SIZE_SYSTEMS).map((system) => <option key={system} value={system}>{system}</option>)}
-                      </select>
-                    </FormField>
-                    <FormField label="Default color" hint="New sizes start with this color.">
-                      <input value={productForm.defaultColor} onChange={(event) => setProductForm({ ...productForm, defaultColor: event.target.value })} placeholder="Black" className="w-full kicks-field text-white" />
-                    </FormField>
-                  </div>
-
-                  <p className="mb-1.5 mt-3 block text-xs font-medium text-[#c9c9c9]">Colors</p>
-                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Product colors">
-                    {productForm.colors.map((color) => (
-                      <span
-                        key={colorKey(color)}
-                        className="inline-flex min-h-[30px] items-center gap-1.5 rounded-[10px] border border-white bg-white py-1 pl-3.5 pr-1.5 text-xs font-semibold text-black"
-                      >
-                        {color}
-                        <button
-                          type="button"
-                          onClick={() => removeColor(color)}
-                          aria-label={`Remove color ${color}`}
-                          title={`Remove color ${color}`}
-                          className="flex h-6 w-6 items-center justify-center rounded-md text-black/60 transition hover:bg-black/10 hover:text-black focus:outline-none focus:ring-2 focus:ring-black/40"
+                  {productForm.type === 'SHOES' ? (
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <FormField label="Size system">
+                        <select
+                          value={productForm.sizeSystem}
+                          onChange={(event) => setProductForm({ ...productForm, sizeSystem: event.target.value })}
+                          className="w-full kicks-field text-white"
                         >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                    <span className="inline-flex min-h-[30px] items-center gap-1.5">
-                      <input
-                        value={colorInput}
-                        onChange={(event) => { setColorInput(event.target.value); setFormError(''); }}
-                        onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addColor(); } }}
-                        placeholder="Add color"
-                        aria-label="New color name"
-                        className="kicks-field kicks-field-sm w-28"
-                      />
-                      <button
-                        type="button"
-                        onClick={addColor}
-                        aria-label="Add color"
-                        title="Add color"
-                        className="flex h-[30px] w-[30px] items-center justify-center rounded-[10px] border border-white/15 text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </span>
-                  </div>
+                          {Object.keys(SIZE_SYSTEMS).map((system) => <option key={system} value={system}>{system}</option>)}
+                        </select>
+                      </FormField>
+                      <div className="flex items-end pb-1">
+                        <p className="text-[11px] leading-relaxed text-[#767676]">{singleColorName()} • tap sizes to add/remove</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[11px] leading-relaxed text-[#767676]">
+                      {PRODUCT_TYPES[productForm.type]?.label || 'Product'} sizes • {singleColorName()} • tap to add/remove
+                    </p>
+                  )}
 
                   <p className="mb-1.5 mt-3 block text-xs font-medium text-[#c9c9c9]">Available sizes</p>
                   <div className="flex flex-wrap gap-1.5" role="group" aria-label="Available sizes">
-                    {(SIZE_SYSTEMS[productForm.sizeSystem] || SIZE_SYSTEMS.UK).map((size) => {
+                    {(productForm.type === 'SHOES' ? (SIZE_SYSTEMS[productForm.sizeSystem] || SIZE_SYSTEMS.UK) : sizesForType(productForm.type)).map((size) => {
                       const selected = productForm.variants.some((row) => row.size === size);
                       return (
                         <button
@@ -5427,125 +5312,74 @@ function AdminPage({ initialSection }) {
 
                   {productForm.variants.length === 0 ? (
                     <p className="mt-3 rounded-[12px] border border-dashed border-white/15 bg-[#141414] p-3 text-center text-xs leading-relaxed text-[#8d8d8d]">
-                      Select sizes above to auto-generate variant rows. Stock and prices stay empty until you enter them. SKUs generate automatically.
+                      Tap a size above to add it with {singleColorName()} color. Enter any stock quantity — SKUs generate automatically.
                     </p>
                   ) : (
-                    <>
-                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={applyColorToAll}
-                          className="inline-flex h-[30px] shrink-0 items-center whitespace-nowrap rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
-                        >
-                          Apply color to all
-                        </button>
-                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <div className="mt-3 space-y-2">
+                      {productForm.variants.map((row) => (
+                        <div key={row.key} className="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-2">
+                          <div className="min-w-[72px] flex-1">
+                            <p className="text-sm font-bold text-white">{row.size}</p>
+                            <p className="truncate font-mono text-[10px] text-[#767676]" title="Auto-generated SKU">{skuByKey[row.key] || '—'} • AUTO</p>
+                          </div>
+                          <div className="flex items-center gap-1" role="group" aria-label={`Stock for ${row.size}`}>
+                            <button type="button" onClick={() => stepStock(row.key, -1)} disabled={Number(row.stock || 0) <= 0} aria-label={`Decrease stock for ${row.size}`} className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] border border-white/15 text-base leading-none text-white transition hover:border-white/35 disabled:opacity-30">−</button>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={row.stock}
+                              onChange={(event) => updateVariant(row.key, { stock: event.target.value === '' ? 0 : Number(event.target.value) }, ['stock'])}
+                              aria-label={`Stock quantity for ${row.size}`}
+                              className="kicks-field kicks-field-sm w-16 text-center"
+                            />
+                            <button type="button" onClick={() => stepStock(row.key, 1)} aria-label={`Increase stock for ${row.size}`} className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] border border-white/15 text-base leading-none text-white transition hover:border-white/35">+</button>
+                          </div>
                           <input
                             type="number"
                             min="0"
-                            value={bulkStock}
-                            onChange={(event) => setBulkStock(event.target.value)}
-                            placeholder="Qty"
-                            aria-label="Stock quantity for all variants"
-                            className="kicks-field kicks-field-sm w-16 shrink-0"
+                            value={row.price}
+                            onChange={(event) => updateVariant(row.key, { price: Number(event.target.value) }, ['price'])}
+                            aria-label={`Price for ${row.size}`}
+                            title="Price (₹)"
+                            className="kicks-field kicks-field-sm w-[76px]"
                           />
-                          <button
-                            type="button"
-                            onClick={() => { applyStockToAll(bulkStock); setBulkStock(''); }}
-                            className="inline-flex h-[30px] shrink-0 items-center whitespace-nowrap rounded-[8px] border border-white/15 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:border-white/35 focus:outline-none focus:ring-2 focus:ring-white/60"
-                          >
-                            Set stock for all
+                          <input
+                            type="number"
+                            min="0"
+                            value={row.salePrice}
+                            onChange={(event) => updateVariant(row.key, { salePrice: event.target.value === '' ? '' : Number(event.target.value) }, ['salePrice'])}
+                            placeholder="Sale"
+                            aria-label={`Sale price for ${row.size}`}
+                            title="Sale price (₹, optional)"
+                            className="kicks-field kicks-field-sm w-[76px]"
+                          />
+                          <button type="button" onClick={() => removeVariantRow(row.key)} aria-label={`Remove ${row.size} variant`} title="Remove variant" className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-red-500/30 text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-400/60">
+                            <Trash2 size={13} />
                           </button>
-                        </span>
-                      </div>
-
-                      <div className="mt-3 hidden overflow-x-auto rounded-[14px] border border-white/10 md:block">
-                        <table className="w-full min-w-[720px] border-collapse text-left text-[13px]">
-                          <thead>
-                            <tr className="border-b border-white/10 text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">
-                              <th scope="col" className="px-3 py-2.5 font-semibold">Size</th>
-                              <th scope="col" className="px-3 py-2.5 font-semibold">Color</th>
-                              <th scope="col" className="px-3 py-2.5 font-semibold">SKU</th>
-                              <th scope="col" className="px-3 py-2.5 font-semibold">Price (₹)</th>
-                              <th scope="col" className="px-3 py-2.5 font-semibold">Sale (₹)</th>
-                              <th scope="col" className="px-3 py-2.5 font-semibold">Stock</th>
-                              <th scope="col" className="px-3 py-2.5 font-semibold"><span className="sr-only">Actions</span></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {productForm.variants.map((row) => (
-                              <tr key={row.key} className="border-b border-white/5 last:border-0">
-                                <td className="whitespace-nowrap px-3 py-2 font-semibold text-white">{row.size}</td>
-                                <td className="whitespace-nowrap px-3 py-2 font-medium text-white">{row.color}</td>
-                                <td className="px-3 py-2">
-                                  <span className="block whitespace-nowrap font-mono text-xs text-white" title="Auto-generated SKU">{skuByKey[row.key] || '—'}</span>
-                                  <span className="mt-0.5 block text-[9px] uppercase tracking-[0.16em] text-[#767676]">Auto</span>
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input type="number" min="0" value={row.price} onChange={(event) => updateVariant(row.key, { price: Number(event.target.value) }, ['price'])} aria-label={`Price for ${row.size}`} className="kicks-field kicks-field-sm w-24" />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input type="number" min="0" value={row.salePrice} onChange={(event) => updateVariant(row.key, { salePrice: event.target.value === '' ? '' : Number(event.target.value) }, ['salePrice'])} placeholder="—" aria-label={`Sale price for ${row.size}`} className="kicks-field kicks-field-sm w-24" />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input type="number" min="0" step="1" value={row.stock} onChange={(event) => updateVariant(row.key, { stock: event.target.value === '' ? 0 : Number(event.target.value) }, ['stock'])} aria-label={`Stock for ${row.size}`} className="kicks-field kicks-field-sm w-20" />
-                                </td>
-                                <td className="px-3 py-2 text-right">
-                                  <button type="button" onClick={() => removeVariantRow(row.key)} aria-label={`Remove ${row.size} variant`} title="Remove variant" className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-red-500/30 text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-400/60">
-                                    <Trash2 size={13} />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="mt-2.5 space-y-2 md:hidden">
-                        {productForm.variants.map((row) => (
-                          <div key={row.key} className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-2.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-bold text-white">{row.size} <span className="font-medium text-[#a8a8a8]">• {row.color || 'No color'}</span></p>
-                              <button type="button" onClick={() => removeVariantRow(row.key)} aria-label={`Remove ${row.size} variant`} title="Remove variant" className="inline-flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-lg border border-red-500/30 text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-400/60">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                            <div className="mt-2.5 grid grid-cols-2 gap-2">
-                              <div>
-                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Color</span>
-                                <span className="block truncate text-sm font-medium text-white">{row.color || '—'}</span>
-                              </div>
-                              <div>
-                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">SKU • Auto</span>
-                                <span className="block break-all font-mono text-xs text-white">{skuByKey[row.key] || '—'}</span>
-                              </div>
-                              <label className="block">
-                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Price (₹)</span>
-                                <input type="number" min="0" value={row.price} onChange={(event) => updateVariant(row.key, { price: Number(event.target.value) }, ['price'])} className="kicks-field kicks-field-sm w-full" />
-                              </label>
-                              <label className="block">
-                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Sale (₹)</span>
-                                <input type="number" min="0" value={row.salePrice} onChange={(event) => updateVariant(row.key, { salePrice: event.target.value === '' ? '' : Number(event.target.value) }, ['salePrice'])} placeholder="—" className="kicks-field kicks-field-sm w-full" />
-                              </label>
-                              <label className="col-span-2 block">
-                                <span className="mb-1 block text-[10px] uppercase tracking-[0.18em] text-[#8d8d8d]">Stock</span>
-                                <input type="number" min="0" step="1" value={row.stock} onChange={(event) => updateVariant(row.key, { stock: event.target.value === '' ? 0 : Number(event.target.value) }, ['stock'])} className="kicks-field kicks-field-sm w-full" />
-                              </label>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 
                 <div className="border-t border-white/10 pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Description</p>
-                  <div className="mt-3 grid gap-3">
-                    <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full kicks-field text-white" /></FormField>
-                    <FormField label="Short description"><textarea rows={2} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="kicks-field" /></FormField>
-                    <FormField label="Description"><textarea rows={3} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="kicks-field" /></FormField>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced((current) => !current)}
+                    aria-expanded={showAdvanced}
+                    className="flex w-full items-center justify-between gap-2 text-left"
+                  >
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Step 4 — More product details (optional)</span>
+                    <span className="text-[#8d8d8d]">{showAdvanced ? '−' : '+'}</span>
+                  </button>
+                  {showAdvanced && (
+                    <div className="mt-3 grid gap-3">
+                      <FormField label="Tags"><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="running, comfort (comma separated)" className="w-full kicks-field text-white" /></FormField>
+                      <FormField label="Short description"><textarea rows={2} value={productForm.shortDescription} onChange={(event) => setProductForm({ ...productForm, shortDescription: event.target.value })} className="kicks-field" /></FormField>
+                      <FormField label="Description"><textarea rows={3} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="kicks-field" /></FormField>
+                    </div>
+                  )}
                 </div>
               </div>
             </AdminCard>
@@ -5566,8 +5400,8 @@ function AdminPage({ initialSection }) {
             </AdminCard>
           </div>
 
-          <aside className="admin-scroll min-w-0 space-y-4 lg:order-1 lg:sticky lg:top-24 lg:self-start">
-            <AdminCard eyebrow="Media" title="Product media">
+          <aside className="admin-scroll order-first min-w-0 space-y-4 lg:order-1 lg:sticky lg:top-24 lg:self-start">
+            <AdminCard eyebrow="Step 1 — Product image" title="Product media">
               <label
                 htmlFor="admin-product-images"
                 onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
@@ -5648,91 +5482,6 @@ function AdminPage({ initialSection }) {
                 </div>
               </div>
 
-              <div className="mt-4 border-t border-white/10 pt-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Color images</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-[#767676]">Each color gets its own gallery. First image is that color&apos;s main image.</p>
-                {productForm.colors.length === 0 ? (
-                  <p className="mt-3 rounded-[12px] border border-dashed border-white/15 bg-[#141414] p-3 text-center text-xs text-[#8d8d8d]">
-                    Add a color in the form to assign it dedicated images.
-                  </p>
-                ) : (
-                  <div className="mt-3 space-y-3">
-                    {productForm.colors.map((color) => {
-                      const urls = productForm.colorImages?.[color] || [];
-                      const others = productForm.colors.filter((entry) => colorKey(entry) !== colorKey(color));
-                      const inputId = `admin-color-images-${colorKey(color) || 'color'}`;
-                      return (
-                        <div key={colorKey(color)} className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-2.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-white">{color}</p>
-                            <label
-                              htmlFor={inputId}
-                              className={`inline-flex h-[30px] cursor-pointer items-center gap-1 rounded-[8px] border border-white/15 px-2.5 text-[11px] font-semibold text-white transition hover:border-white/35 ${uploading ? 'pointer-events-none opacity-50' : ''}`}
-                            >
-                              {uploading && uploadingColor === color
-                                ? <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-                                : <Plus size={12} aria-hidden="true" />}
-                              Upload
-                            </label>
-                            <input
-                              id={inputId}
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp"
-                              multiple
-                              className="sr-only"
-                              disabled={uploading}
-                              onChange={(event) => { uploadColorImages(color, event.target.files); event.target.value = ''; }}
-                            />
-                          </div>
-                          {urls.length > 0 ? (
-                            <div className="mt-2 grid grid-cols-3 gap-1.5">
-                              {urls.map((url, index) => (
-                                <div key={`${url}-${index}`} className="group relative overflow-hidden rounded-lg border border-white/10 bg-[#181818]">
-                                  <img src={url} alt={`${color} image ${index + 1}`} className="h-16 w-full object-cover" loading="lazy" onError={(event) => { event.currentTarget.style.opacity = '0.25'; }} />
-                                  {index === 0 && (
-                                    <span className="absolute left-1 top-1 rounded bg-[#FFC800] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] text-black">Main</span>
-                                  )}
-                                  <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-0.5">
-                                    <span className="flex gap-0.5">
-                                      <button type="button" onClick={() => moveColorImage(color, index, -1)} disabled={index === 0} aria-label={`Move ${color} image ${index + 1} left`} title="Move left" className="flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
-                                        <ChevronLeft size={11} />
-                                      </button>
-                                      <button type="button" onClick={() => moveColorImage(color, index, 1)} disabled={index === urls.length - 1} aria-label={`Move ${color} image ${index + 1} right`} title="Move right" className="flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-black/60 text-white backdrop-blur-sm transition hover:border-white/40 disabled:opacity-30">
-                                        <ChevronRight size={11} />
-                                      </button>
-                                    </span>
-                                    <button type="button" onClick={() => removeColorImage(color, index)} aria-label={`Remove ${color} image ${index + 1}`} title="Remove image" className="flex h-6 w-6 items-center justify-center rounded-md border border-red-500/30 bg-black/60 text-red-200 backdrop-blur-sm transition hover:bg-red-500/20">
-                                      <Trash2 size={11} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-[11px] text-[#767676]">No dedicated images — falls back to general images.</p>
-                          )}
-                          {others.length > 0 && urls.length > 0 && (
-                            <div className="mt-2 flex items-center gap-1.5">
-                              <label htmlFor={`${inputId}-move`} className="shrink-0 text-[10px] uppercase tracking-[0.14em] text-[#8d8d8d]">Move last to</label>
-                              <select
-                                id={`${inputId}-move`}
-                                defaultValue=""
-                                onChange={(event) => { moveColorImageTo(color, urls.length - 1, event.target.value); event.target.value = ''; }}
-                                aria-label={`Move last ${color} image to another color`}
-                                className="kicks-field kicks-field-sm min-w-0 flex-1"
-                              >
-                                <option value="">Select color…</option>
-                                {others.map((entry) => <option key={colorKey(entry)} value={entry}>{entry}</option>)}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
               <p className="mt-4 text-xs leading-relaxed text-[#8d8d8d]">The first image is used as the main storefront image.</p>
             </AdminCard>
           </aside>
@@ -5784,6 +5533,10 @@ function AdminPage({ initialSection }) {
                 <option value="">All brands</option>
                 {brands.map((item) => <option key={item._id || item.id} value={item._id || item.id}>{item.name}</option>)}
               </select>
+              <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} aria-label="Filter by product type" className="kicks-field text-sm text-white">
+                <option value="">All types</option>
+                {Object.entries(PRODUCT_TYPES).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
+              </select>
             </FilterBar>
           </div>
         </AdminCard>
@@ -5795,8 +5548,8 @@ function AdminPage({ initialSection }) {
               <div className="hidden lg:block">
                 <DataTable
                   columns={[
-                    { key: 'image', label: '', render: (row) => (row.images?.[0] ? <img src={row.images[0]} alt={row.name || 'Product'} className="h-11 w-11 rounded-xl object-cover" loading="lazy" /> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#181818] text-xs text-[#666]">—</span>) },
-                    { key: 'name', label: 'Name', render: (row) => <div><div className="font-semibold text-white">{row.name}</div><div className="text-[11px] uppercase tracking-[0.2em] text-[#8d8d8d]">{row.slug}</div></div> },
+                    { key: 'image', label: '', render: (row) => (row.images?.[0] ? <img src={cloudinaryThumb(row.images[0], 96)} alt={row.name || 'Product'} className="h-11 w-11 rounded-xl object-cover" loading="lazy" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} /> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#181818] text-xs text-[#666]">—</span>) },
+                    { key: 'name', label: 'Name', render: (row) => <div><div className="font-semibold text-white">{row.name}</div><div className="text-[11px] uppercase tracking-[0.2em] text-[#8d8d8d]">{productColor(row) || '—'} • {PRODUCT_TYPES[productTypeOf(row)]?.label}</div></div> },
                     { key: 'brand', label: 'Brand', render: (row) => <span>{row.brand?.name || row.brand || '—'}</span> },
                     { key: 'category', label: 'Category', render: (row) => <span>{row.category?.name || row.category || '—'}</span> },
                     { key: 'price', label: 'Price', render: (row) => <span>{formatMoney(row.price || 0)}</span> },
@@ -5822,13 +5575,13 @@ function AdminPage({ initialSection }) {
                 ) : filteredProducts.map((row) => (
                   <div key={row._id} className="flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-white/[0.02] p-3">
                     {row.images?.[0] ? (
-                      <img src={row.images[0]} alt={row.name || 'Product'} className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
+                      <img src={cloudinaryThumb(row.images[0], 128)} alt={row.name || 'Product'} className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
                     ) : (
                       <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#181818] text-xs text-[#666]">—</span>
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold text-white">{row.name}</div>
-                      <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{row.brand?.name || row.brand || ''} • {formatMoney(row.price || 0)}</div>
+                      <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{productColor(row) || '—'} • {row.brand?.name || row.brand || ''} • {formatMoney(row.price || 0)}</div>
                       <div className="mt-1.5"><StatusBadge status={row.status} /></div>
                     </div>
                     <div className="flex shrink-0 flex-col gap-2">
@@ -5870,6 +5623,14 @@ function AdminPage({ initialSection }) {
     const [adjustError, setAdjustError] = useState('');
     const [adjustBusy, setAdjustBusy] = useState(false);
     const [movementsVariantId, setMovementsVariantId] = useState(null);
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [lastSale, setLastSale] = useState(null);
+    const [stepBusy, setStepBusy] = useState('');
+    const undoTimer = useRef(null);
+
+    useEffect(() => () => {
+      if (undoTimer.current) window.clearTimeout(undoTimer.current);
+    }, []);
 
     useEffect(() => {
       const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 350);
@@ -5902,12 +5663,15 @@ function AdminPage({ initialSection }) {
     };
 
     const filteredProducts = allProducts.filter((product) => {
+      if (typeFilter !== 'all' && productTypeOf(product) !== typeFilter) return false;
       if (statusFilter === 'all') return true;
       const stats = productStats(product);
       if (statusFilter === 'out') return stats.state === 'out';
       if (statusFilter === 'low') return stats.low > 0;
       return stats.state === 'in' && stats.low === 0;
     });
+
+    const presentTypes = [...new Set(allProducts.map((product) => productTypeOf(product)))];
 
     const summary = allProducts.reduce((acc, product) => {
       const stats = productStats(product);
@@ -5961,11 +5725,53 @@ function AdminPage({ initialSection }) {
         await postAdjustment({ variantId: saleTarget.variantId, delta: -qty, reason: 'Offline sale' });
         setSaleTarget(null);
         setSaleQty(1);
+        if (undoTimer.current) window.clearTimeout(undoTimer.current);
+        setLastSale({
+          key: `${saleTarget.variantId}-${Date.now()}`,
+          variantId: saleTarget.variantId,
+          qty,
+          label: `${saleTarget.product?.name || 'Product'} • ${saleTarget.variant.color} / ${saleTarget.variant.size}`,
+        });
+        undoTimer.current = window.setTimeout(() => setLastSale(null), 15000);
         showToast(`Offline sale recorded: ${saleTarget.variant.size} × ${qty}.`, 'success');
       } catch (error) {
         showToast(error?.message || 'Unable to record offline sale.', 'error');
       } finally {
         setSaleBusy('');
+      }
+    };
+
+    const undoLastSale = async () => {
+      if (!lastSale) return;
+      const { variantId, qty, label } = lastSale;
+      setLastSale(null);
+      if (undoTimer.current) window.clearTimeout(undoTimer.current);
+      try {
+        await postAdjustment({ variantId, delta: qty, reason: 'Undo offline sale' });
+        showToast(`Restored: ${label}.`, 'success');
+      } catch (error) {
+        showToast(error?.message || 'Unable to undo sale.', 'error');
+      }
+    };
+
+    const quickStep = async (variant, delta) => {
+      const key = String(variant._id);
+      if (stepBusy) return;
+      if (delta < 0 && getVariantStock(variant) + delta < 0) {
+        showToast('Stock cannot go below zero.', 'error');
+        return;
+      }
+      setStepBusy(key);
+      try {
+        await postAdjustment({
+          variantId: key,
+          delta,
+          reason: delta < 0 ? 'Offline sale' : 'Restock',
+        });
+      } catch (error) {
+        showToast(error?.message || 'Unable to update stock.', 'error');
+      } finally {
+        setStepBusy('');
       }
     };
 
@@ -6022,7 +5828,7 @@ function AdminPage({ initialSection }) {
     );
 
     const productImage = (product, sizeClass) => (product?.images?.[0] ? (
-      <img src={product.images[0]} alt={product?.name || 'Product'} className={`${sizeClass} shrink-0 rounded-xl object-cover`} loading="lazy" />
+      <img src={cloudinaryThumb(product.images[0], 128)} alt={product?.name || 'Product'} className={`${sizeClass} shrink-0 rounded-xl object-cover`} loading="lazy" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />
     ) : (
       <span className={`flex ${sizeClass} shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#181818] text-[#666]`} aria-label="No product image">
         <Package size={16} />
@@ -6055,6 +5861,27 @@ function AdminPage({ initialSection }) {
           )}
         />
 
+        {lastSale && (
+          <div className="admin-fade-in flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-3" role="status">
+            <p className="text-[13px] text-emerald-200">{lastSale.label} sold offline.</p>
+            <button type="button" onClick={undoLastSale} className="kicks-btn kicks-btn-secondary kicks-btn-sm">Undo</button>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by product type">
+          {['all', ...presentTypes].map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setTypeFilter(type)}
+              aria-pressed={typeFilter === type}
+              className="kicks-pill"
+            >
+              {type === 'all' ? 'All' : PRODUCT_TYPES[type]?.label || type}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           {[
             { label: 'Total products', value: String(totalProducts) },
@@ -6079,7 +5906,9 @@ function AdminPage({ initialSection }) {
             getVariantStock={getVariantStock}
             variantState={variantState}
             saleBusy={saleBusy}
+            stepBusy={stepBusy}
             onSell={(variant) => openSale(selectedProduct, variant)}
+            onStep={(variant, delta) => quickStep(variant, delta)}
             onAdjust={(variant) => openAdjust(selectedProduct, variant)}
             movementsVariantId={movementsVariantId}
             onToggleMovements={(variantId) => setMovementsVariantId((current) => (current === variantId ? null : variantId))}
@@ -6101,31 +5930,64 @@ function AdminPage({ initialSection }) {
               <div className="grid gap-2.5 md:grid-cols-2">
                 {filteredProducts.map((product) => {
                   const stats = productStats(product);
+                  const color = productColor(product);
+                  const variants = Array.isArray(product?.variants) ? product.variants : [];
                   return (
-                    <div key={product._id} className="flex items-center gap-3 rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-3 transition hover:border-white/20">
-                      {productImage(product, 'h-14 w-14')}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">{product.name}</p>
-                        <p className="mt-0.5 truncate text-xs text-[#8d8d8d]">
-                          {(product.brand?.name || product.brand || 'AJ SPORTS')} • {(product.category?.name || product.category || 'Sneakers')}
-                        </p>
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#a0a0a0]">
-                          <span><strong className="text-white">{stats.total}</strong> units</span>
-                          <span aria-hidden="true">•</span>
-                          <span>{stats.sizes} size{stats.sizes === 1 ? '' : 's'}</span>
-                          <span aria-hidden="true">•</span>
-                          <span>{stats.low} low • {stats.out} out</span>
-                          {stockPill(stats.state, stats.state === 'out' ? 'Out of stock' : 'Available')}
-                        </p>
+                    <div key={product._id} className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-3 transition hover:border-white/20">
+                      <div className="flex items-center gap-3">
+                        {productImage(product, 'h-14 w-14')}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">{product.name}</p>
+                          <p className="mt-0.5 truncate text-xs text-[#8d8d8d]">
+                            {color ? `${color} • ` : ''}{formatMoney(product.price || 0)}
+                          </p>
+                        </div>
+                        {stockPill(stats.state, stats.state === 'out' ? 'Out' : stats.total)}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedProductId(product._id); setMovementsVariantId(null); }}
-                        aria-label={`View inventory for ${product.name}`}
-                        className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
-                      >
-                        View
-                      </button>
+                      {variants.length > 0 && (
+                        <div className="mt-2.5 flex flex-wrap gap-1.5" aria-label={`Sizes for ${product.name}`}>
+                          {variants.map((variant) => {
+                            const stock = getVariantStock(variant);
+                            const state = variantState(variant);
+                            return (
+                              <button
+                                key={variant._id || `${variant.size}-${variant.color}`}
+                                type="button"
+                                onClick={() => { setSaleTarget({ productId: product._id, variantId: variant._id, product, variant }); setSaleQty(1); }}
+                                disabled={stock <= 0}
+                                title={stock <= 0 ? `${variant.size} — sold out` : `Sell 1 × ${variant.size} offline`}
+                                aria-label={stock <= 0 ? `${variant.size}, sold out` : `Sell 1 ${variant.size} offline`}
+                                className={`inline-flex items-center gap-1 rounded-[8px] border px-2 py-1 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                                  state === 'out'
+                                    ? 'border-red-500/25 bg-red-500/[0.07] text-red-200'
+                                    : state === 'low'
+                                      ? 'border-[#FFC800]/25 bg-[#FFC800]/[0.07] text-[#f3d87d] hover:border-[#FFC800]/50'
+                                      : 'border-white/10 bg-white/[0.03] text-white hover:border-white/30'
+                                }`}
+                              >
+                                {variant.size} <span aria-hidden="true">•</span> {stock}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div className="mt-2.5 flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedProductId(product._id); setMovementsVariantId(null); }}
+                          className="kicks-btn kicks-btn-accent kicks-btn-sm flex-1"
+                        >
+                          Quick sell
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedProductId(product._id); setMovementsVariantId(null); }}
+                          aria-label={`View inventory for ${product.name}`}
+                          className="kicks-btn kicks-btn-secondary kicks-btn-sm flex-1"
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -6802,11 +6664,11 @@ function AdminPage({ initialSection }) {
                     <div className="rounded-[20px] border border-white/10 bg-[#111111] p-5">
                       <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Items ({detail.order.items.length})</div>
                       <div className="mt-3 space-y-3">
-                        {detail.order.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-[#181818] p-3">
-                            {item.image && <img src={item.image} alt={item.name || 'Product'} className="h-12 w-12 rounded-lg object-cover" />}
+                        {detail.order.items.map((item) => (
+                          <div key={item._id || item.variantId || item.productId} className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-[#181818] p-3">
+                            {item.image && <img src={item.image} alt={item.productName || item.name || 'Product'} className="h-12 w-12 rounded-lg object-cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }} />}
                             <div className="flex-1 min-w-0">
-                              <div className="truncate font-semibold text-white">{item.name || item.productName || 'Product'}</div>
+                              <div className="truncate font-semibold text-white">{item.productName || item.name || 'Product'}</div>
                               <div className="mt-0.5 text-xs text-[#a0a0a0]">
                                 {item.size && `Size: ${item.size}`}{item.size && item.color ? ' • ' : ''}{item.color && `Color: ${item.color}`}
                                 {' × '}{item.quantity || 1}
@@ -6825,7 +6687,7 @@ function AdminPage({ initialSection }) {
                       <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Timeline</div>
                       <div className="mt-4 space-y-0">
                         {detail.events.map((event, idx) => (
-                          <div key={idx} className="relative flex gap-4 pb-4">
+                          <div key={`${event.status || 'event'}-${event.occurredAt || ''}-${event.providerReference || ''}-${idx}`} className="relative flex gap-4 pb-4">
                             <div className="flex flex-col items-center">
                               <div className="h-3 w-3 rounded-full border-2 border-[#7ee7c2] bg-[#111111]" />
                               {idx < detail.events.length - 1 && <div className="w-px flex-1 bg-white/10" />}
@@ -7205,11 +7067,11 @@ function AdminPage({ initialSection }) {
   };
 
   return (
-    <div className="admin-shell mx-auto w-full max-w-[1500px] px-4 py-6 sm:py-8 lg:px-8">
+    <div className="admin-shell mx-auto w-full max-w-none px-2 py-4 sm:px-3 sm:py-5 lg:px-4">
       <PageMeta title="Admin | AJ SPORTS" description="AJ SPORTS administrator dashboard" />
 
-      <div className="grid items-start gap-5 xl:grid-cols-[232px_minmax(0,1fr)]">
-        <aside className="admin-scroll sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-3 xl:flex">
+      <div className="grid items-start gap-4 xl:grid-cols-[216px_minmax(0,1fr)]">
+        <aside className="admin-scroll sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
           {renderSidebarBody()}
         </aside>
 

@@ -224,7 +224,7 @@ export const productService = {
   },
 
   async createProduct(payload) {
-    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'description', 'shortDescription', 'images', 'colorImages', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
+    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'type', 'description', 'shortDescription', 'images', 'colorImages', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
     const cleanPayload = Object.fromEntries(allowedFields.filter((key) => payload[key] !== undefined).map((key) => [key, payload[key]]));
     if (cleanPayload.colorImages !== undefined) {
       const sanitizedColorImages = sanitizeColorImages(cleanPayload.colorImages);
@@ -276,7 +276,7 @@ export const productService = {
       throw error;
     }
 
-    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'description', 'shortDescription', 'images', 'colorImages', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
+    const allowedFields = ['name', 'slug', 'brand', 'category', 'gender', 'type', 'description', 'shortDescription', 'images', 'colorImages', 'variants', 'tags', 'price', 'salePrice', 'status', 'featured', 'newArrival', 'bestSeller', 'seo'];
     const cleanPayload = Object.fromEntries(allowedFields.filter((key) => payload[key] !== undefined).map((key) => [key, payload[key]]));
     if (cleanPayload.colorImages !== undefined) {
       const sanitizedColorImages = sanitizeColorImages(cleanPayload.colorImages);

@@ -26,6 +26,15 @@ const productSchema = new mongoose.Schema(
     brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', index: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true },
     gender: { type: String, enum: ['MEN', 'WOMEN', 'UNISEX', 'KIDS'], default: 'UNISEX' },
+    // Generic product type drives the admin size UI (shoe sizes vs apparel
+    // sizes vs quantity-only). Optional for backward compatibility; missing
+    // values are treated as SHOES by the admin and storefront.
+    type: {
+      type: String,
+      enum: ['SHOES', 'TSHIRT', 'LOWER', 'JERSEY', 'SOCKS', 'ACCESSORIES', 'OTHER'],
+      default: 'SHOES',
+      index: true,
+    },
     description: { type: String, default: '' },
     shortDescription: { type: String, default: '' },
     images: [{ type: String }],
