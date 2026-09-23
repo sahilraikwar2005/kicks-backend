@@ -4768,10 +4768,11 @@ function AdminPage({ initialSection }) {
     const singleColorName = () => normalizeColorName(productForm.defaultColor) || 'Black';
 
     const setSingleColor = (name) => {
-      const color = normalizeColorName(name) || 'Black';
+      const raw = String(name ?? '');
+      const color = normalizeColorName(raw) || 'Black';
       setProductForm((current) => ({
         ...current,
-        defaultColor: color,
+        defaultColor: raw,
         colors: [color],
         variants: current.variants.map((row) => ({ ...row, color, touched: { ...row.touched, color: true } })),
       }));
@@ -5251,7 +5252,7 @@ function AdminPage({ initialSection }) {
                 <div className="border-t border-white/10 pt-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Pricing</p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <FormField label="Default price (₹)" hint="New sizes start with this price."><input type="number" min="0" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: Number(event.target.value) })} className="w-full kicks-field text-white" /></FormField>
+                    <FormField label="Default price (₹)" hint="New sizes start with this price."><input type="number" min="0" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: event.target.value })} className="w-full kicks-field text-white" /></FormField>
                     <FormField label="Default sale price (₹)" hint="Optional. Must not exceed price."><input type="number" min="0" value={productForm.salePrice} onChange={(event) => setProductForm({ ...productForm, salePrice: event.target.value })} className="w-full kicks-field text-white" /></FormField>
                   </div>
                   <button
@@ -5332,7 +5333,7 @@ function AdminPage({ initialSection }) {
                               min="0"
                               step="1"
                               value={row.stock}
-                              onChange={(event) => updateVariant(row.key, { stock: event.target.value === '' ? 0 : Number(event.target.value) }, ['stock'])}
+                              onChange={(event) => updateVariant(row.key, { stock: event.target.value }, ['stock'])}
                               aria-label={`Stock quantity for ${row.size}`}
                               className="kicks-field kicks-field-sm w-16 text-center"
                             />
@@ -5342,7 +5343,7 @@ function AdminPage({ initialSection }) {
                             type="number"
                             min="0"
                             value={row.price}
-                            onChange={(event) => updateVariant(row.key, { price: Number(event.target.value) }, ['price'])}
+                            onChange={(event) => updateVariant(row.key, { price: event.target.value }, ['price'])}
                             aria-label={`Price for ${row.size}`}
                             title="Price (₹)"
                             className="kicks-field kicks-field-sm w-[76px]"
