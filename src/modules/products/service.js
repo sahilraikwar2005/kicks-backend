@@ -15,8 +15,11 @@ const buildProductQuery = (filters = {}) => {
   if (filters.search) {
     query.$or = [
       { name: { $regex: filters.search, $options: 'i' } },
+      { slug: { $regex: filters.search, $options: 'i' } },
       { description: { $regex: filters.search, $options: 'i' } },
       { tags: { $in: [new RegExp(filters.search, 'i')] } },
+      { 'variants.color': { $regex: filters.search, $options: 'i' } },
+      { 'variants.sku': { $regex: filters.search, $options: 'i' } },
     ];
   }
 

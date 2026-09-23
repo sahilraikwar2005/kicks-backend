@@ -3861,6 +3861,7 @@ function ProductInventoryDetail({
   getVariantStock,
   variantState,
   saleBusy,
+  soldFlash,
   stepBusy,
   onSell,
   onStep,
@@ -3883,17 +3884,18 @@ function ProductInventoryDetail({
   const renderActions = (variant, compact = false) => {
     const stock = getVariantStock(variant);
     const busy = saleBusy === String(variant._id);
+    const justSold = soldFlash === String(variant._id);
     return (
       <span className={`flex items-center ${compact ? 'gap-1.5' : 'gap-1.5 justify-end'}`}>
         <button
           type="button"
           onClick={() => onSell(variant)}
           disabled={stock <= 0 || busy}
-          aria-label={`Sell 1 ${variant.size} offline`}
+          aria-label={justSold ? `Sold 1 ${variant.size} offline` : `Sell 1 ${variant.size} offline`}
           title={stock <= 0 ? 'Out of stock' : 'Sell 1 offline'}
-          className="inline-flex h-8 items-center rounded-[8px] bg-[#FFC800] px-2.5 text-[11px] font-bold text-black transition hover:bg-[#ffd233] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-8 min-w-[64px] items-center justify-center rounded-[8px] bg-[#FFC800] px-2.5 text-[11px] font-bold text-black transition hover:bg-[#ffd233] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : 'Sell 1'}
+          {busy ? 'Selling…' : justSold ? 'Sold ✓' : 'Sell 1'}
         </button>
         <button
           type="button"
@@ -5612,8 +5614,6 @@ function AdminPage({ initialSection }) {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [selectedProductId, setSelectedProductId] = useState(null);
-    const [saleTarget, setSaleTarget] = useState(null);
-    const [saleQty, setSaleQty] = useState(1);
     const [saleBusy, setSaleBusy] = useState('');
     const [adjustTarget, setAdjustTarget] = useState(null);
     const [adjustType, setAdjustType] = useState('Offline Sale');
@@ -5630,6 +5630,7 @@ function AdminPage({ initialSection }) {
 
     useEffect(() => () => {
       if (undoTimer.current) window.clearTimeout(undoTimer.current);
+      if (flashTimer.current) window.clearTimeout(flashTimer.current);
     }, []);
 
     useEffect(() => {
@@ -5709,33 +5710,49 @@ function AdminPage({ initialSection }) {
       await refreshAfterStockChange();
     };
 
-    const confirmOfflineSale = async () => {
-      if (!saleTarget || saleBusy) return;
-      const qty = Math.floor(Number(saleQty));
-      if (!Number.isInteger(qty) || qty < 1) {
-        showToast('Enter a valid quantity of 1 or more.', 'error');
+    const saleErrorMessage = (error) => {
+      const message = String(error?.message || '');
+      if (error?.status === 409 || /insufficient|negative|available/i.test(message)) {
+        return 'Stock changed — refresh required.';
+      }
+      return message || 'Could not complete sale.';
+    };
+
+    // True one-click offline sale: exactly 1 unit, straight to the atomic
+    // server adjustment. No modal, no customer details, no quantity prompt.
+    // Multi-unit sales stay available through the Adjust Stock dialog.
+    const [soldFlash, setSoldFlash] = useState('');
+    const flashTimer = useRef(null);
+
+    const quickSellOneClick = async (product, variant) => {
+      const key = String(variant._id);
+      if (saleBusy) return;
+      const before = getVariantStock(variant);
+      if (before <= 0) {
+        showToast('Already sold out.', 'error');
         return;
       }
-      if (qty > getVariantStock(saleTarget.variant)) {
-        showToast(`Only ${getVariantStock(saleTarget.variant)} unit(s) available for ${saleTarget.variant.size}.`, 'error');
-        return;
-      }
-      setSaleBusy(saleTarget.variantId);
+      setSaleBusy(key);
       try {
-        await postAdjustment({ variantId: saleTarget.variantId, delta: -qty, reason: 'Offline sale' });
-        setSaleTarget(null);
-        setSaleQty(1);
+        await postAdjustment({ variantId: key, delta: -1, reason: 'Offline sale' });
+        const after = before - 1;
+        setSoldFlash(key);
+        if (flashTimer.current) window.clearTimeout(flashTimer.current);
+        flashTimer.current = window.setTimeout(() => setSoldFlash(''), 1500);
         if (undoTimer.current) window.clearTimeout(undoTimer.current);
         setLastSale({
-          key: `${saleTarget.variantId}-${Date.now()}`,
-          variantId: saleTarget.variantId,
-          qty,
-          label: `${saleTarget.product?.name || 'Product'} • ${saleTarget.variant.color} / ${saleTarget.variant.size}`,
+          key: `${key}-${Date.now()}`,
+          variantId: key,
+          qty: 1,
+          label: `${product?.name || 'Product'} • ${variant.color} / ${variant.size}`,
+          before,
+          after,
         });
         undoTimer.current = window.setTimeout(() => setLastSale(null), 15000);
-        showToast(`Offline sale recorded: ${saleTarget.variant.size} × ${qty}.`, 'success');
+        showToast(`✓ ${variant.size} sold offline — stock ${before} → ${after}.`, 'success');
       } catch (error) {
-        showToast(error?.message || 'Unable to record offline sale.', 'error');
+        await refreshAfterStockChange();
+        showToast(saleErrorMessage(error), 'error');
       } finally {
         setSaleBusy('');
       }
@@ -5805,11 +5822,6 @@ function AdminPage({ initialSection }) {
       }
     };
 
-    const openSale = (product, variant) => {
-      setSaleTarget({ productId: product._id, variantId: variant._id, product, variant });
-      setSaleQty(1);
-    };
-
     const openAdjust = (product, variant) => {
       setAdjustTarget({ productId: product._id, variantId: variant._id, product, variant });
       setAdjustType('Offline Sale');
@@ -5863,7 +5875,9 @@ function AdminPage({ initialSection }) {
 
         {lastSale && (
           <div className="admin-fade-in flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-3" role="status">
-            <p className="text-[13px] text-emerald-200">{lastSale.label} sold offline.</p>
+            <p className="text-[13px] text-emerald-200">
+              ✓ {lastSale.label} sold offline{lastSale.before !== undefined ? ` — stock ${lastSale.before} → ${lastSale.after}` : ''}.
+            </p>
             <button type="button" onClick={undoLastSale} className="kicks-btn kicks-btn-secondary kicks-btn-sm">Undo</button>
           </div>
         )}
@@ -5906,8 +5920,9 @@ function AdminPage({ initialSection }) {
             getVariantStock={getVariantStock}
             variantState={variantState}
             saleBusy={saleBusy}
+            soldFlash={soldFlash}
             stepBusy={stepBusy}
-            onSell={(variant) => openSale(selectedProduct, variant)}
+            onSell={(variant) => quickSellOneClick(selectedProduct, variant)}
             onStep={(variant, delta) => quickStep(variant, delta)}
             onAdjust={(variant) => openAdjust(selectedProduct, variant)}
             movementsVariantId={movementsVariantId}
@@ -5935,59 +5950,65 @@ function AdminPage({ initialSection }) {
                   return (
                     <div key={product._id} className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-3 transition hover:border-white/20">
                       <div className="flex items-center gap-3">
-                        {productImage(product, 'h-14 w-14')}
+                        {productImage(product, 'h-16 w-16')}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-white">{product.name}</p>
-                          <p className="mt-0.5 truncate text-xs text-[#8d8d8d]">
-                            {color ? `${color} • ` : ''}{formatMoney(product.price || 0)}
-                          </p>
+                          <p className="truncate text-[15px] font-bold text-white">{product.name}</p>
+                          {color ? <p className="mt-0.5 truncate text-xs text-[#a8a8a8]">{color}</p> : null}
+                          <p className="mt-0.5 text-sm font-bold text-white">{formatMoney(product.price || 0)}</p>
                         </div>
-                        {stockPill(stats.state, stats.state === 'out' ? 'Out' : stats.total)}
+                        {stockPill(stats.state, stats.state === 'out' ? 'Out' : `${stats.total} pcs`)}
                       </div>
                       {variants.length > 0 && (
-                        <div className="mt-2.5 flex flex-wrap gap-1.5" aria-label={`Sizes for ${product.name}`}>
+                        <div className="mt-2.5 space-y-1.5" aria-label={`Sizes for ${product.name}`}>
                           {variants.map((variant) => {
                             const stock = getVariantStock(variant);
                             const state = variantState(variant);
+                            const busy = saleBusy === String(variant._id);
+                            const justSold = soldFlash === String(variant._id);
                             return (
-                              <button
+                              <div
                                 key={variant._id || `${variant.size}-${variant.color}`}
-                                type="button"
-                                onClick={() => { setSaleTarget({ productId: product._id, variantId: variant._id, product, variant }); setSaleQty(1); }}
-                                disabled={stock <= 0}
-                                title={stock <= 0 ? `${variant.size} — sold out` : `Sell 1 × ${variant.size} offline`}
-                                aria-label={stock <= 0 ? `${variant.size}, sold out` : `Sell 1 ${variant.size} offline`}
-                                className={`inline-flex items-center gap-1 rounded-[8px] border px-2 py-1 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                                className={`flex items-center gap-2 rounded-[10px] border px-2.5 py-1.5 ${
                                   state === 'out'
-                                    ? 'border-red-500/25 bg-red-500/[0.07] text-red-200'
+                                    ? 'border-red-500/20 bg-red-500/[0.05]'
                                     : state === 'low'
-                                      ? 'border-[#FFC800]/25 bg-[#FFC800]/[0.07] text-[#f3d87d] hover:border-[#FFC800]/50'
-                                      : 'border-white/10 bg-white/[0.03] text-white hover:border-white/30'
+                                      ? 'border-[#FFC800]/20 bg-[#FFC800]/[0.05]'
+                                      : 'border-white/[0.08] bg-black/20'
                                 }`}
                               >
-                                {variant.size} <span aria-hidden="true">•</span> {stock}
-                              </button>
+                                <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-white">{variant.size}</span>
+                                <span className={`w-12 shrink-0 text-right text-[13px] font-bold tabular-nums ${state === 'out' ? 'text-red-200' : state === 'low' ? 'text-[#f3d87d]' : 'text-white'}`} aria-live="polite">
+                                  {busy ? '…' : stock}
+                                </span>
+                                {stock <= 0 ? (
+                                  <span className="inline-flex h-9 min-w-[72px] shrink-0 items-center justify-center rounded-[10px] text-[11px] font-bold uppercase tracking-[0.08em] text-red-200/70">
+                                    Sold out
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => quickSellOneClick(product, variant)}
+                                    disabled={busy}
+                                    title={`Sell 1 × ${variant.size} offline`}
+                                    aria-label={`Sell 1 ${variant.size} of ${product.name} offline`}
+                                    className="inline-flex h-9 min-w-[72px] shrink-0 items-center justify-center rounded-[10px] bg-[#FFC800] px-3 text-[12px] font-bold text-black transition hover:bg-[#ffd233] disabled:cursor-wait disabled:opacity-60"
+                                  >
+                                    {busy ? 'Selling…' : justSold ? 'Sold ✓' : 'Sell'}
+                                  </button>
+                                )}
+                              </div>
                             );
                           })}
                         </div>
                       )}
-                      <div className="mt-2.5 flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => { setSelectedProductId(product._id); setMovementsVariantId(null); }}
-                          className="kicks-btn kicks-btn-accent kicks-btn-sm flex-1"
-                        >
-                          Quick sell
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setSelectedProductId(product._id); setMovementsVariantId(null); }}
-                          aria-label={`View inventory for ${product.name}`}
-                          className="kicks-btn kicks-btn-secondary kicks-btn-sm flex-1"
-                        >
-                          Details
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedProductId(product._id); setMovementsVariantId(null); }}
+                        aria-label={`Inventory details for ${product.name}`}
+                        className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-2.5 w-full"
+                      >
+                        Details
+                      </button>
                     </div>
                   );
                 })}
@@ -5997,37 +6018,6 @@ function AdminPage({ initialSection }) {
               <p className="mt-3 text-xs text-[#767676]">Showing {allProducts.length} of {totalProducts} products. Refine search to find more.</p>
             )}
           </AdminCard>
-        )}
-
-        {saleTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Record offline sale">
-            <div className="w-full max-w-sm rounded-[20px] border border-white/10 bg-[#0d0d0d] p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8d8d8d]">Offline sale</p>
-              <h3 className="mt-1.5 text-lg font-bold text-white">{saleTarget.product?.name}</h3>
-              <p className="mt-1 text-xs text-[#a0a0a0]">{saleTarget.variant?.color} / {saleTarget.variant?.size} • Current stock {getVariantStock(saleTarget.variant)}</p>
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3">
-                <span className="text-xs uppercase tracking-[0.16em] text-[#8d8d8d]">Quantity sold</span>
-                <span className="inline-flex items-center gap-2">
-                  <button type="button" onClick={() => setSaleQty((qty) => Math.max(1, Math.floor(Number(qty) || 1) - 1))} aria-label="Decrease quantity" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 text-lg text-white transition hover:border-white/35">−</button>
-                  <span className="min-w-8 text-center text-sm font-bold text-white" aria-live="polite">{saleQty}</span>
-                  <button type="button" onClick={() => setSaleQty((qty) => Math.min(getVariantStock(saleTarget.variant), Math.floor(Number(qty) || 0) + 1))} aria-label="Increase quantity" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 text-lg text-white transition hover:border-white/35">+</button>
-                </span>
-              </div>
-              <p className="mt-3 text-sm text-[#d5d5d5]">New stock: <strong className="text-white">{getVariantStock(saleTarget.variant) - Math.floor(Number(saleQty) || 0)}</strong></p>
-              <div className="mt-4 flex gap-2">
-                <button type="button" onClick={() => { setSaleTarget(null); setSaleQty(1); }} className="kicks-btn kicks-btn-secondary kicks-btn-sm flex-1">Cancel</button>
-                <button
-                  type="button"
-                  onClick={confirmOfflineSale}
-                  disabled={Boolean(saleBusy)}
-                  className="kicks-btn kicks-btn-accent kicks-btn-sm flex-1"
-                >
-                  {saleBusy && <Loader2 size={13} className="animate-spin" />}
-                  Confirm sale
-                </button>
-              </div>
-            </div>
-          </div>
         )}
 
         {adjustTarget && (
