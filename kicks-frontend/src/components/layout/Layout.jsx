@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   const isAdminRoute = pathname.startsWith('/admin');
 
   return (
-    <div className={`min-h-screen bg-[#090909] text-white ${isAdminRoute ? '' : 'storefront-root'}`}>
+    <div className="min-h-screen bg-[#090909] text-white">
       <Navbar />
       <main>{children}</main>
       {!isAdminRoute && <Footer />}
