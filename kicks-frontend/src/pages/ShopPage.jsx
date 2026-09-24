@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import { apiClient } from '../api/client';
 import { productsApi } from '../api/products.api';
+import { FOOTWEAR_TYPES, PRODUCT_TYPES, PRODUCT_TYPE_ORDER, SPORTSWEAR_TYPES, typeTitle } from '../data/productTypes';
 
 const sizeOptions = ['UK 6', 'UK 7', 'UK 8', 'UK 9'];
 const colorOptions = ['Black', 'White', 'Grey'];
@@ -37,9 +38,28 @@ export default function ShopPage() {
       maxPrice: params.get('maxPrice') || '',
       size: params.get('size') || '',
       color: params.get('color') || '',
+      type: params.get('type') || '',
     }),
     [params],
   );
+
+  // Product-type filtering is client-side (backend has no type filter):
+  // values use the exact product type contract (SHOES, SLIDES, CROCS, ...).
+  const typeValues = useMemo(
+    () => String(filters.type || '').split(',').map((value) => value.trim().toUpperCase()).filter((value) => PRODUCT_TYPE_ORDER.includes(value)),
+    [filters.type],
+  );
+  const useTypeFilter = typeValues.length > 0;
+  const sameTypeSet = (group) => useTypeFilter && typeValues.length === group.length && typeValues.every((value) => group.includes(value));
+  const shopTitle = !useTypeFilter
+    ? 'All sneakers'
+    : typeValues.length === 1
+      ? typeTitle(typeValues[0])
+      : sameTypeSet(FOOTWEAR_TYPES)
+        ? 'FOOTWEAR'
+        : sameTypeSet(SPORTSWEAR_TYPES)
+          ? 'SPORTSWEAR'
+          : 'SHOP ALL';
 
   const setFilter = (key, value) => {
     const next = new URLSearchParams(params);
@@ -94,17 +114,23 @@ export default function ShopPage() {
   });
 
   const query = useQuery({
-    queryKey: ['products-list', filters],
-    queryFn: () => productsApi.getList(filters).then((response) => unwrapPayload(response)),
+    queryKey: ['products-list', useTypeFilter ? { ...filters, limit: 100, page: 1 } : filters],
+    queryFn: () => productsApi.getList(useTypeFilter ? { ...filters, limit: 100, page: 1 } : filters).then((response) => unwrapPayload(response)),
     placeholderData: (previousData) => previousData,
   });
 
   const categoryOptions = toArray(unwrapPayload(categoriesQuery.data));
   const brandOptions = toArray(unwrapPayload(brandsQuery.data));
-  const products = Array.isArray(query.data?.items) ? query.data.items : [];
-  const total = Number(query.data?.total ?? products.length ?? 0);
-  const totalPages = Math.max(Number(query.data?.totalPages || 1), 1);
-  const activeFilterCount = [filters.category, filters.brand, filters.gender, filters.search, filters.minPrice, filters.maxPrice, filters.size, filters.color].filter(Boolean).length;
+  const serverProducts = Array.isArray(query.data?.items) ? query.data.items : [];
+  const visibleProducts = useTypeFilter
+    ? serverProducts.filter((product) => typeValues.includes(String(product?.type || '').toUpperCase()))
+    : serverProducts;
+  const products = useTypeFilter
+    ? visibleProducts.slice((filters.page - 1) * filters.limit, filters.page * filters.limit)
+    : visibleProducts;
+  const total = useTypeFilter ? visibleProducts.length : Number(query.data?.total ?? visibleProducts.length ?? 0);
+  const totalPages = Math.max(useTypeFilter ? Math.ceil(visibleProducts.length / filters.limit) : Number(query.data?.totalPages || 1), 1);
+  const activeFilterCount = [filters.category, filters.brand, filters.gender, filters.search, filters.minPrice, filters.maxPrice, filters.size, filters.color, filters.type].filter(Boolean).length;
   const activeSortLabel = sortOptions.find((option) => option.value === filters.sort)?.label || 'Newest';
 
   const applyPrice = () => {
@@ -128,12 +154,12 @@ export default function ShopPage() {
           <span aria-hidden="true" className="text-[#4d4d4d]">/</span>
           <Link to="/shop" className="transition hover:text-white">Shop</Link>
           <span aria-hidden="true" className="text-[#4d4d4d]">/</span>
-          <span className="text-white">All sneakers</span>
+          <span className="text-white">{shopTitle}</span>
         </nav>
 
         <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-5">
           <div className="min-w-0">
-            <h1 className="kicks-page-title">All sneakers</h1>
+            <h1 className="kicks-page-title">{shopTitle}</h1>
             <p className="mt-3 text-[13px] text-[#9a9a9a]" aria-live="polite">
               {query.isLoading ? 'Loading styles…' : `${total} ${total === 1 ? 'style' : 'styles'} in the current selection`}
             </p>
@@ -162,8 +188,38 @@ export default function ShopPage() {
           </div>
         </div>
 
+        {/* Type row — top-level product type filter */}
+        <div className="mt-7 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Filter by product type">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!useTypeFilter}
+            aria-pressed={!useTypeFilter}
+            onClick={() => setFilter('type', '')}
+            className="kicks-pill"
+          >
+            All
+          </button>
+          {PRODUCT_TYPE_ORDER.map((type) => {
+            const isActive = typeValues.includes(type);
+            return (
+              <button
+                key={type}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-pressed={isActive}
+                onClick={() => setFilter('type', isActive && typeValues.length === 1 ? '' : type)}
+                className="kicks-pill"
+              >
+                {PRODUCT_TYPES[type].label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Category row — real backend categories only */}
-        <div className="mt-7 border-y border-white/10 py-3">
+        <div className="mt-3 border-y border-white/10 py-3">
           <div className="kicks-scroll-row" role="tablist" aria-label="Filter by category">
             <button
               type="button"

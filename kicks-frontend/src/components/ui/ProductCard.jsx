@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { cartApi } from '../../api/cart.api';
 import { wishlistApi } from '../../api/wishlist.api';
 import { primaryProductImage, NEUTRAL_PRODUCT_IMAGE } from './productImage';
+import { PRODUCT_TYPES } from '../../data/productTypes';
 import { useToast } from '../../context/useToast';
 import { useAuth } from '../../context/useAuth';
 
@@ -80,7 +81,11 @@ export default function ProductCard({ product }) {
   };
 
   const brand = product?.brand?.name || product?.brand || 'AJ SPORTS';
-  const category = product?.category?.name || product?.category || 'Sneakers';
+  const category = product?.category?.name || product?.category || '';
+  const typeLabel = product?.type && PRODUCT_TYPES[product.type]
+    ? PRODUCT_TYPES[product.type].label.toUpperCase()
+    : (category || 'Footwear').toUpperCase();
+  const color = product?.variants?.[0]?.color || '';
 
   return (
     <article className="kicks-product-card group min-w-0">
@@ -114,8 +119,11 @@ export default function ProductCard({ product }) {
 
       <div className="px-0.5 pt-3">
         <p className="kicks-meta truncate">{brand}</p>
-        <p className="mt-1 truncate text-[11px] tracking-[0.08em] text-[#767676]">
-          {category}{isOutOfStock ? ' • Out of stock' : isLowStock ? ' • Low stock' : ''}
+        <p className="mt-1 truncate text-[11px] uppercase tracking-[0.18em] text-[#a8a8a8]">
+          {typeLabel}
+          {color ? ` • ${color}` : ''}
+          {category && category.toLowerCase() !== typeLabel.toLowerCase() ? ` • ${category}` : ''}
+          {isOutOfStock ? ' • Out of stock' : isLowStock ? ' • Low stock' : ''}
         </p>
 
         <Link

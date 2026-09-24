@@ -35,6 +35,41 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link to="/shop?type=SHOES" className="transition hover:text-white">
+                Shoes
+              </Link>
+            </li>
+            <li>
+              <Link to="/shop?type=SLIDES" className="transition hover:text-white">
+                Slides
+              </Link>
+            </li>
+            <li>
+              <Link to="/shop?type=CROCS" className="transition hover:text-white">
+                Crocs / Clogs
+              </Link>
+            </li>
+            <li>
+              <Link to="/shop?type=TSHIRT" className="transition hover:text-white">
+                T-Shirts
+              </Link>
+            </li>
+            <li>
+              <Link to="/shop?type=LOWER" className="transition hover:text-white">
+                Lowers
+              </Link>
+            </li>
+            <li>
+              <Link to="/shop?type=SHORTS" className="transition hover:text-white">
+                Shorts
+              </Link>
+            </li>
+            <li>
+              <Link to="/shop?type=SOCKS" className="transition hover:text-white">
+                Socks
+              </Link>
+            </li>
+            <li>
               <Link to="/categories" className="transition hover:text-white">
                 Collections
               </Link>

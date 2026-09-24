@@ -1,17 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User } from 'lucide-react';
+import { Bell, ChevronDown, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { notificationsApi } from '../../api/notifications.api';
 import { cartApi } from '../../api/cart.api';
 import { useAuth } from '../../context/useAuth';
+import { ESSENTIALS_TYPES, FOOTWEAR_TYPES, SPORTSWEAR_TYPES, typeLabel } from '../../data/productTypes';
 
 const navItems = [
   { label: 'Home', to: '/' },
-  { label: 'Shop', to: '/shop' },
+  { label: 'Shop', to: '/shop', menu: true },
+  { label: 'Shoes', to: '/shop?type=SHOES' },
+  { label: 'Sportswear', to: `/shop?type=${SPORTSWEAR_TYPES.join(',')}` },
+  { label: 'Footwear', to: `/shop?type=${FOOTWEAR_TYPES.join(',')}` },
   { label: 'Collections', to: '/categories' },
   { label: 'Stories', to: '/blog' },
   { label: 'About', to: '/about' },
+];
+
+const shopMenuGroups = [
+  { heading: null, links: [{ label: 'Shop All', to: '/shop' }] },
+  { heading: 'Footwear', links: FOOTWEAR_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
+  { heading: 'Sportswear', links: SPORTSWEAR_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
+  { heading: 'Essentials', links: ESSENTIALS_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
+];
+
+const mobileMenuSections = [
+  { heading: null, links: [{ label: 'Shop All', to: '/shop' }] },
+  { heading: 'Footwear', links: FOOTWEAR_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
+  { heading: 'Sportswear', links: SPORTSWEAR_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
+  { heading: 'Essentials', links: ESSENTIALS_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
+  { heading: null, links: [{ label: 'Collections', to: '/categories' }, { label: 'Stories', to: '/blog' }, { label: 'About', to: '/about' }] },
 ];
 
 export default function Navbar() {
@@ -122,8 +141,46 @@ export default function Navbar() {
           </div>
 
           {!isAdmin && (
-            <div className="hidden items-center gap-7 lg:flex lg:justify-self-center">
+            <div className="hidden items-center gap-6 lg:flex lg:justify-self-center">
               {navItems.map((item) => (
+                item.menu ? (
+                  <div key={item.to} className="group relative">
+                    <NavLink
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `relative flex items-center gap-1 py-1 text-[11px] uppercase tracking-[0.22em] transition ${isActive ? 'text-white' : 'text-[#8f8f8f] hover:text-white'}`
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <span>{item.label}</span>
+                          <ChevronDown size={12} aria-hidden="true" />
+                          {isActive && <span aria-hidden="true" className="absolute inset-x-0 -bottom-0.5 h-[2px] rounded-full bg-white" />}
+                        </>
+                      )}
+                    </NavLink>
+                    <div className="invisible absolute left-1/2 top-full z-50 w-[440px] -translate-x-1/2 pt-3 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-white/10 bg-[#111111] p-5 shadow-2xl shadow-black/60">
+                        {shopMenuGroups.map((group) => (
+                          <div key={group.heading || 'all'}>
+                            {group.heading && (
+                              <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8d8d8d]">{group.heading}</p>
+                            )}
+                            {group.links.map((link) => (
+                              <Link
+                                key={link.to}
+                                to={link.to}
+                                className="block rounded-[8px] px-1 py-1.5 text-xs uppercase tracking-[0.18em] text-[#d4d4d4] transition hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -138,6 +195,7 @@ export default function Navbar() {
                     </>
                   )}
                 </NavLink>
+                )
               ))}
             </div>
           )}
@@ -250,18 +308,29 @@ export default function Navbar() {
                   </button>
                 </>
               ) : (
-                navItems.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] transition ${isActive ? 'bg-white text-black active:bg-[#e8e8e8]' : 'text-[#d4d4d4] active:bg-white/10 active:text-white'}`
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                ))
+                <div className="flex flex-col gap-1">
+                  {mobileMenuSections.map((section, sectionIndex) => (
+                    <div key={section.heading || `top-${sectionIndex}`}>
+                      {section.heading && (
+                        <p className="px-4 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8d8d8d]">
+                          {section.heading}
+                        </p>
+                      )}
+                      {section.links.map((item) => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setMobileOpen(false)}
+                          className={({ isActive }) =>
+                            `block rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] transition ${isActive ? 'bg-white text-black active:bg-[#e8e8e8]' : 'text-[#d4d4d4] active:bg-white/10 active:text-white'}`
+                          }
+                        >
+                          {item.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

@@ -1,51 +1,76 @@
-import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import ProductCard from '../components/ui/ProductCard';
-import { apiClient } from '../api/client';
 import { productsApi } from '../api/products.api';
-
-const categoryTiles = [
-  { slug: 'running', title: 'RUNNING', subtitle: 'Speed Redefined' },
-  { slug: 'lifestyle', title: 'LIFESTYLE', subtitle: 'Everyday Style' },
-  { slug: 'basketball', title: 'BASKETBALL', subtitle: 'Play Harder' },
-  { slug: 'training', title: 'TRAINING', subtitle: 'Built Stronger' },
-];
-
-const featurePillars = ['Performance', 'Style', 'Community', 'Purpose'];
-
-function toArray(value) {
-  if (Array.isArray(value)) return value;
-  if (Array.isArray(value?.items)) return value.items;
-  if (Array.isArray(value?.categories)) return value.categories;
-  return [];
-}
+import {
+  ESSENTIALS_TYPES,
+  FOOTWEAR_TYPES,
+  PRODUCT_TYPES,
+  PRODUCT_TYPE_ORDER,
+  SPORTSWEAR_TYPES,
+} from '../data/productTypes';
 
 function unwrapPayload(payload) {
   return payload?.data ?? payload ?? {};
 }
 
+function SectionHeader({ eyebrow, title, ctaTo, ctaLabel, ctaAria }) {
+  return (
+    <div className="flex items-end justify-between gap-4">
+      <div className="min-w-0">
+        <p className="kicks-eyebrow">{eyebrow}</p>
+        <h2 className="kicks-section-title mt-3">{title}</h2>
+      </div>
+      {ctaTo && (
+        <Link
+          to={ctaTo}
+          aria-label={ctaAria || ctaLabel}
+          className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
+        >
+          {ctaLabel} <ArrowRight size={13} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ProductGrid({ products }) {
+  if (products.length === 0) {
+    return (
+      <div className="kicks-body mt-8 rounded-2xl border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
+        Fresh drops landing soon. Browse the full collection meanwhile.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard key={product?._id || product?.slug} product={product} />
+      ))}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['featured-products'],
-    queryFn: () => productsApi.getFeatured().then((response) => response?.data?.items || response?.data?.products || response?.data || []),
-  });
-
-  const newArrivals = Array.isArray(data) ? data.filter((product) => product?.newArrival).slice(0, 4) : [];
-  const bestSellers = Array.isArray(data) ? data.filter((product) => product?.bestSeller).slice(0, 4) : [];
-
-  const categoriesQuery = useQuery({
-    queryKey: ['home-categories'],
-    queryFn: () => apiClient.get('/categories').then((response) => response.data),
+    queryKey: ['home-catalog'],
+    queryFn: () => productsApi.getList({ limit: 60, sort: 'newest' }).then((response) => unwrapPayload(response)),
     staleTime: 5 * 60 * 1000,
   });
-  const apiCategories = toArray(unwrapPayload(categoriesQuery.data));
-  const tiles = categoryTiles
-    .map((tile) => ({ ...tile, category: apiCategories.find((item) => item.slug === tile.slug) }))
-    .filter((tile) => tile.category);
+
+  const items = Array.isArray(data?.items) ? data.items : [];
+  const ofTypes = (types) => items.filter((product) => types.includes(product?.type));
+  const featuredShoes = items.filter((product) => product?.featured && product?.type === 'SHOES').slice(0, 4);
+  const featuredFallback = featuredShoes.length > 0 ? featuredShoes : ofTypes(['SHOES']).slice(0, 4);
+  const sportswear = ofTypes(SPORTSWEAR_TYPES).slice(0, 4);
+  const newArrivals = items.filter((product) => product?.newArrival).slice(0, 8);
+  const newFallback = newArrivals.length > 0 ? newArrivals : items.slice(0, 8);
+  const essentials = ofTypes(ESSENTIALS_TYPES).slice(0, 4);
 
   return (
     <div className="bg-[#090909]">
+      {/* HERO — static, footwear-first, no slider */}
       <section className="relative overflow-hidden" aria-label="Featured collection">
         <div className="absolute inset-0" aria-hidden="true">
           <img
@@ -64,125 +89,66 @@ export default function HomePage() {
 
         <div className="relative mx-auto flex min-h-[82vh] w-full max-w-[1400px] flex-col justify-center px-4 py-16 sm:py-20 lg:min-h-[90vh] lg:px-8">
           <p className="hero-rise kicks-eyebrow">
-            Premium sneakers · Engineered for motion
+            Footwear-first sports store
           </p>
           <h1 className="mt-4 font-black uppercase leading-[0.88] tracking-[-0.05em] text-white text-[16vw] sm:mt-5 sm:text-7xl lg:text-8xl xl:text-[8.5rem]">
             <span className="hero-rise block" style={{ animationDelay: '90ms' }}>Move</span>
             <span className="hero-rise block text-[#e2e2e2]" style={{ animationDelay: '200ms' }}>Different</span>
           </h1>
           <p className="hero-rise kicks-body mt-5 max-w-md sm:mt-6" style={{ animationDelay: '300ms' }}>
-            Premium sneakers designed for movement, comfort, and everyday expression.
+            Footwear, sportswear and essentials built for every move.
           </p>
           <div className="hero-rise mt-7 flex flex-wrap items-center gap-3 sm:mt-9" style={{ animationDelay: '400ms' }}>
             <Link
-              to="/shop"
-              aria-label="Shop AJ SPORTS sneakers"
-              className="kicks-btn kicks-btn-primary group/btn"
+              to="/shop?type=SHOES"
+              aria-label="Shop AJ SPORTS shoes"
+              className="kicks-btn kicks-btn-primary"
             >
-              Shop AJ SPORTS
-              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent text-current transition-all duration-200">
-                <ArrowRight size={15} strokeWidth={2.6} className="translate-x-0 transition-transform duration-200 group-hover/btn:translate-x-1" />
-              </span>
+              Shop shoes
             </Link>
-            <a
-              href="#best-sellers"
-              aria-label="Scroll to best sellers"
-              title="Scroll to best sellers"
-              className="kicks-icon-btn h-10 w-10"
-            >
-              <ArrowDown size={16} />
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section aria-label="Why AJ SPORTS" className="border-y border-white/10 bg-[#090909]">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-px bg-white/10 lg:grid-cols-4">
-          {featurePillars.map((pillar) => (
-            <div key={pillar} className="bg-[#090909] px-4 py-6 text-center sm:py-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white sm:text-sm">{pillar}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="kicks-eyebrow">Choose your pace</p>
-            <h2 className="kicks-section-title mt-3">Shop by category</h2>
-          </div>
-          <Link
-            to="/shop"
-            aria-label="Explore all categories"
-            className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
-          >
-            Explore all <ArrowRight size={13} />
-          </Link>
-        </div>
-
-        {categoriesQuery.isLoading ? (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 lg:grid-cols-4">
-            {[...Array(4)].map((_, index) => (
-              <div key={index} className="h-56 animate-pulse rounded-[24px] bg-[#151515] sm:h-72 lg:h-[26rem]" />
-            ))}
-          </div>
-        ) : categoriesQuery.isError || tiles.length === 0 ? (
-          <div className="mt-8 rounded-[24px] border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            <p className="text-sm text-[#d2d2d2] sm:text-base">Categories are unavailable right now. Browse the full collection instead.</p>
             <Link
               to="/shop"
-              className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5"
+              aria-label="Shop the full AJ SPORTS collection"
+              className="kicks-btn kicks-btn-secondary"
             >
               Shop all
             </Link>
           </div>
-        ) : (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 lg:grid-cols-4">
-            {tiles.map((tile) => (
-              <Link
-                key={tile.slug}
-                to={`/shop?category=${tile.category._id || tile.category.id}`}
-                aria-label={`Shop ${tile.title} sneakers`}
-                className="group relative block overflow-hidden rounded-[24px] border border-white/10 transition hover:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/60"
-              >
-                <img
-                  src={tile.category.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'}
-                  alt={tile.category.name || tile.title}
-                  className="h-56 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-72 lg:h-[26rem]"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" aria-hidden="true" />
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-5">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-xl font-black uppercase tracking-[-0.02em] text-white sm:text-2xl lg:text-3xl">{tile.title}</h3>
-                    <p className="mt-1 truncate text-xs text-[#d5d5d5] sm:text-sm">{tile.subtitle}</p>
-                  </div>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-sm transition group-hover:border-white/60 group-hover:bg-white/10" aria-hidden="true">
-                    <ArrowUpRight size={14} />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        </div>
       </section>
 
-      <section id="best-sellers" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="kicks-eyebrow">Curated for movement</p>
-            <h2 className="kicks-section-title mt-3">New arrivals</h2>
-          </div>
-          <Link
-            to="/shop"
-            aria-label="View all new arrivals"
-            className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
-          >
-            View all <ArrowRight size={13} />
-          </Link>
+      {/* SHOP BY CATEGORY — grid on desktop, rail on mobile */}
+      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20" aria-label="Shop by category">
+        <SectionHeader eyebrow="Find your fit" title="Shop by category" ctaTo="/shop" ctaLabel="Shop all" ctaAria="Shop the full collection" />
+        <div className="kicks-scroll-row -mx-4 mt-8 snap-x px-4 sm:mx-0 sm:mt-10 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 lg:grid-cols-4 xl:grid-cols-7 xl:gap-4">
+          {PRODUCT_TYPE_ORDER.map((type) => (
+            <Link
+              key={type}
+              to={`/shop?type=${type}`}
+              aria-label={`Shop ${PRODUCT_TYPES[type].label}`}
+              className="group relative block w-[62vw] max-w-[260px] shrink-0 snap-start overflow-hidden rounded-[20px] border border-white/10 transition hover:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/60 sm:w-auto sm:max-w-none"
+            >
+              <img
+                src={PRODUCT_TYPES[type].image}
+                alt={PRODUCT_TYPES[type].label}
+                className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-56 lg:h-48 xl:h-44"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" aria-hidden="true" />
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3.5 sm:p-4">
+                <h3 className="truncate text-base font-black uppercase tracking-[-0.02em] text-white sm:text-lg">{PRODUCT_TYPES[type].label}</h3>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-sm transition group-hover:border-white/60 group-hover:bg-white/10" aria-hidden="true">
+                  <ArrowUpRight size={13} />
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
+      </section>
 
+      {/* FEATURED SHOES */}
+      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20" aria-label="Featured footwear">
+        <SectionHeader eyebrow="Shoe-first, always" title="Featured footwear" ctaTo="/shop?type=SHOES" ctaLabel="Shop shoes" ctaAria="Shop all shoes" />
         {isLoading ? (
           <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {[...Array(4)].map((_, index) => (
@@ -194,44 +160,21 @@ export default function HomePage() {
           </div>
         ) : isError ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            <p className="kicks-body">Unable to load new arrivals right now.</p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5"
-            >
+            <p className="kicks-body">Unable to load featured footwear right now.</p>
+            <button type="button" onClick={() => refetch()} className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5">
               Retry
             </button>
           </div>
-        ) : newArrivals.length === 0 ? (
-          <div className="kicks-body mt-8 rounded-2xl border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            Fresh drops landing soon. Browse the full collection meanwhile.
-          </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
-            {newArrivals.map((product) => (
-              <ProductCard key={product?._id || product?.slug} product={product} />
-            ))}
-          </div>
+          <ProductGrid products={featuredFallback} />
         )}
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="kicks-eyebrow">Most wanted</p>
-            <h2 className="kicks-section-title mt-3">Best sellers</h2>
-          </div>
-          <Link
-            to="/shop"
-            aria-label="Shop all best sellers"
-            className="kicks-btn kicks-btn-secondary kicks-btn-sm shrink-0"
-          >
-            Shop all <ArrowRight size={13} />
-          </Link>
-        </div>
-
-        {isLoading ? (
+      {/* SPORTSWEAR */}
+      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20" aria-label="Sportswear">
+        <SectionHeader eyebrow="Train / Play / Move" title="Sportswear" ctaTo={`/shop?type=${SPORTSWEAR_TYPES.join(',')}`} ctaLabel="Shop sportswear" ctaAria="Shop all sportswear" />
+        {!isLoading && !isError && <ProductGrid products={sportswear} />}
+        {(isLoading || isError) && (
           <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {[...Array(4)].map((_, index) => (
               <div key={index}>
@@ -240,49 +183,67 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        ) : isError ? (
-          <div className="mt-8 rounded-2xl border border-white/10 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            <p className="kicks-body">Unable to load best sellers right now.</p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="kicks-btn kicks-btn-secondary kicks-btn-sm mt-5"
-            >
-              Retry
-            </button>
-          </div>
-        ) : bestSellers.length === 0 ? (
-          <div className="kicks-body mt-8 rounded-2xl border border-dashed border-white/15 bg-[#111111] p-8 text-center sm:mt-10 sm:p-10">
-            No best sellers flagged right now. Explore the full collection.
-          </div>
-        ) : (
+        )}
+      </section>
+
+      {/* NEW ARRIVALS — mixed types */}
+      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20" aria-label="New arrivals">
+        <SectionHeader eyebrow="Just landed" title="New arrivals" ctaTo="/shop" ctaLabel="Shop all" ctaAria="Shop the full collection" />
+        {!isLoading && !isError && <ProductGrid products={newFallback} />}
+        {(isLoading || isError) && (
           <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
-            {bestSellers.map((product) => (
-              <ProductCard key={product?._id || product?.slug} product={product} />
+            {[...Array(4)].map((_, index) => (
+              <div key={index}>
+                <div className="aspect-square animate-pulse rounded-[14px] bg-[#151515]" />
+                <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-[#1c1c1c]" />
+              </div>
             ))}
           </div>
         )}
       </section>
 
-      <section className="bg-[#FFC800]">
-        <div className="mx-auto max-w-[1400px] px-4 py-16 text-center sm:py-24 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-black/70">Our philosophy</p>
-          <h2 className="mx-auto mt-5 max-w-4xl text-4xl font-black uppercase leading-[0.95] tracking-[-0.02em] text-black sm:text-6xl lg:text-7xl">
-            Movement changes everything.
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed text-black/75 sm:text-base">
-            We make space for people who move with purpose, express themselves freely, and never settle for standing still.
-          </p>
-          <Link
-            to="/about"
-            aria-label="Meet AJ SPORTS"
-            className="kicks-btn mt-9 bg-black text-white hover:bg-black/85 focus:outline-none focus:ring-2 focus:ring-black/50 focus:ring-offset-2 focus:ring-offset-[#FFC800]"
-          >
-            Meet AJ SPORTS <ArrowRight size={16} />
-          </Link>
-        </div>
+      {/* ESSENTIALS */}
+      <section className="mx-auto max-w-[1400px] px-4 py-12 sm:py-16 lg:px-8 lg:py-20" aria-label="Sports essentials">
+        <SectionHeader eyebrow="Finish the kit" title="Sports essentials" ctaTo={`/shop?type=${ESSENTIALS_TYPES.join(',')}`} ctaLabel="Shop essentials" ctaAria="Shop sports essentials" />
+        {!isLoading && !isError && <ProductGrid products={essentials} />}
+        {(isLoading || isError) && (
+          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-10 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
+            {[...Array(4)].map((_, index) => (
+              <div key={index}>
+                <div className="aspect-square animate-pulse rounded-[14px] bg-[#151515]" />
+                <div className="mt-3 h-3 w-2/3 animate-pulse rounded bg-[#1c1c1c]" />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
+      {/* EVERYDAY FOOTWEAR — editorial banner */}
+      <section className="mx-auto max-w-[1400px] px-4 pb-12 sm:pb-16 lg:px-8 lg:pb-20" aria-label="Everyday footwear collection">
+        <Link
+          to={`/shop?type=${FOOTWEAR_TYPES.join(',')}`}
+          aria-label="Explore the everyday footwear collection"
+          className="group relative block overflow-hidden rounded-[24px] border border-white/10 transition hover:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/60"
+        >
+          <img
+            src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=1600&q=75"
+            alt="Everyday footwear collection"
+            className="h-64 w-full object-cover transition duration-500 group-hover:scale-[1.03] sm:h-80"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0 flex flex-col justify-center p-6 sm:p-10">
+            <p className="kicks-eyebrow">Collection</p>
+            <h2 className="mt-3 max-w-md text-3xl font-black uppercase leading-[0.95] tracking-[-0.03em] text-white sm:text-5xl">
+              Everyday footwear
+            </h2>
+            <p className="mt-3 max-w-sm text-sm text-[#d5d5d5]">Shoes, slides and clogs for every part of your day.</p>
+            <span className="kicks-btn kicks-btn-primary mt-6 w-fit">
+              Explore collection <ArrowRight size={14} />
+            </span>
+          </div>
+        </Link>
+      </section>
     </div>
   );
 }
