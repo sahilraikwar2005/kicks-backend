@@ -2746,7 +2746,8 @@ function AccountPasswordSection() {
             placeholder="Confirm new password"
           />
 
-          <div>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
+            <span className="text-sm text-[#a8a8a8]">Can&apos;t remember your current password?</span>
             <Link to={forgotHref} className="text-sm font-bold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
               Forgot your current password?
             </Link>
@@ -2755,7 +2756,7 @@ function AccountPasswordSection() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 kicks-btn kicks-btn-primary kicks-btn-sm transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[220px]"
           >
             {isSubmitting && <Loader2 size={16} className="animate-spin" />}
             {isSubmitting ? 'Updating...' : 'Update Password'}
