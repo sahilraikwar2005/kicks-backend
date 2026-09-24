@@ -6208,6 +6208,10 @@ function AdminPage({ initialSection }) {
         setAdjustError('Enter a valid quantity of 1 or more.');
         return;
       }
+      if (qty > 10000) {
+        setAdjustError('Quantity must not exceed 10,000 units per adjustment.');
+        return;
+      }
       const delta = adjustType === 'Correction' ? adjustSign * qty : adjustType === 'Restock' ? qty : -qty;
       if (delta < 0 && qty > getVariantStock(adjustTarget.variant)) {
         setAdjustError(`Only ${getVariantStock(adjustTarget.variant)} unit(s) available. Stock cannot go below zero.`);
@@ -6462,7 +6466,17 @@ function AdminPage({ initialSection }) {
                   <span className="text-xs uppercase tracking-[0.16em] text-[#8d8d8d]">Quantity</span>
                   <span className="inline-flex items-center gap-2">
                     <button type="button" onClick={() => setAdjustQty((qty) => Math.max(1, Math.floor(Number(qty) || 1) - 1))} aria-label="Decrease quantity" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 text-lg text-white transition hover:border-white/35">−</button>
-                    <span className="min-w-8 text-center text-sm font-bold text-white" aria-live="polite">{adjustQty}</span>
+                    <input
+                      value={adjustQty}
+                      onChange={(event) => {
+                        const digits = event.target.value.replace(/\D/g, '').slice(0, 5);
+                        setAdjustQty(digits === '' ? '' : Number(digits));
+                        setAdjustError('');
+                      }}
+                      inputMode="numeric"
+                      aria-label="Adjustment quantity"
+                      className="h-9 w-16 rounded-[10px] border border-white/15 bg-black/30 text-center text-sm font-bold text-white outline-none transition focus:border-white/35"
+                    />
                     <button type="button" onClick={() => setAdjustQty((qty) => Math.floor(Number(qty) || 0) + 1)} aria-label="Increase quantity" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 text-lg text-white transition hover:border-white/35">+</button>
                   </span>
                 </div>

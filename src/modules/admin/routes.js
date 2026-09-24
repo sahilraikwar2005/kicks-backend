@@ -12,7 +12,7 @@ import Joi from 'joi';
 const router = express.Router();
 const adminSettingsSchema = Joi.object({ value: Joi.any().required(), description: Joi.string().trim().max(200).optional().allow('') });
 const adminUserStatusSchema = Joi.object({ isActive: Joi.boolean().required() });
-const adminInventoryAdjustSchema = Joi.object({ delta: Joi.number().integer().invalid(0).required(), reason: Joi.string().trim().max(200).optional().allow(''), referenceId: Joi.string().trim().max(120).optional().allow('') });
+const adminInventoryAdjustSchema = Joi.object({ delta: Joi.number().integer().invalid(0).min(-10000).max(10000).required(), reason: Joi.string().trim().max(200).optional().allow(''), referenceId: Joi.string().trim().max(120).optional().allow('') });
 const adminPaginationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
