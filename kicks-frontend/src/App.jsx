@@ -6473,13 +6473,48 @@ function AdminPage({ initialSection }) {
     const totalOrders = unwrapPayload(data)?.total ?? orders.length;
     const expandedOrder = orders.find((order) => String(order._id) === String(expandedOrderId)) || null;
 
+    // Mirrors the backend order state machine: the dropdown only ever offers
+    // the current status plus its legal successors. Past PACKED there are no
+    // manual moves — SHIPPED / OUT_FOR_DELIVERY / DELIVERED arrive exclusively
+    // through shipment/carrier events, never the generic dropdown.
+    const ORDER_NEXT_ACTIONS = {
+      PENDING: ['CONFIRMED', 'CANCELLED'],
+      CONFIRMED: ['PROCESSING', 'CANCELLED'],
+      PROCESSING: ['PACKED'],
+      PACKED: [],
+      SHIPPED: [],
+      OUT_FOR_DELIVERY: [],
+      DELIVERED: [],
+      CANCELLED: [],
+      REFUNDED: [],
+    };
+    const validNextStatuses = (status) => ORDER_NEXT_ACTIONS[status] || [];
+
+    // Translates a backend race rejection into the useful next step.
+    const statusErrorMessage = (error) => {
+      const message = String(error?.message || '');
+      if (/PROCESSING to SHIPPED/i.test(message)) {
+        return 'Please mark the order as PACKED first, then create the shipment.';
+      }
+      if (/PACKED to (SHIPPED|OUT_FOR_DELIVERY|DELIVERED)/i.test(message)) {
+        return 'Please create the shipment before marking this order as shipped — statuses past PACKED come from carrier events.';
+      }
+      return message || 'Unable to update order status.';
+    };
+
     const orderActions = (row) => {
       const expanded = String(expandedOrderId) === String(row._id);
+      const nextStatuses = validNextStatuses(row.status);
       return (
         <div className="flex flex-wrap items-center gap-1.5">
-          <select value={row.status} onChange={(event) => updateStatus(row._id, event.target.value)} aria-label={`Update status for ${row.orderNumber || 'order'}`} title="Update order status" className="rounded-full border border-white/10 bg-[#181818] px-2.5 py-1.5 text-[11px] text-white">
-            {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((statusItem) => <option key={statusItem} value={statusItem}>{statusItem}</option>)}
+          <select value={row.status} onChange={(event) => updateStatus(row._id, event.target.value)} aria-label={`Update status for ${row.orderNumber || 'order'}`} title={nextStatuses.length > 0 ? 'Update order status' : 'Order status is advanced by the shipping workflow'} className="rounded-full border border-white/10 bg-[#181818] px-2.5 py-1.5 text-[11px] text-white">
+            {[row.status, ...nextStatuses.filter((statusItem) => statusItem !== row.status)].map((statusItem) => <option key={statusItem} value={statusItem}>{statusItem}</option>)}
           </select>
+          {row.status === 'PROCESSING' && (
+            <button type="button" onClick={() => updateStatus(row._id, 'PACKED')} aria-label={`Mark ${row.orderNumber || 'order'} as packed`} title="Mark packed" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+              Mark Packed
+            </button>
+          )}
           <button type="button" onClick={() => createShipment(row._id)} aria-label={`Create shipment for ${row.orderNumber || 'order'}`} title="Create shipment" className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-white transition hover:border-white/30">
             <Truck size={14} />
           </button>
@@ -6500,7 +6535,7 @@ function AdminPage({ initialSection }) {
         await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
         showToast('Order status updated.', 'success');
       } catch (error) {
-        setActionError(error?.message || 'Unable to update order status.');
+        setActionError(statusErrorMessage(error));
       }
     };
     const createShipment = async (id) => {
@@ -6508,6 +6543,7 @@ function AdminPage({ initialSection }) {
       try {
         const result = await apiClient.post(`/admin/orders/${id}/ship`);
         await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+        await queryClient.invalidateQueries({ queryKey: ['admin-order-shipment'] });
         showToast('Shipment created.', 'success');
         return unwrapPayload(result.data)?.shipment ?? result.data;
       } catch (error) {
@@ -6596,6 +6632,42 @@ function AdminPage({ initialSection }) {
                   <div className="flex justify-between gap-3 border-t border-white/10 pt-1.5 text-sm font-semibold text-white"><span>Total</span><span>{formatMoney(expandedOrder.grandTotal || 0)}</span></div>
                   {expandedOrder.paymentId && <div className="truncate text-[#8d8d8d]">Payment ID: {expandedOrder.paymentId}</div>}
                 </div>
+              </div>
+              <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Shipping</p>
+                {expandedShipmentQuery.isLoading ? (
+                  <div className="mt-2 h-10 animate-pulse rounded-[10px] bg-white/5" />
+                ) : expandedShipment ? (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={expandedShipment.status} />
+                      {expandedShipment.isTest && (
+                        <span className="rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#FFC800]">TEST</span>
+                      )}
+                    </div>
+                    <p className="truncate font-mono text-xs text-white">{expandedShipment.awb || expandedShipment.shipmentId || '—'}</p>
+                    <Link to="/admin/shipping" className="inline-block text-xs text-[#a8a8a8] underline decoration-white/20 underline-offset-4 hover:text-white">
+                      Manage in Shipping →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-[#8d8d8d]">
+                      {expandedOrder.status === 'PACKED'
+                        ? 'Ready to ship — create the shipment to continue.'
+                        : 'No shipment yet.'}
+                    </p>
+                    {expandedOrder.status === 'PACKED' && (
+                      <button
+                        type="button"
+                        onClick={() => createShipment(expandedOrder._id)}
+                        className="kicks-btn kicks-btn-secondary kicks-btn-sm"
+                      >
+                        <Truck size={13} /> Create Shipment
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             {Array.isArray(expandedOrder.items) && expandedOrder.items.length > 0 && (

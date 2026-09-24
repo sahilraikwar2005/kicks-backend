@@ -25,7 +25,7 @@ const allowedTransitions = {
   REFUNDED: [],
 };
 
-const assertValidOrderTransition = (currentStatus, nextStatus) => {
+export const assertValidOrderTransition = (currentStatus, nextStatus) => {
   if (!Object.prototype.hasOwnProperty.call(allowedTransitions, currentStatus)) {
     const error = new Error(`Unsupported order status: ${currentStatus}`);
     error.statusCode = 409;
