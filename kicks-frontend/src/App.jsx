@@ -2714,7 +2714,7 @@ function AccountPasswordSection() {
   };
 
   return (
-    <div className="max-w-[560px] space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div>
         <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d8d8d]">Security Settings</p>
         <h2 className="mt-1 text-2xl font-black uppercase tracking-[-0.04em] text-white">Change Password</h2>
@@ -2730,21 +2730,23 @@ function AccountPasswordSection() {
             placeholder="Enter current password"
           />
 
-          <PasswordField
-            label="New Password"
-            name="newPassword"
-            register={register}
-            error={errors.newPassword?.message}
-            placeholder="Minimum 8 characters"
-          />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <PasswordField
+              label="New Password"
+              name="newPassword"
+              register={register}
+              error={errors.newPassword?.message}
+              placeholder="Minimum 8 characters"
+            />
 
-          <PasswordField
-            label="Confirm New Password"
-            name="confirmPassword"
-            register={register}
-            error={errors.confirmPassword?.message}
-            placeholder="Confirm new password"
-          />
+            <PasswordField
+              label="Confirm New Password"
+              name="confirmPassword"
+              register={register}
+              error={errors.confirmPassword?.message}
+              placeholder="Confirm new password"
+            />
+          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
             <span className="text-sm text-[#a8a8a8]">Can&apos;t remember your current password?</span>
