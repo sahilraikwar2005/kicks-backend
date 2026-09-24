@@ -206,6 +206,17 @@ select.kicks-field {
   appearance: auto;
   padding-right: 32px;
 }
+/* Icon-clearance paddings combined with .kicks-field (e.g. pl-10 pr-8).
+   Tailwind v4 emits utilities inside @layer utilities, which loses to the
+   unlayered .kicks-field padding above — so without these companions the
+   text sits underneath absolute-positioned icons. Higher specificity
+   (0,2,0) restores the intended padding wherever the two are combined. */
+.kicks-field.pl-10 { padding-left: 2.5rem; }
+.kicks-field.pr-7 { padding-right: 1.75rem; }
+.kicks-field.pr-8 { padding-right: 2rem; }
+.kicks-field.pr-9 { padding-right: 2.25rem; }
+.kicks-field.pr-10 { padding-right: 2.5rem; }
+.kicks-field.pr-12 { padding-right: 3rem; }
 textarea.kicks-field {
   padding: 12px 14px;
   min-height: 110px;
