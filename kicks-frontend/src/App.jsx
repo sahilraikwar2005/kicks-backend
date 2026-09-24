@@ -7444,8 +7444,8 @@ function AdminPage({ initialSection }) {
     <div className="admin-shell mx-auto w-full max-w-none px-2 py-4 sm:px-3 sm:py-5 lg:px-4">
       <PageMeta title="Admin | AJ SPORTS" description="AJ SPORTS administrator dashboard" />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[216px_minmax(0,1fr)]">
-        <aside className="admin-scroll sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
+      <div className="grid items-stretch gap-4 xl:grid-cols-[216px_minmax(0,1fr)]">
+        <aside className="admin-scroll sticky top-20 hidden min-h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
           {renderSidebarBody()}
         </aside>
 
