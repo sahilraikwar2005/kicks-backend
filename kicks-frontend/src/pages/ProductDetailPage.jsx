@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronLeft, ChevronRight, Heart, Info, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Expand, Heart, Info, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { cartApi } from '../api/cart.api';
@@ -17,6 +17,7 @@ import ProductCard from '../components/ui/ProductCard';
 import { colorKey } from '../utils/variantMatrix';
 import { colorThumbnail, resolveGalleryImages, sizesForColor, variantColors, variantForSelection } from '../utils/productGallery';
 import { NEUTRAL_PRODUCT_IMAGE } from '../components/ui/productImage';
+import ProductImageViewer from '../components/ui/ProductImageViewer';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1).max(5),
@@ -38,6 +39,7 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -334,15 +336,26 @@ export default function ProductDetailPage() {
                   <ChevronRight size={16} />
                 </button>
               </div>
-              <img
-                src={galleryImages[safeImageIndex] || getImageFallback}
-                alt={product?.name || 'Product'}
-                className="h-[300px] w-full rounded-[22px] object-cover sm:h-[420px] md:h-[560px]"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = getImageFallback;
-                }}
-              />
+              <button
+                type="button"
+                onClick={() => setViewerOpen(true)}
+                aria-label={`Open fullscreen image viewer for ${product?.name || 'product'}`}
+                title="Open fullscreen viewer"
+                className="block w-full cursor-zoom-in rounded-[22px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                <img
+                  src={galleryImages[safeImageIndex] || getImageFallback}
+                  alt={product?.name || 'Product'}
+                  className="h-[300px] w-full rounded-[22px] object-cover sm:h-[420px] md:h-[560px]"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = getImageFallback;
+                  }}
+                />
+              </button>
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-5 right-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-sm">
+                <Expand size={15} />
+              </span>
             </div>
 
             <div className="grid grid-cols-3 gap-3 md:gap-4">
@@ -655,6 +668,14 @@ export default function ProductDetailPage() {
           )}
         </section>
       </div>
+      {viewerOpen && (
+        <ProductImageViewer
+          images={galleryImages}
+          initialIndex={safeImageIndex}
+          alt={product?.name || 'Product'}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
     </>
   );
 }

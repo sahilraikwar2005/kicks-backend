@@ -247,6 +247,37 @@ textarea.kicks-field {
   font-weight: 600;
 }
 
+/* Mobile-only: keep the ACTIVE filter pill readable across touch states.
+   On touch devices a tap matches :hover (sticky) and :active, and the generic
+   press-feedback rules later in this file would otherwise tear apart the
+   white-background + dark-text pairing above. These selectors (0,3,0) beat the
+   generic (0,2,0) rules, but live inside the mobile breakpoint so desktop is
+   untouched. Inactive pills are intentionally not targeted. */
+@media (max-width: 640px) {
+  .kicks-pill[aria-pressed='true'],
+  .kicks-pill-active {
+    background: #fff;
+    border-color: #fff;
+    color: #0a0a0a;
+  }
+  .kicks-pill[aria-pressed='true']:hover,
+  .kicks-pill[aria-pressed='true']:active,
+  .kicks-pill-active:hover,
+  .kicks-pill-active:active {
+    background: #fff;
+    border-color: #fff;
+    color: #0a0a0a;
+  }
+  .kicks-pill[aria-pressed='true']:focus-visible,
+  .kicks-pill-active:focus-visible {
+    background: #fff;
+    border-color: #fff;
+    color: #0a0a0a;
+    outline: 2px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
+  }
+}
+
 /* ---------- Tab pills (account / settings navigation) ---------- */
 .kicks-tab {
   display: inline-flex;
@@ -421,6 +452,42 @@ textarea.kicks-field {
 .kicks-bag-btn:disabled {
   cursor: wait;
   opacity: 0.55;
+}
+
+/* ---------- Mobile nav menu (explicit state pairing) ---------- */
+/* Every background below is paired with its foreground in the same rule so a
+   light surface can never end up with light text, in any interaction state. */
+.mobile-nav-menu .mobile-nav-link {
+  color: #d4d4d4;
+  background-color: transparent;
+}
+.mobile-nav-menu .mobile-nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+.mobile-nav-menu .mobile-nav-link:active {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.mobile-nav-menu .mobile-nav-link:focus-visible {
+  color: #ffffff;
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+.mobile-nav-menu .mobile-nav-link[aria-current='page'] {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #0a0a0a;
+}
+.mobile-nav-menu .mobile-nav-link[aria-current='page']:hover {
+  background-color: #ffffff;
+  color: #0a0a0a;
+}
+.mobile-nav-menu .mobile-nav-link[aria-current='page']:active,
+.mobile-nav-menu .mobile-nav-link[aria-current='page']:focus-visible {
+  background-color: #e8e8e8;
+  border-color: #e8e8e8;
+  color: #0a0a0a;
 }
 
 /* ---------- Press / tap feedback (interaction states only) ---------- */

@@ -279,7 +279,7 @@ export default function Navbar() {
 
         {mobileOpen && (
           <div className="mt-3 rounded-2xl border border-white/10 bg-[#111111] p-2.5 lg:hidden">
-            <div className="flex flex-col gap-1.5">
+            <div className="mobile-nav-menu flex flex-col gap-1.5">
               {isAdmin ? (
                 <>
                   <Link
@@ -322,7 +322,7 @@ export default function Navbar() {
                           to={item.to}
                           onClick={() => setMobileOpen(false)}
                           className={({ isActive }) =>
-                            `block rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] transition ${isActive ? 'bg-white text-black active:bg-[#e8e8e8]' : 'text-[#d4d4d4] active:bg-white/10 active:text-white'}`
+                            `mobile-nav-link block rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] transition ${isActive ? 'bg-white text-black active:bg-[#e8e8e8]' : 'text-[#d4d4d4] active:bg-white/10 active:text-white'}`
                           }
                         >
                           {item.label}
