@@ -10,6 +10,14 @@ export default function Layout({ children }) {
   const showCookieBanner = !isAdmin && !pathname.startsWith('/admin');
   const isAdminRoute = pathname.startsWith('/admin');
 
+  if (isAdminRoute) {
+    return (
+      <div className="min-h-screen bg-[#090909] text-white">
+        <main>{children}</main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#090909] text-white">
       <Navbar />

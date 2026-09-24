@@ -7426,7 +7426,7 @@ function AdminPage({ initialSection }) {
       <PageMeta title="Admin | AJ SPORTS" description="AJ SPORTS administrator dashboard" />
 
       <div className="grid items-start gap-4 xl:grid-cols-[216px_minmax(0,1fr)]">
-        <aside className="admin-scroll sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
+        <aside className="admin-scroll sticky top-4 hidden h-[calc(100vh-2rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
           {renderSidebarBody()}
         </aside>
 
