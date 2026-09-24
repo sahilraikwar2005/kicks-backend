@@ -7417,6 +7417,15 @@ function AdminPage({ initialSection }) {
                 <PasswordField label="Current password" name="currentPassword" register={pwForm.register} error={pwForm.formState.errors.currentPassword?.message} placeholder="Current password" />
                 <PasswordField label="New password" name="newPassword" register={pwForm.register} error={pwForm.formState.errors.newPassword?.message} placeholder="Minimum 8 characters" />
                 <PasswordField label="Confirm new password" name="confirmPassword" register={pwForm.register} error={pwForm.formState.errors.confirmPassword?.message} placeholder="Confirm new password" />
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
+                  <span className="text-sm text-[#a8a8a8]">Can&apos;t remember your current password?</span>
+                  <Link
+                    to={adminUser?.email ? `/forgot-password?email=${encodeURIComponent(adminUser.email)}` : '/forgot-password'}
+                    className="text-sm font-bold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
+                  >
+                    Forgot your current password?
+                  </Link>
+                </div>
                 <button
                   type="submit"
                   disabled={pwSaving || pwForm.formState.isSubmitting}
