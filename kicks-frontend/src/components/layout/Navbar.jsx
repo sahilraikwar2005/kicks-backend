@@ -10,9 +10,6 @@ import { ESSENTIALS_TYPES, FOOTWEAR_TYPES, SPORTSWEAR_TYPES, typeLabel } from '.
 const navItems = [
   { label: 'Home', to: '/' },
   { label: 'Shop', to: '/shop', menu: true },
-  { label: 'Shoes', to: '/shop?type=SHOES' },
-  { label: 'Sportswear', to: `/shop?type=${SPORTSWEAR_TYPES.join(',')}` },
-  { label: 'Footwear', to: `/shop?type=${FOOTWEAR_TYPES.join(',')}` },
   { label: 'Collections', to: '/categories' },
   { label: 'Stories', to: '/blog' },
   { label: 'About', to: '/about' },
