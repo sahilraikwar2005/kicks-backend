@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 // Pincode lookup provider layer. All provider specifics live here —
 // components only consume lookupPincode()/usePincodeLookup() and never call
 // external APIs directly.
@@ -113,11 +113,14 @@ export const usePincodeLookup = ({ value, debounceMs = PINCODE_DEBOUNCE_MS, onVe
     }
   }
 
-  const reset = () => {
+  // Stable identity: PincodeField subscribes `reset` as an unmount cleanup, so
+  // this MUST NOT change every render — otherwise each parent re-render would
+  // invalidate the in-flight request id and the lookup could never resolve.
+  const reset = useCallback(() => {
     requestId.current += 1;
     verifiedFor.current = '';
     setSnap((current) => (current.status === 'idle' && current.result === null ? current : { pin: null, status: 'idle', result: null, error: '' }));
-  };
+  }, [setSnap]);
 
   // Notify once per verified code (guarded, never during render).
   useEffect(() => {
@@ -139,7 +142,7 @@ export const usePincodeLookup = ({ value, debounceMs = PINCODE_DEBOUNCE_MS, onVe
       } catch (lookupError) {
         if (requestId.current !== id) return; // stale response: ignore
         if (lookupError?.code === 'PROVIDER_UNREACHABLE' || lookupError?.code === 'PROVIDER_ERROR') {
-          setSnap({ pin, status: 'unknown', result: null, error: 'Could not verify this pincode right now. Please double-check the number.' });
+          setSnap({ pin, status: 'unknown', result: null, error: 'Unable to verify pincode right now. Please try again.' });
         } else {
           setSnap({ pin, status: 'invalid', result: null, error: lookupError?.message || 'This pincode does not appear to exist. Please check the number.' });
         }
