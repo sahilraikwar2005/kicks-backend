@@ -4633,7 +4633,7 @@ function AdminPage({ initialSection }) {
 
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <AdminKpi icon={IndianRupee} label="Revenue" value={metrics.totalRevenue ? formatMoney(metrics.totalRevenue) : '—'} sub="Gross sales" />
           <AdminKpi icon={Package} label="Orders" value={metrics.totalOrders ?? '—'} sub={`${metrics.pendingOrders || 0} pending`} />
           <AdminKpi icon={Users} label="Customers" value={metrics.totalUsers ?? '—'} sub="Accounts" />
@@ -7445,7 +7445,7 @@ function AdminPage({ initialSection }) {
       <PageMeta title="Admin | AJ SPORTS" description="AJ SPORTS administrator dashboard" />
 
       <div className="grid items-start gap-4 xl:grid-cols-[216px_minmax(0,1fr)]">
-        <aside className="admin-scroll sticky top-20 hidden h-[calc(100vh-2rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
+        <aside className="admin-scroll sticky top-4 hidden h-[calc(100vh-2rem)] flex-col overflow-y-auto rounded-[14px] border border-white/[0.08] bg-[#0b0b0b] p-2.5 xl:flex">
           {renderSidebarBody()}
         </aside>
 
