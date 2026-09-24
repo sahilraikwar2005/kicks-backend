@@ -50,7 +50,6 @@ import { SearchableCombobox, PincodeField } from './components/ui/AddressFields'
 import { INDIA_STATES, citySuggestions, pincodeStateConflictMessage } from './data/indiaLocations';
 import { adminApi } from './api/admin.api';
 import { authApi } from './api/auth.api';
-import { blogApi } from './api/blog.api';
 import { cartApi } from './api/cart.api';
 import { cmsApi } from './api/cms.api';
 import { notificationsApi } from './api/notifications.api';
@@ -359,8 +358,6 @@ function AppShell() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
-        <Route path="/blog" element={<BlogPage />} />
-        <Route path="/blog/:slug" element={<BlogDetailPage />} />
         <Route path="/cms/:slug" element={<CmsPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<CustomerRoute />}>
@@ -4002,58 +3999,6 @@ function NotificationsPage() {
         )}
       </div>
     </div>
-  );
-}
-
-function BlogPage() {
-  const { data, isLoading, isError } = useQuery({ queryKey: ['blog'], queryFn: () => blogApi.list() });
-  const posts = unwrapPayload(data)?.posts ?? unwrapPayload(data)?.items ?? [];
-
-  return (
-    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title="Journal | AJ SPORTS" description="AJ SPORTS stories and style insights" />
-      <div className="mb-8">
-        <p className="kicks-eyebrow">Journal</p>
-        <h1 className="mt-3 kicks-section-title">Stories & style</h1>
-      </div>
-      {isLoading ? <div className="grid gap-6 lg:grid-cols-3"><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /><div className="h-[300px] animate-pulse rounded-[24px] bg-[#111111]" /></div> : isError ? <div className="rounded-[24px] border border-white/10 bg-[#111111] p-8 text-[#d4d4d4]">Unable to load editorial content.</div> : <div className="grid gap-6 lg:grid-cols-3">{posts.map((post) => (
-        <Link key={post.slug || post._id} to={`/blog/${post.slug || post._id}`} className="overflow-hidden rounded-[24px] border border-white/10 bg-[#111111]">
-          <img src={post.coverImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1000&q=80'} alt={post.title || 'Blog article'} className="h-72 w-full object-cover" />
-          <div className="p-6">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#a1a1a1]">{post.category || 'Culture'}</p>
-            <h3 className="mt-3 text-xl font-bold text-white sm:text-2xl">{post.title}</h3>
-            <p className="mt-3 text-[#d0d0d0]">{post.shortDescription || post.excerpt || 'Read the latest AJ SPORTS conversation.'}</p>
-          </div>
-        </Link>
-      ))}</div>}
-    </div>
-  );
-}
-
-function BlogDetailPage() {
-  const { slug } = useParams();
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['blog-detail', slug],
-    queryFn: () => blogApi.getBySlug(slug),
-    enabled: Boolean(slug),
-  });
-  const post = unwrapPayload(data)?.post ?? unwrapPayload(data)?.blog ?? {};
-
-  if (isLoading) return <div className="mx-auto max-w-[1200px] px-4 py-12 text-white lg:px-8">Loading story...</div>;
-  if (isError || !post.title) return <div className="mx-auto max-w-[1200px] px-4 py-12 text-white lg:px-8">Story unavailable.</div>;
-
-  return (
-    <article className="mx-auto max-w-[1200px] px-4 py-6 sm:py-12 lg:px-8">
-      <PageMeta title={`${post.title} | AJ SPORTS`} description={post.shortDescription || post.excerpt || 'AJ SPORTS editorial'} />
-      <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[#111111]">
-        <img src={post.coverImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80'} alt={post.title} className="h-[420px] w-full object-cover" />
-      </div>
-      <div className="mt-8 max-w-[900px]">
-        <p className="kicks-eyebrow">{post.category || 'Journal'}</p>
-        <h1 className="mt-4 text-4xl font-black uppercase tracking-[-0.08em] text-white sm:text-5xl">{post.title}</h1>
-        <div className="mt-8 space-y-5 text-lg leading-8 text-[#d5d5d5]" dangerouslySetInnerHTML={{ __html: post.content || post.body || 'No article content available.' }} />
-      </div>
-    </article>
   );
 }
 

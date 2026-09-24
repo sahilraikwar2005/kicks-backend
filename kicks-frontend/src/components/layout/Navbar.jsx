@@ -11,7 +11,6 @@ const navItems = [
   { label: 'Home', to: '/' },
   { label: 'Shop', to: '/shop', menu: true },
   { label: 'Collections', to: '/categories' },
-  { label: 'Stories', to: '/blog' },
   { label: 'About', to: '/about' },
 ];
 
@@ -27,7 +26,7 @@ const mobileMenuSections = [
   { heading: 'Footwear', links: FOOTWEAR_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
   { heading: 'Sportswear', links: SPORTSWEAR_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
   { heading: 'Essentials', links: ESSENTIALS_TYPES.map((type) => ({ label: typeLabel(type), to: `/shop?type=${type}` })) },
-  { heading: null, links: [{ label: 'Collections', to: '/categories' }, { label: 'Stories', to: '/blog' }, { label: 'About', to: '/about' }] },
+  { heading: null, links: [{ label: 'Collections', to: '/categories' }, { label: 'About', to: '/about' }] },
 ];
 
 export default function Navbar() {

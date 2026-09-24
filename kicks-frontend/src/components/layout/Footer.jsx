@@ -13,7 +13,7 @@ export default function Footer() {
       return;
     }
     setEmail('');
-    setNote('Newsletter is not live yet — read Stories for the latest drops.');
+    setNote('Newsletter is not live yet — check back soon for the latest drops.');
   };
 
   return (
@@ -74,11 +74,6 @@ export default function Footer() {
                 Collections
               </Link>
             </li>
-            <li>
-              <Link to="/blog" className="transition hover:text-white">
-                Stories
-              </Link>
-            </li>
           </ul>
         </div>
 
@@ -105,7 +100,7 @@ export default function Footer() {
 
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white">Stay Moving</p>
-          <p className="mt-5 text-sm text-[#a7a7a7]">New drops and stories, once a week.</p>
+          <p className="mt-5 text-sm text-[#a7a7a7]">New drops, once a week.</p>
           <form onSubmit={subscribe} className="mt-4" noValidate>
             <div className="flex items-center gap-2 border-b border-white/20 pb-2 focus-within:border-white/50">
               <label htmlFor="footer-newsletter-email" className="sr-only">
