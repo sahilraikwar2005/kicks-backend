@@ -49,6 +49,7 @@ import { addressesApi } from './api/addresses.api';
 import { SearchableCombobox, PincodeField } from './components/ui/AddressFields';
 import { INDIA_STATES, citySuggestions, pincodeStateConflictMessage } from './data/indiaLocations';
 import { adminApi } from './api/admin.api';
+import { StepBatcher, STEP_BATCH_WINDOW_MS } from './utils/stepBatcher';
 import { authApi } from './api/auth.api';
 import { blogApi } from './api/blog.api';
 import { cartApi } from './api/cart.api';
@@ -3865,7 +3866,7 @@ function ProductInventoryDetail({
   variantState,
   saleBusy,
   soldFlash,
-  stepBusy,
+  stepPending,
   onSell,
   onStep,
   onAdjust,
@@ -3983,19 +3984,21 @@ function ProductInventoryDetail({
                             <button
                               type="button"
                               onClick={() => onStep(variant, -1)}
-                              disabled={getVariantStock(variant) <= 0 || stepBusy === String(variant._id)}
+                              disabled={getVariantStock(variant) <= 0}
                               aria-label={`Decrease stock for ${variant.size}`}
                               className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/15 text-sm leading-none text-white transition hover:border-white/35 disabled:opacity-30"
                             >
                               −
                             </button>
-                            <span className="min-w-8 text-center font-bold text-white" aria-live="polite">
-                              {stepBusy === String(variant._id) ? '…' : getVariantStock(variant)}
+                            <span className="inline-flex min-w-8 items-center justify-center gap-1 text-center font-bold text-white" aria-live="polite">
+                              {getVariantStock(variant)}
+                              {stepPending?.[String(variant._id)] && (
+                                <span aria-hidden="true" title="Syncing stock…" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#FFC800]" />
+                              )}
                             </span>
                             <button
                               type="button"
                               onClick={() => onStep(variant, 1)}
-                              disabled={stepBusy === String(variant._id)}
                               aria-label={`Increase stock for ${variant.size}`}
                               className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/15 text-sm leading-none text-white transition hover:border-white/35 disabled:opacity-30"
                             >
@@ -4060,19 +4063,21 @@ function ProductInventoryDetail({
                       <button
                         type="button"
                         onClick={() => onStep(variant, -1)}
-                        disabled={getVariantStock(variant) <= 0 || stepBusy === String(variant._id)}
+                        disabled={getVariantStock(variant) <= 0}
                         aria-label={`Decrease stock for ${variant.size}`}
                         className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-white/15 text-base leading-none text-white transition hover:border-white/35 disabled:opacity-30"
                       >
                         −
                       </button>
-                      <span className="min-w-8 text-center text-base font-bold text-white" aria-live="polite">
-                        {stepBusy === String(variant._id) ? '…' : getVariantStock(variant)}
+                      <span className="inline-flex min-w-8 items-center justify-center gap-1 text-center text-base font-bold text-white" aria-live="polite">
+                        {getVariantStock(variant)}
+                        {stepPending?.[String(variant._id)] && (
+                          <span aria-hidden="true" title="Syncing stock…" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#FFC800]" />
+                        )}
                       </span>
                       <button
                         type="button"
                         onClick={() => onStep(variant, 1)}
-                        disabled={stepBusy === String(variant._id)}
                         aria-label={`Increase stock for ${variant.size}`}
                         className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-white/15 text-base leading-none text-white transition hover:border-white/35 disabled:opacity-30"
                       >
@@ -5746,8 +5751,36 @@ function AdminPage({ initialSection }) {
     const [movementsVariantId, setMovementsVariantId] = useState(null);
     const [typeFilter, setTypeFilter] = useState('all');
     const [lastSale, setLastSale] = useState(null);
-    const [stepBusy, setStepBusy] = useState('');
     const undoTimer = useRef(null);
+
+    // Optimistic, batched +/- stepping. Clicks update the TanStack cache
+    // instantly and accumulate per variant; one atomic request flushes per
+    // quiet window. Failures roll back only the failed delta.
+    const stepBatcherRef = useRef(null);
+    useEffect(() => {
+      const batcher = new StepBatcher({        windowMs: STEP_BATCH_WINDOW_MS,
+        onFlush: async (key, delta) => {
+          await apiClient.post(`/admin/inventory/${key}/adjust`, { delta, reason: delta < 0 ? 'Offline sale' : 'Restock' });
+          // Newer clicks may have queued mid-flight; reconciling now would
+          // clobber their optimistic values, so only refetch when fully quiet.
+          if (!batcher.pending(key)) {
+            await queryClient.invalidateQueries({ queryKey: ['admin-products-inventory'] });
+          }
+        },
+        onError: (key, delta) => {
+          bumpCachedVariantStock(key, -delta);
+          showToast('Stock update failed. Changes were not saved.', 'error');
+        },
+      });
+      stepBatcherRef.current = batcher;
+      return () => {
+        batcher.dispose();
+        stepBatcherRef.current = null;
+      };
+      // Mount-once queue owner: helpers intentionally use first-render closures
+      // over stable queryClient/showToast (equivalent on every render).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => () => {
       if (undoTimer.current) window.clearTimeout(undoTimer.current);
@@ -5892,26 +5925,82 @@ function AdminPage({ initialSection }) {
       }
     };
 
-    const quickStep = async (variant, delta) => {
+    // Reads the currently displayed (possibly optimistic) stock for a variant
+    // straight from the TanStack cache. Falls back to the row object.
+    const readCachedVariantStock = (key) => {
+      const cached = queryClient.getQueryData(['admin-products-inventory', debouncedSearch]);
+      const items = unwrapPayload(cached)?.items;
+      if (!Array.isArray(items)) return null;
+      for (const product of items) {
+        const match = (Array.isArray(product?.variants) ? product.variants : [])
+          .find((entry) => String(entry?._id) === String(key));
+        if (match) return Number(match.stock ?? 0);
+      }
+      return null;
+    };
+
+    // Applies a stock delta to every cached admin-products-inventory page.
+    // Synchronous: observers re-render instantly (optimistic UI + rollback).
+    const bumpCachedVariantStock = (key, delta) => {
+      if (!delta) return;
+      queryClient.setQueriesData({ queryKey: ['admin-products-inventory'] }, (old) => {
+        const items = unwrapPayload(old)?.items;
+        if (!Array.isArray(items)) return old;
+        return {
+          ...old,
+          data: {
+            ...(old?.data ?? {}),
+            items: items.map((product) => ({
+              ...product,
+              variants: (Array.isArray(product?.variants) ? product.variants : []).map((variant) => (
+                String(variant?._id) === String(key)
+                  ? { ...variant, stock: Number(variant.stock ?? 0) + delta }
+                  : variant
+              )),
+            })),
+          },
+        };
+      });
+    };
+
+    // Instant optimistic step with per-variant batching. The visible stock,
+    // product totals and summary cards all derive from the same cache, so
+    // they update together with zero refetch. One atomic request flushes
+    // per 400ms quiet window; failures roll back only the failed delta.
+    const quickStep = (variant, delta) => {
       const key = String(variant._id);
-      if (stepBusy) return;
-      if (delta < 0 && getVariantStock(variant) + delta < 0) {
+      const cached = readCachedVariantStock(key);
+      const current = cached === null ? getVariantStock(variant) : cached;
+      if (delta < 0 && current + delta < 0) {
         showToast('Stock cannot go below zero.', 'error');
         return;
       }
-      setStepBusy(key);
-      try {
-        await postAdjustment({
-          variantId: key,
-          delta,
-          reason: delta < 0 ? 'Offline sale' : 'Restock',
-        });
-      } catch (error) {
-        showToast(error?.message || 'Unable to update stock.', 'error');
-      } finally {
-        setStepBusy('');
+      bumpCachedVariantStock(key, delta);
+      const batcher = stepBatcherRef.current;
+      if (batcher) {
+        batcher.push(key, delta);
+        return;
       }
+      // Batcher not mounted yet: direct single adjustment so no click is lost.
+      apiClient.post(`/admin/inventory/${key}/adjust`, { delta, reason: delta < 0 ? 'Offline sale' : 'Restock' })
+        .then(() => queryClient.invalidateQueries({ queryKey: ['admin-products-inventory'] }))
+        .catch(() => {
+          bumpCachedVariantStock(key, -delta);
+          showToast('Stock update failed. Changes were not saved.', 'error');
+        });
     };
+
+    // Per-variant sync indicator for the steppers (recomputed each render
+    // from the live batcher queues; no global page loading state).
+    const stepPending = {};
+    {
+      const batcher = stepBatcherRef.current;
+      if (batcher) {
+        for (const key of batcher.keys()) {
+          if (batcher.isActive(key)) stepPending[key] = true;
+        }
+      }
+    }
 
     const saveAdjustment = async () => {
       if (!adjustTarget || adjustBusy) return;
@@ -6046,7 +6135,7 @@ function AdminPage({ initialSection }) {
             variantState={variantState}
             saleBusy={saleBusy}
             soldFlash={soldFlash}
-            stepBusy={stepBusy}
+            stepPending={stepPending}
             onSell={(variant) => quickSellOneClick(selectedProduct, variant)}
             onStep={(variant, delta) => quickStep(variant, delta)}
             onAdjust={(variant) => openAdjust(selectedProduct, variant)}
