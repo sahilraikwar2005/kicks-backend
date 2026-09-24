@@ -7499,11 +7499,13 @@ function AdminPage({ initialSection }) {
               </span>
               <Link
                 to="/"
-                className="hidden h-8 items-center gap-1.5 rounded-[10px] border border-white/10 px-3 text-[11px] font-semibold text-white transition hover:border-white/30 sm:inline-flex"
+                aria-label="Open storefront"
+                title="Storefront"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/10 text-white transition hover:border-white/30 sm:h-8 sm:w-auto sm:px-3 sm:text-[11px] sm:font-semibold"
               >
-                <ExternalLink size={12} /> Storefront
+                <ExternalLink size={12} /> <span className="hidden sm:inline">Storefront</span>
               </Link>
-              <div className="relative">
+              <div className="relative hidden shrink-0 sm:block">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((current) => !current)}
