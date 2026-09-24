@@ -6472,6 +6472,12 @@ function AdminPage({ initialSection }) {
     const totalPages = unwrapPayload(data)?.totalPages || 1;
     const totalOrders = unwrapPayload(data)?.total ?? orders.length;
     const expandedOrder = orders.find((order) => String(order._id) === String(expandedOrderId)) || null;
+    const expandedShipmentQuery = useQuery({
+      queryKey: ['admin-order-shipment', expandedOrderId],
+      queryFn: () => adminApi.shipmentById(expandedOrderId).catch(() => null),
+      enabled: Boolean(expandedOrderId),
+    });
+    const expandedShipment = unwrapPayload(expandedShipmentQuery.data)?.shipment ?? null;
 
     // Mirrors the backend order state machine: the dropdown only ever offers
     // the current status plus its legal successors. Past PACKED there are no
