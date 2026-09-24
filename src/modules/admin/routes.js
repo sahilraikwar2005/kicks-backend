@@ -27,6 +27,9 @@ const adminShipmentsQuerySchema = Joi.object({
   provider: Joi.string().trim().lowercase().optional().allow(''),
   search: Joi.string().trim().max(100).optional().allow(''),
 });
+const mockShipmentEventSchema = Joi.object({
+  event: Joi.string().trim().lowercase().valid('pickup', 'shipped', 'out_for_delivery', 'delivered', 'ndr', 'rto', 'rto_transit', 'returned').required(),
+});
 
 router.use(protect, isAdmin);
 
@@ -52,6 +55,9 @@ router.post('/orders/:id/ship', validateObjectIdParam('id'), asyncHandler(shipme
 router.post('/shipments/orders/:id', validateObjectIdParam('id'), asyncHandler(shipmentController.create));
 router.get('/shipments', validateQuery(adminShipmentsQuerySchema), asyncHandler(shipmentController.listAdmin));
 router.get('/shipments/:id', validateObjectIdParam('id'), asyncHandler(shipmentController.getAdminDetails));
+router.get('/shipments/:id/label', validateObjectIdParam('id'), asyncHandler(shipmentController.mockShipmentLabel));
+router.post('/shipments/:id/pickup', validateObjectIdParam('id'), asyncHandler(shipmentController.scheduleMockPickup));
+router.post('/shipments/:id/mock/event', validateObjectIdParam('id'), validate(mockShipmentEventSchema), asyncHandler(shipmentController.simulateMockEvent));
 router.get('/orders/:id/invoice', validateObjectIdParam('id'), asyncHandler(invoiceController.getAdminInvoice));
 router.post('/orders/:id/invoice/resend', validateObjectIdParam('id'), asyncHandler(invoiceController.resend));
 
