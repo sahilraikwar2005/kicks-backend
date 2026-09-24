@@ -2,6 +2,7 @@ import { apiClient } from './client';
 
 export const adminApi = {
   dashboard: () => apiClient.get('/admin/dashboard').then((response) => response.data),
+  salesOverview: (range = 'today') => apiClient.get('/admin/sales-overview', { params: { range } }).then((response) => response.data),
   users: (params = {}) => apiClient.get('/admin/users', { params }).then((response) => response.data),
   userById: (id) => apiClient.get(`/admin/users/${id}`).then((response) => response.data),
   updateUserStatus: (id, isActive) => apiClient.patch(`/admin/users/${id}/status`, { isActive }).then((response) => response.data),

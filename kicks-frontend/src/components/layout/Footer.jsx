@@ -45,7 +45,7 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link to="/shop?type=CROCS" className="transition hover:text-white">
+              <Link to="/shop?type=CROCKS" className="transition hover:text-white">
                 Crocs / Clogs
               </Link>
             </li>

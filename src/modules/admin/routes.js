@@ -30,7 +30,12 @@ const adminShipmentsQuerySchema = Joi.object({
 
 router.use(protect, isAdmin);
 
+const adminSalesRangeSchema = Joi.object({
+  range: Joi.string().valid('today', '7d', '30d', 'all').default('today'),
+});
+
 router.get('/dashboard', asyncHandler(adminController.dashboard));
+router.get('/sales-overview', validateQuery(adminSalesRangeSchema), asyncHandler(adminController.salesOverview));
 router.get('/products', validateQuery(adminProductsQuerySchema), asyncHandler(adminController.listProducts));
 router.get('/users', validateQuery(adminPaginationSchema), asyncHandler(adminController.listUsers));
 router.get('/users/:id', validateObjectIdParam('id'), asyncHandler(adminController.getUserById));

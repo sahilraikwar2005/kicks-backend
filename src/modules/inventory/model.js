@@ -35,6 +35,8 @@ const inventoryMovementSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+inventoryMovementSchema.index({ type: 1, createdAt: -1 });
+
 const Inventory = mongoose.model('Inventory', inventorySchema);
 const InventoryMovement = mongoose.model('InventoryMovement', inventoryMovementSchema);
 

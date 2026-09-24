@@ -1,6 +1,18 @@
 import Order from '../orders/model.js';
 import Product from '../products/model.js';
 import User from '../users/model.js';
+import { InventoryMovement } from '../inventory/model.js';
+
+const SALES_RANGES = {
+  today: () => {
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    return since;
+  },
+  '7d': () => new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  '30d': () => new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+  all: () => null,
+};
 
 export const adminService = {
   async getDashboardMetrics() {
@@ -36,6 +48,66 @@ export const adminService = {
       lowStockProducts,
       recentOrders,
       topSellingProducts,
+    };
+  },
+
+  async getSalesOverview(range = 'today') {
+    const since = (SALES_RANGES[range] || SALES_RANGES.today)();
+    const dateFilter = since ? { createdAt: { $gte: since } } : {};
+
+    // ONLINE: completed ecommerce sales only — paid, not cancelled/refunded.
+    // Offline adjustments never create orders, so the sets cannot overlap.
+    const [online] = await Order.aggregate([
+      { $match: { paymentStatus: 'PAID', status: { $nin: ['CANCELLED', 'REFUNDED'] }, ...dateFilter } },
+      {
+        $group: {
+          _id: null,
+          orders: { $sum: 1 },
+          items: { $sum: { $sum: '$items.quantity' } },
+          revenue: { $sum: '$grandTotal' },
+        },
+      },
+    ]);
+
+    // OFFLINE: one-click offline sales are ADJUSTMENT movements with reason
+    // "Offline sale" (optionally suffixed with " — note"). Undo creates a
+    // separate +qty movement with reason "Undo offline sale", which nets out.
+    // Movements store no price, so offline reports items only — never revenue.
+    const [offline] = await InventoryMovement.aggregate([
+      {
+        $match: {
+          type: 'ADJUSTMENT',
+          reason: { $in: [/^Offline sale( —|$)/, /^Undo offline sale$/] },
+          ...dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          sold: {
+            $sum: {
+              $cond: [{ $eq: ['$reason', 'Undo offline sale'] }, 0, '$quantity'],
+            },
+          },
+          undone: {
+            $sum: {
+              $cond: [{ $eq: ['$reason', 'Undo offline sale'] }, '$quantity', 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const onlineOrders = Number(online?.orders || 0);
+    const onlineItems = Number(online?.items || 0);
+    const onlineRevenue = Number(online?.revenue || 0);
+    const offlineItems = Math.max(0, Number(offline?.sold || 0) - Number(offline?.undone || 0));
+
+    return {
+      range,
+      online: { revenue: onlineRevenue, orders: onlineOrders, items: onlineItems },
+      offline: { revenue: null, items: offlineItems },
+      total: { revenue: onlineRevenue, items: onlineItems + offlineItems, orders: onlineOrders },
     };
   },
 };

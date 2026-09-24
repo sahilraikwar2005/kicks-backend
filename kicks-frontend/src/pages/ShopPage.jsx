@@ -44,7 +44,7 @@ export default function ShopPage() {
   );
 
   // Product-type filtering is client-side (backend has no type filter):
-  // values use the exact product type contract (SHOES, SLIDES, CROCS, ...).
+  // values use the exact product type contract (SHOES, SLIDES, CROCKS, ...).
   const typeValues = useMemo(
     () => String(filters.type || '').split(',').map((value) => value.trim().toUpperCase()).filter((value) => PRODUCT_TYPE_ORDER.includes(value)),
     [filters.type],

@@ -21,6 +21,11 @@ export const adminController = {
     res.status(200).json(apiSuccess('Admin dashboard fetched successfully', { metrics }));
   },
 
+  salesOverview: async (req, res) => {
+    const overview = await adminService.getSalesOverview(req.query.range || 'today');
+    res.status(200).json(apiSuccess('Sales overview fetched successfully', { overview }));
+  },
+
   listUsers: async (req, res) => {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);

@@ -177,6 +177,8 @@ const detectSizeSystem = (size) => {
 // and quantity-only products use a single "Free Size" variant.
 const PRODUCT_TYPES = {
   SHOES: { label: 'Shoes', sizes: SIZE_SYSTEMS.UK, mode: 'sizes' },
+  SLIDES: { label: 'Slides', sizes: ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'], mode: 'sizes' },
+  CROCKS: { label: 'Crocks', sizes: ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'], mode: 'sizes' },
   TSHIRT: { label: 'T-Shirts', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
   LOWER: { label: 'Lower', sizes: ['S', 'M', 'L', 'XL', 'XXL'], mode: 'sizes' },
   SHORTS: { label: 'Shorts', sizes: ['S', 'M', 'L', 'XL'], mode: 'sizes' },
@@ -4376,6 +4378,19 @@ function AdminPage({ initialSection }) {
     const topSellingProducts = Array.isArray(metrics.topSellingProducts) ? metrics.topSellingProducts : [];
     const maxTopQuantity = Math.max(1, ...topSellingProducts.map((product) => Number(product.quantity || 0)));
 
+    const [salesRange, setSalesRange] = useState('today');
+    const salesQuery = useQuery({
+      queryKey: ['admin-sales-overview', salesRange],
+      queryFn: () => adminApi.salesOverview(salesRange),
+      staleTime: 30 * 1000,
+    });
+    const sales = unwrapPayload(salesQuery.data)?.overview ?? {
+      online: { revenue: 0, orders: 0, items: 0 },
+      offline: { revenue: null, items: 0 },
+      total: { revenue: 0, orders: 0, items: 0 },
+    };
+    const onlineShare = sales.total.items > 0 ? Math.round((sales.online.items / sales.total.items) * 100) : 0;
+
     if (isLoading) return <Skeleton lines={6} />;
     if (isError) return <ErrorState message="Unable to load the admin dashboard." />;
 
@@ -4387,6 +4402,110 @@ function AdminPage({ initialSection }) {
           <AdminKpi icon={Users} label="Customers" value={metrics.totalUsers ?? '—'} sub="Accounts" />
           <AdminKpi icon={ShoppingBag} label="Products" value={metrics.totalProducts ?? '—'} sub="Catalog" />
         </div>
+
+        <AdminCard
+          eyebrow="Sales overview"
+          title="Online vs offline"
+          action={(
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Sales time range">
+              {[
+                { value: 'today', label: 'Today' },
+                { value: '7d', label: '7 Days' },
+                { value: '30d', label: '30 Days' },
+                { value: 'all', label: 'All Time' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setSalesRange(option.value)}
+                  aria-pressed={salesRange === option.value}
+                  className={`inline-flex h-8 items-center rounded-[8px] border px-3 text-[11px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                    salesRange === option.value
+                      ? 'border-[#FFC800]/50 bg-[#FFC800]/10 text-[#FFC800]'
+                      : 'border-white/10 text-[#a8a8a8] hover:border-white/30 hover:text-white'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        >
+          {salesQuery.isLoading ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[0, 1, 2].map((index) => <div key={index} className="admin-skeleton h-[92px] animate-pulse rounded-[12px]" />)}
+            </div>
+          ) : salesQuery.isError ? (
+            <p className="text-sm text-[#a0a0a0]">Unable to load sales overview right now.</p>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Online sales</p>
+                  <p className="mt-2 truncate text-2xl font-black tracking-[-0.03em] text-white">{formatMoney(sales.online.revenue)}</p>
+                  <p className="mt-1 truncate text-xs text-[#8d8d8d]">{sales.online.orders} order{sales.online.orders === 1 ? '' : 's'} • {sales.online.items} item{sales.online.items === 1 ? '' : 's'}</p>
+                </div>
+                <div className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Offline sales</p>
+                  <p className="mt-2 truncate text-2xl font-black tracking-[-0.03em] text-white">{sales.offline.items} item{sales.offline.items === 1 ? '' : 's'}</p>
+                  <p className="mt-1 truncate text-xs text-[#8d8d8d]">revenue not tracked</p>
+                </div>
+                <div className="rounded-[12px] border border-[#FFC800]/25 bg-[#FFC800]/[0.05] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Total sales</p>
+                  <p className="mt-2 truncate text-2xl font-black tracking-[-0.03em] text-white">{formatMoney(sales.total.revenue)}</p>
+                  <p className="mt-1 truncate text-xs text-[#8d8d8d]">{sales.total.orders} order{sales.total.orders === 1 ? '' : 's'} • {sales.total.items} item{sales.total.items === 1 ? '' : 's'}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-x-auto rounded-[12px] border border-white/[0.08]">
+                <table className="w-full min-w-[420px] text-left text-[13px]">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="px-3 py-2.5 font-semibold"><span className="sr-only">Metric</span></th>
+                      <th scope="col" className="px-3 py-2.5 font-semibold">Online</th>
+                      <th scope="col" className="px-3 py-2.5 font-semibold">Offline</th>
+                      <th scope="col" className="px-3 py-2.5 font-semibold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="px-3 py-2 text-[#a0a0a0]">Orders</td>
+                      <td className="px-3 py-2 font-semibold text-white">{sales.online.orders}</td>
+                      <td className="px-3 py-2 text-[#767676]">—</td>
+                      <td className="px-3 py-2 font-semibold text-white">{sales.total.orders}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-[#a0a0a0]">Items</td>
+                      <td className="px-3 py-2 font-semibold text-white">{sales.online.items}</td>
+                      <td className="px-3 py-2 font-semibold text-white">{sales.offline.items}</td>
+                      <td className="px-3 py-2 font-semibold text-white">{sales.total.items}</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-[#a0a0a0]">Revenue</td>
+                      <td className="px-3 py-2 font-semibold text-white">{formatMoney(sales.online.revenue)}</td>
+                      <td className="px-3 py-2 text-[#767676]">—</td>
+                      <td className="px-3 py-2 font-semibold text-white">{formatMoney(sales.total.revenue)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4" aria-label={`Online ${onlineShare}% of items sold`}>
+                <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-[#FFC800] transition-all" style={{ width: `${onlineShare}%` }} />
+                  <div className="h-full flex-1 rounded-full bg-white/25" />
+                </div>
+                <div className="mt-1.5 flex justify-between text-[11px] text-[#8d8d8d]">
+                  <span>Online {onlineShare}%</span>
+                  <span>Offline {100 - onlineShare}%</span>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-[#767676]">
+                Offline counts one-click counter sales only; undone sales are netted out. Offline revenue isn&apos;t tracked because sale movements store no price.
+              </p>
+            </>
+          )}
+        </AdminCard>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <AdminCard eyebrow="Order pipeline" title="Live status distribution">

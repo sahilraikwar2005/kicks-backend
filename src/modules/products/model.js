@@ -31,7 +31,7 @@ const productSchema = new mongoose.Schema(
     // values are treated as SHOES by the admin and storefront.
     type: {
       type: String,
-      enum: ['SHOES', 'TSHIRT', 'LOWER', 'SHORTS', 'JERSEY', 'SOCKS', 'ACCESSORIES', 'OTHER'],
+      enum: ['SHOES', 'SLIDES', 'TSHIRT', 'LOWER', 'SHORTS', 'JERSEY', 'SOCKS', 'CROCKS', 'ACCESSORIES', 'OTHER'],
       default: 'SHOES',
       index: true,
     },

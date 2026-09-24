@@ -15,6 +15,17 @@ test.after(async () => {
 
 const uniqueSuffix = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+test('product type accepts SLIDES and CROCKS', () => {
+  for (const type of ['SLIDES', 'CROCKS']) {
+    const { error, value } = createProductSchema.validate(
+      { name: 'Type Probe', price: 999, type, variants: [] },
+      { abortEarly: false, stripUnknown: true },
+    );
+    assert.equal(error, undefined);
+    assert.equal(value.type, type);
+  }
+});
+
 test('product type passes create validation and rejects unknown types', () => {
   const ok = createProductSchema.validate(
     { name: 'Type Probe', price: 999, type: 'TSHIRT', variants: [] },
