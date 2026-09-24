@@ -257,8 +257,8 @@ export default function Navbar() {
                 >
                   <User size={13} /> <span className="hidden sm:inline max-w-20 truncate">{user?.firstName || 'Account'}</span>
                 </Link>
-                <button type="button" onClick={logout} aria-label="Log out" className="hidden h-9 items-center rounded-[10px] border border-white/15 px-3 text-[11px] uppercase tracking-[0.14em] text-white sm:inline-flex">
-                  Logout
+                <button type="button" onClick={logout} aria-label="Log out" title="Log out" className="hidden h-9 items-center rounded-[10px] border border-white/15 px-3 text-white transition hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/50 sm:inline-flex">
+                  <LogOut size={15} />
                 </button>
               </div>
             ) : (
