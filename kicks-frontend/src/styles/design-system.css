@@ -247,6 +247,37 @@ textarea.kicks-field {
   font-weight: 600;
 }
 
+/* Mobile-only: keep the ACTIVE filter pill readable across touch states.
+   On touch devices a tap matches :hover (sticky) and :active, and the generic
+   press-feedback rules later in this file would otherwise tear apart the
+   white-background + dark-text pairing above. These selectors (0,3,0) beat the
+   generic (0,2,0) rules, but live inside the mobile breakpoint so desktop is
+   untouched. Inactive pills are intentionally not targeted. */
+@media (max-width: 640px) {
+  .kicks-pill[aria-pressed='true'],
+  .kicks-pill-active {
+    background: #fff;
+    border-color: #fff;
+    color: #0a0a0a;
+  }
+  .kicks-pill[aria-pressed='true']:hover,
+  .kicks-pill[aria-pressed='true']:active,
+  .kicks-pill-active:hover,
+  .kicks-pill-active:active {
+    background: #fff;
+    border-color: #fff;
+    color: #0a0a0a;
+  }
+  .kicks-pill[aria-pressed='true']:focus-visible,
+  .kicks-pill-active:focus-visible {
+    background: #fff;
+    border-color: #fff;
+    color: #0a0a0a;
+    outline: 2px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
+  }
+}
+
 /* ---------- Tab pills (account / settings navigation) ---------- */
 .kicks-tab {
   display: inline-flex;
