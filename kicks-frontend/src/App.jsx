@@ -2729,11 +2729,6 @@ function AccountPasswordSection() {
             error={errors.currentPassword?.message}
             placeholder="Enter current password"
           />
-          <div className="-mt-2">
-            <Link to={forgotHref} className="text-sm text-[#a8a8a8] underline decoration-white/20 underline-offset-4 hover:text-white">
-              Forgot your current password?
-            </Link>
-          </div>
 
           <PasswordField
             label="New Password"
@@ -2750,6 +2745,12 @@ function AccountPasswordSection() {
             error={errors.confirmPassword?.message}
             placeholder="Confirm new password"
           />
+
+          <div>
+            <Link to={forgotHref} className="text-sm font-bold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+              Forgot your current password?
+            </Link>
+          </div>
 
           <button
             type="submit"
