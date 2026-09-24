@@ -12,6 +12,13 @@ export const shipmentController = {
     res.status(200).json(apiSuccess('Shipment details fetched', { shipment }));
   },
   tracking: async (req, res) => res.status(200).json(apiSuccess('Tracking fetched', { shipment: await shipmentService.getForCustomer(req.params.id, req.user._id) })),
+  scheduleMockPickup: async (req, res) => res.status(200).json(apiSuccess('Mock pickup scheduled', { shipment: await shipmentService.scheduleMockPickup(req.params.id) })),
+  simulateMockEvent: async (req, res) => res.status(200).json(apiSuccess('Mock shipment event processed', await shipmentService.simulateMockEvent(req.params.id, req.body.event))),
+  mockShipmentLabel: async (req, res) => {
+    const label = await shipmentService.getShipmentLabel(req.params.id);
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    return res.status(200).send(label.labelHtml);
+  },
   webhook: async (req, res) => {
     let payload = req.body;
     if (Buffer.isBuffer(req.body)) {

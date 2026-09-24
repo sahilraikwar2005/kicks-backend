@@ -58,6 +58,9 @@ export const env = {
   smtpPassword: process.env.SMTP_PASSWORD || '',
   emailFrom: process.env.EMAIL_FROM || 'AJ SPORTS <noreply@example.com>',
   shippingProvider: process.env.SHIPPING_PROVIDER || 'shiprocket',
+  // Mock courier stand-in for development/testing. Production uses
+  // SHIPPING_PROVIDER=delhivery with MOCK_SHIPPING_ENABLED=false.
+  mockShippingEnabled: process.env.MOCK_SHIPPING_ENABLED !== 'false',
   shippingApiKey: process.env.SHIPPING_API_KEY || '',
   shippingApiSecret: process.env.SHIPPING_API_SECRET || '',
   shippingPickupLocation: process.env.SHIPPING_PICKUP_LOCATION || '',

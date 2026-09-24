@@ -14,4 +14,7 @@ export const adminApi = {
   shipments: (params = {}) => apiClient.get('/admin/shipments', { params }).then((response) => response.data),
   shipmentById: (id) => apiClient.get(`/admin/shipments/${id}`).then((response) => response.data),
   createShipment: (orderId) => apiClient.post(`/admin/orders/${orderId}/ship`).then((response) => response.data),
+  shipmentLabelUrl: (id) => `${apiClient.defaults.baseURL}/admin/shipments/${id}/label`,
+  scheduleMockPickup: (id) => apiClient.post(`/admin/shipments/${id}/pickup`).then((response) => response.data),
+  simulateMockEvent: (id, event) => apiClient.post(`/admin/shipments/${id}/mock/event`, { event }).then((response) => response.data),
 };

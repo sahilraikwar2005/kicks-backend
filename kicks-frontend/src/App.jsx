@@ -6324,6 +6324,12 @@ function AdminPage({ initialSection }) {
     const totalPages = unwrapPayload(data)?.totalPages || 1;
     const totalOrders = unwrapPayload(data)?.total ?? orders.length;
     const expandedOrder = orders.find((order) => String(order._id) === String(expandedOrderId)) || null;
+    const expandedShipmentQuery = useQuery({
+      queryKey: ['admin-order-shipment', expandedOrderId],
+      queryFn: () => adminApi.shipmentById(expandedOrderId).catch(() => null),
+      enabled: Boolean(expandedOrderId),
+    });
+    const expandedShipment = unwrapPayload(expandedShipmentQuery.data)?.shipment ?? null;
 
     const orderActions = (row) => {
       const expanded = String(expandedOrderId) === String(row._id);
@@ -6448,6 +6454,27 @@ function AdminPage({ initialSection }) {
                   <div className="flex justify-between gap-3 border-t border-white/10 pt-1.5 text-sm font-semibold text-white"><span>Total</span><span>{formatMoney(expandedOrder.grandTotal || 0)}</span></div>
                   {expandedOrder.paymentId && <div className="truncate text-[#8d8d8d]">Payment ID: {expandedOrder.paymentId}</div>}
                 </div>
+              </div>
+              <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Shipping</p>
+                {expandedShipmentQuery.isLoading ? (
+                  <div className="mt-2 h-10 animate-pulse rounded-[10px] bg-white/5" />
+                ) : expandedShipment ? (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={expandedShipment.status} />
+                      {expandedShipment.isTest && (
+                        <span className="rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#FFC800]">TEST</span>
+                      )}
+                    </div>
+                    <p className="truncate font-mono text-xs text-white">{expandedShipment.awb || expandedShipment.shipmentId || '—'}</p>
+                    <Link to="/admin/shipping" className="inline-block text-xs text-[#a8a8a8] underline decoration-white/20 underline-offset-4 hover:text-white">
+                      Manage in Shipping →
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-[#8d8d8d]">No shipment yet — use the truck action below.</p>
+                )}
               </div>
             </div>
             {Array.isArray(expandedOrder.items) && expandedOrder.items.length > 0 && (
@@ -6608,6 +6635,50 @@ function AdminPage({ initialSection }) {
     const [createOrderId, setCreateOrderId] = useState('');
     const [createBusy, setCreateBusy] = useState(false);
     const [createError, setCreateError] = useState('');
+    const [mockBusy, setMockBusy] = useState('');
+    const [mockError, setMockError] = useState('');
+
+    // Mirrors the backend mock transition map: only currently-valid
+    // simulation buttons are shown for a mock shipment.
+    const MOCK_EVENT_BUTTONS = {
+      pickup: { target: 'PICKED_UP', label: 'Pickup' },
+      shipped: { target: 'IN_TRANSIT', label: 'Shipped' },
+      out_for_delivery: { target: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+      delivered: { target: 'DELIVERED', label: 'Delivered' },
+      ndr: { target: 'NDR', label: 'NDR' },
+      rto: { target: 'RTO_INITIATED', label: 'RTO' },
+      rto_transit: { target: 'RTO_IN_TRANSIT', label: 'RTO Transit' },
+      returned: { target: 'RETURNED', label: 'Returned' },
+    };
+    const MOCK_NEXT_STATUSES = {
+      READY_FOR_PICKUP: ['PICKUP_SCHEDULED', 'PICKED_UP'],
+      PICKUP_SCHEDULED: ['PICKED_UP'],
+      PICKED_UP: ['IN_TRANSIT'],
+      IN_TRANSIT: ['OUT_FOR_DELIVERY', 'NDR'],
+      OUT_FOR_DELIVERY: ['DELIVERED', 'NDR'],
+      NDR: ['OUT_FOR_DELIVERY', 'RTO_INITIATED'],
+      RTO_INITIATED: ['RTO_IN_TRANSIT'],
+      RTO_IN_TRANSIT: ['RETURNED'],
+    };
+    const mockValidEvents = (status) => {
+      const allowed = MOCK_NEXT_STATUSES[status] || [];
+      return Object.entries(MOCK_EVENT_BUTTONS).filter(([, button]) => allowed.includes(button.target));
+    };
+
+    const runMockAction = async (key, action) => {
+      if (mockBusy) return;
+      setMockBusy(key);
+      setMockError('');
+      try {
+        await action();
+        await detailQuery.refetch();
+        await refetch();
+      } catch (err) {
+        setMockError(err?.message || 'Mock action failed.');
+      } finally {
+        setMockBusy('');
+      }
+    };
 
     const { data, isLoading, isError, refetch } = useQuery({
       queryKey: ['admin-shipments', page, statusFilter, providerFilter, search],
@@ -6651,7 +6722,7 @@ function AdminPage({ initialSection }) {
       }
     };
 
-    const shipmentStatuses = ['PENDING', 'PROCESSING', 'CREATED', 'AWB_ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'FAILED', 'SHIPPED'];
+    const shipmentStatuses = ['PENDING', 'PROCESSING', 'CREATED', 'AWB_ASSIGNED', 'READY_FOR_PICKUP', 'PICKUP_SCHEDULED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'NDR', 'RTO_INITIATED', 'RTO_IN_TRANSIT', 'RETURNED', 'CANCELLED', 'FAILED', 'SHIPPED'];
 
     const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
@@ -6685,6 +6756,7 @@ function AdminPage({ initialSection }) {
               <select value={providerFilter} onChange={(e) => { setProviderFilter(e.target.value); setPage(1); }} aria-label="Filter by provider" className="kicks-field text-sm text-white">
                 <option value="">All providers</option>
                 <option value="shiprocket">Shiprocket</option>
+                <option value="mock">Mock</option>
                 <option value="manual">Manual</option>
               </select>
             </div>
@@ -6829,6 +6901,75 @@ function AdminPage({ initialSection }) {
                       )}
                     </div>
                   </div>
+
+                  {/* Mock shipment controls (MOCK test shipments only) */}
+                  {detail.provider === 'MOCK' && detail.isTest && (
+                    <div className="rounded-[20px] border border-[#FFC800]/25 bg-[#FFC800]/[0.04] p-5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-[10px] uppercase tracking-[0.28em] text-[#8c8c8c]">Mock shipment controls</div>
+                        <span className="rounded-full border border-[#FFC800]/40 bg-[#FFC800]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FFC800]">TEST SHIPMENT</span>
+                      </div>
+                      {detail.pickup?.requestId && (
+                        <p className="mt-3 text-sm text-[#d2d2d2]">
+                          Pickup: <span className="font-semibold text-white">{detail.pickup.status || 'SCHEDULED'}</span>
+                          {detail.pickup.date ? ` • ${fmtDate(detail.pickup.date)}` : ''}
+                          {detail.pickup.slot ? ` • ${detail.pickup.slot}` : ''}
+                        </p>
+                      )}
+                      {detail.estimatedDeliveryDate && (
+                        <p className="mt-1 text-xs text-[#8d8d8d]">Estimated delivery: {fmtDate(detail.estimatedDeliveryDate)}</p>
+                      )}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <a href={adminApi.shipmentLabelUrl(detail._id)} target="_blank" rel="noopener noreferrer" className="kicks-btn kicks-btn-secondary kicks-btn-sm">
+                          View Label
+                        </a>
+                        {detail.status === 'READY_FOR_PICKUP' && !detail.pickup?.requestId && (
+                          <button
+                            type="button"
+                            onClick={() => runMockAction('pickup-schedule', () => adminApi.scheduleMockPickup(detail._id))}
+                            disabled={Boolean(mockBusy)}
+                            className="kicks-btn kicks-btn-secondary kicks-btn-sm disabled:cursor-wait disabled:opacity-60"
+                          >
+                            {mockBusy === 'pickup-schedule' ? 'Scheduling…' : 'Schedule Pickup'}
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-4 text-[10px] uppercase tracking-[0.22em] text-[#8d8d8d]">Simulate carrier event</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {mockValidEvents(detail.status)
+                          .filter(([event]) => ['pickup', 'shipped', 'out_for_delivery', 'delivered'].includes(event))
+                          .map(([event, button]) => (
+                            <button
+                              key={event}
+                              type="button"
+                              onClick={() => runMockAction(`mock-${event}`, () => adminApi.simulateMockEvent(detail._id, event))}
+                              disabled={Boolean(mockBusy)}
+                              className="kicks-btn kicks-btn-secondary kicks-btn-sm disabled:cursor-wait disabled:opacity-60"
+                            >
+                              {mockBusy === `mock-${event}` ? 'Sending…' : `Simulate ${button.label}`}
+                            </button>
+                          ))}
+                      </div>
+                      {mockValidEvents(detail.status).some(([event]) => ['ndr', 'rto', 'rto_transit', 'returned'].includes(event)) && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {mockValidEvents(detail.status)
+                            .filter(([event]) => ['ndr', 'rto', 'rto_transit', 'returned'].includes(event))
+                            .map(([event, button]) => (
+                              <button
+                                key={event}
+                                type="button"
+                                onClick={() => runMockAction(`mock-${event}`, () => adminApi.simulateMockEvent(detail._id, event))}
+                                disabled={Boolean(mockBusy)}
+                                className="kicks-btn kicks-btn-danger kicks-btn-sm uppercase disabled:cursor-wait disabled:opacity-60"
+                              >
+                                {mockBusy === `mock-${event}` ? 'Sending…' : `Simulate ${button.label}`}
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                      {mockError && <p role="alert" className="mt-3 rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{mockError}</p>}
+                    </div>
+                  )}
 
                   {/* Order Info */}
                   {detail.order && (

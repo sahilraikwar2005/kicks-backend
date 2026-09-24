@@ -4,6 +4,16 @@ import ShipmentWebhookEvent from './webhook.model.js';
 import Order from '../orders/model.js';
 import User from '../users/model.js';
 import { shippingConfig } from '../../config/shipping.js';
+import { env } from '../../config/env.js';
+import {
+  MOCK_PROVIDER_NAME,
+  MOCK_ALLOWED_TRANSITIONS,
+  MOCK_SIMULATION_EVENTS,
+  buildMockLabelHtml,
+  createMockShipmentPayload,
+  generateMockAwb,
+  scheduleMockPickupPayload,
+} from './providers/mock.provider.js';
 import {
   sendShippedEmail,
   sendOutForDeliveryEmail,
@@ -39,11 +49,17 @@ const statusRank = {
   PROCESSING: 1,
   CREATED: 2,
   AWB_ASSIGNED: 3,
+  READY_FOR_PICKUP: 3,
+  PICKUP_SCHEDULED: 4,
   SHIPPED: 4,
   PICKED_UP: 5,
   IN_TRANSIT: 6,
   OUT_FOR_DELIVERY: 7,
+  NDR: 7,
+  RTO_INITIATED: 7,
+  RTO_IN_TRANSIT: 7,
   DELIVERED: 8,
+  RETURNED: 8,
   CANCELLED: 9,
   FAILED: 9,
 };
@@ -61,6 +77,18 @@ const statusMap = new Map([
   ['OUT_FOR_DELIVERY', 'OUT_FOR_DELIVERY'],
   ['OUT FOR DELIVERY', 'OUT_FOR_DELIVERY'],
   ['DELIVERED', 'DELIVERED'],
+  ['READY_FOR_PICKUP', 'READY_FOR_PICKUP'],
+  ['READY FOR PICKUP', 'READY_FOR_PICKUP'],
+  ['PICKUP_SCHEDULED', 'PICKUP_SCHEDULED'],
+  ['PICKUP SCHEDULED', 'PICKUP_SCHEDULED'],
+  ['NDR', 'NDR'],
+  ['UNDELIVERED', 'NDR'],
+  ['NOT DELIVERED', 'NDR'],
+  ['RTO_INITIATED', 'RTO_INITIATED'],
+  ['RTO', 'RTO_INITIATED'],
+  ['RTO_IN_TRANSIT', 'RTO_IN_TRANSIT'],
+  ['RETURNED', 'RETURNED'],
+  ['RTO_DELIVERED', 'RETURNED'],
   ['CANCELLED', 'CANCELLED'],
   ['CANCELED', 'CANCELLED'],
   ['FAILED', 'FAILED'],
@@ -176,6 +204,98 @@ const applyOrderShippingStatus = async (orderId, shipmentStatus, shipment = null
   }
 };
 
+const isMockShippingActive = () => shippingConfig.provider === 'mock' && shippingConfig.mockShippingEnabled !== false;
+
+const assertMockShipment = (shipment) => {
+  if (!isMockShippingActive()) throw shipmentError('Mock shipping is disabled', 503);
+  if (!shipment) throw shipmentError('Shipment not found', 404);
+  if (shipment.provider !== MOCK_PROVIDER_NAME || !shipment.isTest) {
+    throw shipmentError('Mock simulation is only available for MOCK test shipments', 400);
+  }
+};
+
+// Provider-independent event applier shared by real webhooks and mock
+// simulations: persist normalized status + timeline event, then map onto the
+// order through the established shipping-status path.
+const applyCarrierStatusChange = async (shipment, {
+  status,
+  source,
+  providerReference = '',
+  occurredAt = null,
+  metadata = {},
+  awb = null,
+  trackingUrl = null,
+} = {}) => {
+  const updated = await Shipment.findByIdAndUpdate(
+    shipment._id,
+    {
+      $set: { status, ...(awb ? { awb } : {}), ...(trackingUrl ? { trackingUrl } : {}) },
+      $push: {
+        events: {
+          status,
+          occurredAt: occurredAt || new Date(),
+          providerReference,
+          source,
+          metadata,
+        },
+      },
+    },
+    { new: true },
+  );
+  await applyOrderShippingStatus(shipment.order, status, updated);
+  return updated;
+};
+
+const markShipmentFailed = async (shipmentId, message, source) => {
+  await Shipment.updateOne(
+    { _id: shipmentId },
+    {
+      $set: { status: 'FAILED', failureReason: message },
+      $push: { events: { status: 'FAILED', source, metadata: { error: message } } },
+    },
+  );
+};
+
+// Builds and persists a clearly-fake shipment for a paid, eligible order.
+// No order status change here: the order stays PACKED/CONFIRMED/PROCESSING
+// until a simulated carrier event moves it through the shared event path.
+const finalizeMockShipment = async (pendingShipment, order) => {
+  const payload = createMockShipmentPayload();
+  let { shipmentId, awb } = payload;
+  for (let attempt = 0; attempt < 5 && await Shipment.exists({ awb }); attempt += 1) {
+    awb = generateMockAwb();
+  }
+  const trackingUrl = `${env.clientUrl || ''}/account/orders/${order._id}`.replace(/^\//, '/');
+  const labelHtml = buildMockLabelHtml(order, { shipmentId, awb });
+  return Shipment.findByIdAndUpdate(
+    pendingShipment._id,
+    {
+      $set: {
+        provider: MOCK_PROVIDER_NAME,
+        isTest: true,
+        shipmentId,
+        awb,
+        trackingUrl,
+        status: 'READY_FOR_PICKUP',
+        labelHtml,
+        estimatedDeliveryDate: payload.estimatedDeliveryDate,
+        pickup: { requestId: '', status: '', date: null, slot: '' },
+        raw: { mock: true, provider: MOCK_PROVIDER_NAME, isTest: true, createdAt: payload.createdAt },
+        failureReason: '',
+      },
+      $push: {
+        events: {
+          $each: [
+            { status: 'READY_FOR_PICKUP', source: MOCK_PROVIDER_NAME, providerReference: shipmentId, metadata: { awb } },
+            { status: 'AWB_ASSIGNED', source: MOCK_PROVIDER_NAME, providerReference: awb, metadata: { mock: true } },
+          ],
+        },
+      },
+    },
+    { new: true },
+  );
+};
+
 export const shipmentService = {
   async createForOrder(orderId) {
     const order = await Order.findById(orderId).populate('user');
@@ -206,6 +326,17 @@ export const shipmentService = {
     }
 
     try {
+      // Mock provider: pure local computation, zero network. Real-courier
+      // paths below stay untouched.
+      if (shippingConfig.provider === 'mock') {
+        if (!isMockShippingActive()) {
+          const message = 'Mock shipping is disabled';
+          await markShipmentFailed(shipment._id, message, MOCK_PROVIDER_NAME);
+          throw shipmentError(message, 503);
+        }
+        return finalizeMockShipment(shipment, order);
+      }
+
       const token = await shiprocketToken();
       const response = await fetch(`${shippingConfig.baseUrl}/v1/external/orders/create/adhoc`, {
         method: 'POST',
@@ -255,8 +386,97 @@ export const shipmentService = {
     }
   },
 
-  async listAdmin({ page = 1, limit = 20, status, provider, search } = {}) {
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  // ---- Mock provider lifecycle (test only, zero network) ----
+
+  async scheduleMockPickup(shipmentId) {
+    const shipment = await Shipment.findById(shipmentId);
+    assertMockShipment(shipment);
+    if (shipment.pickup?.requestId) return shipment;
+    if (shipment.status !== 'READY_FOR_PICKUP') {
+      throw shipmentError(`Pickup can only be scheduled from READY_FOR_PICKUP (current: ${shipment.status})`);
+    }
+    const pickup = scheduleMockPickupPayload();
+    return Shipment.findByIdAndUpdate(
+      shipment._id,
+      {
+        $set: { status: 'PICKUP_SCHEDULED', pickup },
+        $push: {
+          events: {
+            status: 'PICKUP_SCHEDULED',
+            source: MOCK_PROVIDER_NAME,
+            providerReference: pickup.requestId,
+            metadata: { pickupDate: pickup.date, slot: pickup.slot },
+          },
+        },
+      },
+      { new: true },
+    );
+  },
+
+  async simulateMockEvent(shipmentId, event) {
+    const shipment = await Shipment.findById(shipmentId);
+    assertMockShipment(shipment);
+    const target = MOCK_SIMULATION_EVENTS[String(event || '').toLowerCase()];
+    if (!target) throw shipmentError(`Unknown mock event: ${event}`);
+    // Same-state replay is an idempotent no-op: no write, no side effects.
+    if (target === shipment.status) return { duplicate: true, eventId: null, status: shipment.status };
+    const allowed = MOCK_ALLOWED_TRANSITIONS[shipment.status] || [];
+    if (!allowed.includes(target)) {
+      throw shipmentError(`Cannot move mock shipment from ${shipment.status} to ${target}`);
+    }
+
+    // Deterministic event id: exact replays dedupe, legitimate repeats
+    // (NDR → OFD → NDR) get a per-occurrence suffix from the timeline.
+    const priorCount = (shipment.events || []).filter(
+      (item) => item?.source === MOCK_PROVIDER_NAME && item?.metadata?.mockEvent === event,
+    ).length;
+    const eventId = `mock:${shipment.shipmentId}:${event}:${priorCount}`;
+
+    let eventRecord;
+    try {
+      eventRecord = await ShipmentWebhookEvent.create({
+        provider: MOCK_PROVIDER_NAME,
+        eventId,
+        eventType: event,
+        payloadHash: `mock:${shipment.shipmentId}:${target}:${priorCount}`,
+        status: 'RECEIVED',
+        attempts: 1,
+        metadata: { provider: MOCK_PROVIDER_NAME, mockEvent: event },
+      });
+    } catch (error) {
+      if (error.code !== 11000) throw error;
+      return { duplicate: true, eventId, status: shipment.status };
+    }
+
+    const claimed = await ShipmentWebhookEvent.findOneAndUpdate(
+      { _id: eventRecord._id, status: 'RECEIVED' },
+      { $set: { status: 'PROCESSING', lastError: '' }, $inc: { attempts: 1 } },
+      { new: true },
+    );
+    if (!claimed) return { duplicate: true, eventId, status: shipment.status };
+
+    try {
+      const updated = await applyCarrierStatusChange(shipment, {
+        status: target,
+        source: MOCK_PROVIDER_NAME,
+        providerReference: shipment.shipmentId,
+        metadata: { mockEvent: event },
+      });
+      await ShipmentWebhookEvent.updateOne({ _id: claimed._id }, { $set: { status: 'PROCESSED', processedAt: new Date(), lastError: '' } });
+      return { shipment: updated, eventId, status: target };
+    } catch (error) {
+      await ShipmentWebhookEvent.updateOne({ _id: claimed._id }, { $set: { status: 'FAILED', lastError: error.message || 'Mock event failed' } });
+      throw error;
+    }
+  },
+
+  async getShipmentLabel(shipmentId) {
+    const shipment = await Shipment.findById(shipmentId).select('shipmentId awb labelHtml provider isTest').lean();
+    if (!shipment || !shipment.labelHtml) throw shipmentError('Shipping label not found', 404);
+    return shipment;
+  },
+
+  async listAdmin({ page = 1, limit = 20, status, provider, search } = {}) {    const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
 
@@ -414,27 +634,15 @@ export const shipmentService = {
         return { received: true, ignored: true, eventId };
       }
 
-      const updatedShipment = await Shipment.findByIdAndUpdate(
-        shipment._id,
-        {
-          $set: {
-            status: providerStatus,
-            awb: payload.awb || payload.awb_code || shipment.awb,
-            trackingUrl: payload.tracking_url || shipment.trackingUrl,
-          },
-          $push: {
-            events: {
-              status: providerStatus,
-              occurredAt: payload.event_time ? new Date(payload.event_time) : new Date(),
-              providerReference: String(payload.shipment_id || payload.awb || payload.awb_code || ''),
-              source: shippingConfig.provider,
-              metadata: { providerStatus: payload.current_status || payload.status || payload.shipment_status || '' },
-            },
-          },
-        },
-        { new: true },
-      );
-      await applyOrderShippingStatus(shipment.order, providerStatus, updatedShipment);
+      await applyCarrierStatusChange(shipment, {
+        status: providerStatus,
+        source: shippingConfig.provider,
+        providerReference: String(payload.shipment_id || payload.awb || payload.awb_code || ''),
+        occurredAt: payload.event_time ? new Date(payload.event_time) : null,
+        metadata: { providerStatus: payload.current_status || payload.status || payload.shipment_status || '' },
+        awb: payload.awb || payload.awb_code || null,
+        trackingUrl: payload.tracking_url || null,
+      });
       await ShipmentWebhookEvent.updateOne({ _id: claimed._id }, { $set: { status: 'PROCESSED', processedAt: new Date(), lastError: '' } });
       return { received: true, eventId, status: providerStatus };
     } catch (error) {

@@ -2,6 +2,7 @@ import { env } from './env.js';
 
 export const shippingConfig = {
   provider: env.shippingProvider,
+  mockShippingEnabled: env.mockShippingEnabled,
   apiKey: env.shippingApiKey,
   apiSecret: env.shippingApiSecret,
   pickupLocation: env.shippingPickupLocation,
@@ -12,4 +13,6 @@ export const shippingConfig = {
 
 export const shippingProviderMap = {
   shiprocket: 'shiprocket',
+  mock: 'mock',
+  delhivery: 'delhivery',
 };
