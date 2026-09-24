@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import Product from '../products/model.js';
 import Inventory, { InventoryMovement } from './model.js';
 
+// Single-operation safety cap for bulk stock adjustments. Normal restocks
+// (tens/hundreds of units) pass comfortably; typos like 1000000 are rejected.
+const MAX_STOCK_ADJUSTMENT = 10000;
+
 const normalizeQty = (qty) => {
   const amount = Number(qty);
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -264,6 +268,18 @@ export const inventoryService = {
       error.statusCode = 400;
       throw error;
     }
+    // Bulk adjustments are single atomic $inc operations, but fractional or
+    // absurd quantities must never reach stock counts.
+    if (!Number.isInteger(adjustment)) {
+      const error = new Error('Adjustment quantity must be a whole number of units');
+      error.statusCode = 400;
+      throw error;
+    }
+    if (Math.abs(adjustment) > MAX_STOCK_ADJUSTMENT) {
+      const error = new Error(`Adjustment quantity must not exceed ${MAX_STOCK_ADJUSTMENT} units per operation`);
+      error.statusCode = 400;
+      throw error;
+    }
 
     const { inventory } = await ensureInventory(productId, variantId);
 
@@ -279,7 +295,7 @@ export const inventoryService = {
     );
 
     if (!doc) {
-      const error = new Error('Inventory adjustment would create negative stock');
+      const error = new Error('Cannot remove more stock than currently available.');
       error.statusCode = 409;
       throw error;
     }
