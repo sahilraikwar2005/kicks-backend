@@ -212,6 +212,46 @@ const cloudinaryThumb = (url, width = 160) => {
   return `${url.slice(0, index + marker.length)}w_${size},q_auto,f_auto/${after}`;
 };
 
+// Compact stacked product thumbnails for admin order rows. Uses the
+// order-item image snapshot first (the exact purchased image), then a
+// populated product image, then the neutral placeholder — never broken.
+const orderItemThumbSrc = (item) => {
+  if (item?.image) return item.image;
+  const product = item?.productId;
+  if (product && typeof product === 'object' && Array.isArray(product.images) && product.images[0]) {
+    return product.images[0];
+  }
+  return NEUTRAL_PRODUCT_IMAGE;
+};
+
+const orderItemThumbName = (item) => item?.name || item?.productName
+  || (item?.productId && typeof item.productId === 'object' ? item.productId.name : '') || 'Product';
+
+const OrderProductThumbs = ({ items }) => {
+  const list = Array.isArray(items) ? items : [];
+  if (list.length === 0) return null;
+  const visible = list.slice(0, 3);
+  const extra = list.length - visible.length;
+  return (
+    <span className="inline-flex items-center">
+      {visible.map((item, index) => (
+        <img
+          key={item?._id || item?.variantId || index}
+          src={cloudinaryThumb(orderItemThumbSrc(item), 96)}
+          alt=""
+          title={orderItemThumbName(item)}
+          loading="lazy"
+          onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }}
+          className={`h-10 w-10 rounded-lg border border-white/10 bg-[#181818] object-cover ${index > 0 ? '-ml-3' : ''}`}
+        />
+      ))}
+      {extra > 0 && (
+        <span className="-ml-3 flex h-10 min-w-10 items-center justify-center rounded-lg border border-white/10 bg-[#181818] px-1 text-[11px] font-bold text-white">+{extra}</span>
+      )}
+    </span>
+  );
+};
+
 // Normalizes persisted product.colorImages into { DisplayName: [urls] }.
 const normalizePersistedColorImages = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -6351,7 +6391,7 @@ function AdminPage({ initialSection }) {
               <div className="mt-4 space-y-2.5">
                 {expandedOrder.items.map((item, index) => (
                   <div key={item._id || item.variantId || index} className="flex items-center gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] p-3">
-                    {item.image && <img src={item.image} alt={item.name || item.productName || 'Product'} className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />}
+                    {item.image && <img src={cloudinaryThumb(item.image, 128)} alt={item.name || item.productName || 'Product'} className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-white">{item.name || item.productName || 'Product'}</div>
                       <div className="mt-0.5 truncate text-xs text-[#8d8d8d]">{[item.size, item.color].filter(Boolean).join(' • ') || ''} × {item.quantity || 1}</div>
@@ -6374,7 +6414,7 @@ function AdminPage({ initialSection }) {
                 columns={[
                   { key: 'orderNumber', label: 'Order', render: (row) => <div><div className="font-semibold text-white">{row.orderNumber}</div><div className="mt-0.5 text-[11px] text-[#8d8d8d]">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</div></div> },
                   { key: 'customer', label: 'Customer', render: (row) => <div><div className="text-white">{`${row.customerSnapshot?.firstName || ''} ${row.customerSnapshot?.lastName || ''}`.trim() || '—'}</div><div className="text-[11px] text-[#8d8d8d]">{row.customerSnapshot?.email || ''}</div></div> },
-                  { key: 'items', label: 'Items', render: (row) => <span>{row.items?.length || 0}</span> },
+                  { key: 'items', label: 'Items', render: (row) => <span className="inline-flex items-center gap-2"><OrderProductThumbs items={row.items} /><span>{row.items?.length || 0}</span></span> },
                   { key: 'grandTotal', label: 'Amount', render: (row) => <span className="font-semibold text-white">{formatMoney(row.grandTotal || 0)}</span> },
                   { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
                   { key: 'paymentStatus', label: 'Payment', render: (row) => <StatusBadge status={row.paymentStatus} /> },
@@ -6396,6 +6436,9 @@ function AdminPage({ initialSection }) {
                     </div>
                     <span className="shrink-0 font-semibold text-white">{formatMoney(row.grandTotal || 0)}</span>
                   </div>
+                  {Array.isArray(row.items) && row.items.length > 0 && (
+                    <div className="mt-2"><OrderProductThumbs items={row.items} /></div>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <StatusBadge status={row.status} />
                     <StatusBadge status={row.paymentStatus} />
