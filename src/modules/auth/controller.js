@@ -1,6 +1,7 @@
 import { apiSuccess } from '../../utils/apiResponse.js';
 import { authService } from './service.js';
 import { registrationService } from './registration.service.js';
+import { passwordResetService } from './passwordReset.service.js';
 
 export const authController = {
   register: async (req, res) => {
@@ -79,4 +80,30 @@ export const authController = {
 
   verifyEmail: async (req, res) => res.status(200).json(apiSuccess('Email verified', { user: await authService.verifyEmail(req.body.token) })),
   resendVerification: async (req, res) => { await authService.resendVerification(req.user._id); return res.status(200).json(apiSuccess('Verification email sent', { ok: true })); },
+
+  requestPasswordReset: async (req, res) => {
+    const result = await passwordResetService.requestReset({ email: req.body.email });
+    return res.status(200).json(apiSuccess('If an account exists for this email, a verification code has been sent.', result));
+  },
+
+  verifyPasswordResetOtp: async (req, res) => {
+    const result = await passwordResetService.verifyOtp({ email: req.body.email, code: req.body.code });
+    return res.status(200).json(apiSuccess('Code verified. Choose a new password.', result));
+  },
+
+  resendPasswordResetOtp: async (req, res) => {
+    const result = await passwordResetService.resendOtp({ email: req.body.email });
+    return res.status(200).json(apiSuccess('If an account exists for this email, a verification code has been sent.', result));
+  },
+
+  confirmPasswordReset: async (req, res) => {
+    await passwordResetService.confirmReset({
+      email: req.body.email,
+      resetToken: req.body.resetToken,
+      newPassword: req.body.newPassword,
+      confirmPassword: req.body.confirmPassword,
+    });
+    authService.clearAuthCookies(res);
+    return res.status(200).json(apiSuccess('Password reset successfully. Please log in again.', { ok: true }));
+  },
 };

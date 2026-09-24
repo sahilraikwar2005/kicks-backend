@@ -39,12 +39,12 @@ export function generateOtp() {
   return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
 }
 
-function hashOtp(otp) {
+export function hashOtp(otp) {
   const pepper = String(process.env.SESSION_SECRET || env.sessionSecret || 'kicks-otp-pepper');
   return crypto.createHmac('sha256', pepper).update(String(otp)).digest('hex');
 }
 
-function safeEqualHex(a, b) {
+export function safeEqualHex(a, b) {
   const left = Buffer.from(String(a || ''), 'hex');
   const right = Buffer.from(String(b || ''), 'hex');
   if (left.length !== right.length || left.length === 0) return false;

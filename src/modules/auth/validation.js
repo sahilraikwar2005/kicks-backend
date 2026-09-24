@@ -43,3 +43,23 @@ export const changePasswordSchema = Joi.object({
 }).unknown(false);
 
 export const verificationSchema = Joi.object({ token: Joi.string().required() }).unknown(false);
+
+export const passwordResetRequestSchema = Joi.object({
+  email: emailRule,
+}).unknown(false);
+
+export const passwordResetVerifySchema = Joi.object({
+  email: emailRule,
+  code: Joi.string().trim().pattern(/^\d{6}$/).required(),
+}).unknown(false);
+
+export const passwordResetResendSchema = Joi.object({
+  email: emailRule,
+}).unknown(false);
+
+export const passwordResetConfirmSchema = Joi.object({
+  email: emailRule,
+  resetToken: Joi.string().trim().min(16).max(256).required(),
+  newPassword: Joi.string().min(8).max(128).required(),
+  confirmPassword: Joi.string().optional(),
+}).unknown(false);

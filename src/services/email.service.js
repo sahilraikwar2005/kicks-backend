@@ -132,6 +132,28 @@ export async function sendOtpEmail({ to, firstName, otp }) {
 }
 
 /**
+ * 2c. Password-reset OTP (email channel)
+ */
+export async function sendPasswordResetOtpEmail({ to, firstName, otp }) {
+  const name = firstName ? escapeHtml(firstName) : 'there';
+  const subject = 'Your AJ SPORTS password reset code';
+  const text = `Hi ${firstName || 'there'},\n\nWe received a request to reset your AJ SPORTS account password. Your verification code is:\n${otp}\n\nThis code expires in 10 minutes. Do not share this code with anyone.\n\nIf you did not request a password reset, you can safely ignore this email; your account remains secure.\n\nThe AJ SPORTS Team`;
+  const html = emailLayout({
+    title: subject,
+    content: `
+      <h2 style="margin-top: 0; color: #09090b; font-size: 20px; font-weight: 700;">Reset your password</h2>
+      <p style="color: #3f3f46; font-size: 15px; line-height: 1.6;">Hi ${name}, use the code below to verify it is you and choose a new AJ SPORTS password.</p>
+      <div style="margin: 24px 0; text-align: center; background-color: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; padding: 20px;">
+        <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #09090b;">${escapeHtml(otp)}</span>
+      </div>
+      <p style="color: #71717a; font-size: 13px; line-height: 1.5;">This code expires in 10 minutes. Do not share this code with anyone.<br>If you did not request a password reset, you can safely ignore this email.</p>
+    `,
+  });
+
+  return sendEmail({ to, subject, text, html });
+}
+
+/**
  * 2. Email Verification & Resend Verification
  */
 export async function sendVerificationEmail(user, url) {

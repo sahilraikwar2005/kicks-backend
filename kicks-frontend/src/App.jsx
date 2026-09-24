@@ -2667,8 +2667,9 @@ function AccountOrdersSection() {
 
 function AccountPasswordSection() {
   const { showToast } = useToast();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const forgotHref = user?.email ? `/forgot-password?email=${encodeURIComponent(user.email)}` : '/forgot-password';
   const passwordChangeSchema = z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z.string().min(8, 'New password must be at least 8 characters'),
@@ -2728,6 +2729,11 @@ function AccountPasswordSection() {
             error={errors.currentPassword?.message}
             placeholder="Enter current password"
           />
+          <div className="-mt-2">
+            <Link to={forgotHref} className="text-sm text-[#a8a8a8] underline decoration-white/20 underline-offset-4 hover:text-white">
+              Forgot your current password?
+            </Link>
+          </div>
 
           <PasswordField
             label="New Password"
@@ -3335,42 +3341,284 @@ function RegisterPage() {
   );
 }
 
-function ForgotPasswordPage() {
-  const { showToast } = useToast();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-    resolver: zodResolver(z.object({ email: z.string().email('Valid email required') })),
-    defaultValues: { email: '' },
-  });
-  const [submitted, setSubmitted] = useState(false);
+// Parses "Resend available in N seconds." with a safe fallback (the shared
+// error middleware only forwards status + message, not extra fields).
+const parseCooldownSeconds = (message, fallback = 60) => {
+  const match = String(message || '').match(/(\d+)\s*seconds?/i);
+  const seconds = match ? Number(match[1]) : NaN;
+  return Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds, 300) : fallback;
+};
 
-  const onSubmit = async (values) => {
+const errorStatus = (error) => error?.status ?? error?.response?.status ?? 0;
+
+// Reusable email-OTP password reset flow shared by Login and Account Center.
+// Phases: email -> otp -> password, then redirect to Login. Every async
+// action clears its loading state in finally — the UI never hangs.
+function PasswordResetFlow({ initialEmail = '' }) {
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [phase, setPhase] = useState('email');
+  const [email, setEmail] = useState(initialEmail);
+  const [emailError, setEmailError] = useState('');
+  const [masked, setMasked] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const resetPasswordSchema = z.object({
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm your new password'),
+  }).refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+  const passwordForm = useForm({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { newPassword: '', confirmPassword: '' },
+  });
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setInterval(() => setCooldown((current) => Math.max(0, current - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
+  const onSendOtp = async (event) => {
+    event.preventDefault();
+    if (!z.string().email('Valid email required').safeParse(normalizedEmail).success) {
+      setEmailError('Valid email required');
+      return;
+    }
+    setEmailError('');
+    setSending(true);
     try {
-      await authApi.forgotPassword(values);
-      setSubmitted(true);
-      showToast('Reset instructions were sent if the email is registered.', 'success');
+      const response = await authApi.requestPasswordReset({ email: normalizedEmail });
+      const result = response?.data ?? response ?? {};
+      setMasked(result.identifier || '');
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpError('');
+      setCooldown(Number(result.resendAfterSeconds) || 60);
+      setPhase('otp');
+      showToast('If an account exists for this email, a verification code has been sent.', 'success');
     } catch (error) {
-      showToast(error?.message || 'Could not send reset instructions.', 'error');
+      showToast(error?.message || 'Could not send the verification code.', 'error');
+    } finally {
+      setSending(false);
     }
   };
 
+  const focusResetOtpBox = (index) => {
+    if (typeof document === 'undefined') return;
+    const box = document.getElementById(`reset-otp-${index}`);
+    if (box) box.focus();
+  };
+
+  const handleResetOtpChange = (index, value) => {
+    const digit = String(value || '').replace(/\D/g, '').slice(-1);
+    setOtpDigits((current) => {
+      const next = [...current];
+      next[index] = digit;
+      return next;
+    });
+    setOtpError('');
+    if (digit && index < 5) focusResetOtpBox(index + 1);
+  };
+
+  const handleResetOtpKeyDown = (index, event) => {
+    if (event.key === 'Backspace' && !otpDigits[index] && index > 0) focusResetOtpBox(index - 1);
+  };
+
+  const handleResetOtpPaste = (event) => {
+    event.preventDefault();
+    const digits = String(event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6).split('');
+    if (digits.length === 0) return;
+    setOtpDigits((current) => current.map((_, index) => digits[index] || ''));
+    setOtpError('');
+    focusResetOtpBox(Math.min(digits.length, 5));
+  };
+
+  const onVerifyOtp = async (event) => {
+    event.preventDefault();
+    const code = otpDigits.join('');
+    if (code.length !== 6) {
+      setOtpError('Enter the 6-digit code.');
+      return;
+    }
+    setVerifying(true);
+    setOtpError('');
+    try {
+      const response = await authApi.verifyPasswordResetOtp({ email: normalizedEmail, code });
+      const result = response?.data ?? response ?? {};
+      if (!result.resetToken) throw new Error('Verification failed. Please try again.');
+      setResetToken(result.resetToken);
+      setPhase('password');
+      showToast('Code verified. Choose a new password.', 'success');
+    } catch (error) {
+      setOtpError(error?.message || 'Verification failed. Please try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const onResend = async () => {
+    if (resending || cooldown > 0) return;
+    setResending(true);
+    try {
+      const response = await authApi.resendPasswordResetOtp({ email: normalizedEmail });
+      const result = response?.data ?? response ?? {};
+      setMasked(result.identifier || masked);
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpError('');
+      setCooldown(Number(result.resendAfterSeconds) || 60);
+      showToast('A new code was sent.', 'success');
+    } catch (error) {
+      if (errorStatus(error) === 429) setCooldown(parseCooldownSeconds(error?.message));
+      showToast(error?.message || 'Could not resend the code.', 'error');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const onResetPassword = async (values) => {
+    try {
+      await authApi.confirmPasswordReset({
+        email: normalizedEmail,
+        resetToken,
+        newPassword: values.newPassword,
+        confirmPassword: values.confirmPassword,
+      });
+      showToast('Password reset successfully. Please log in again.', 'success');
+      try {
+        await logout();
+      } finally {
+        navigate('/login', { replace: true });
+      }
+    } catch (error) {
+      showToast(error?.message || 'Could not reset the password.', 'error');
+    }
+  };
+
+  if (phase === 'otp') {
+    return (
+      <div>
+        <p className="text-sm text-[#d0d0d0]">
+          Enter the 6-digit code{masked ? <> sent to <span className="font-semibold text-white">{masked}</span></> : ' sent to your email'}.
+        </p>
+        <form onSubmit={onVerifyOtp} className="mt-5">
+          <div className="flex gap-1.5 sm:gap-2" role="group" aria-label="Enter the 6-digit verification code">
+            {otpDigits.map((digit, index) => (
+              <input
+                key={index}
+                id={`reset-otp-${index}`}
+                value={digit}
+                onChange={(event) => handleResetOtpChange(index, event.target.value)}
+                onKeyDown={(event) => handleResetOtpKeyDown(index, event)}
+                onPaste={handleResetOtpPaste}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label={`Digit ${index + 1}`}
+                maxLength={1}
+                className="h-12 min-w-0 flex-1 rounded-[10px] border border-white/10 bg-[#181818] text-center text-lg font-bold text-white outline-none transition focus:border-white/40"
+              />
+            ))}
+          </div>
+
+          {otpError && <p role="alert" className="mt-3 rounded-[14px] border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{otpError}</p>}
+
+          <button type="submit" disabled={verifying} className="mt-5 w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-wait disabled:opacity-60">
+            {verifying ? 'Verifying...' : 'Verify code'}
+          </button>
+        </form>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+          {cooldown > 0 ? (
+            <span className="text-[#8d8d8d]" aria-live="polite">
+              Resend code in 00:{String(cooldown).padStart(2, '0')}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={onResend}
+              disabled={resending}
+              className="text-white underline decoration-white/30 underline-offset-4 hover:decoration-white disabled:opacity-60"
+            >
+              {resending ? 'Sending...' : 'Resend OTP'}
+            </button>
+          )}
+          <button type="button" onClick={() => { setPhase('email'); setOtpError(''); }} className="text-[#a8a8a8] underline decoration-white/20 underline-offset-4 hover:text-white">
+            Use a different email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'password') {
+    const { register: resetRegister, handleSubmit: handleResetSubmit, formState: { errors: resetErrors, isSubmitting: isResetting } } = passwordForm;
+    return (
+      <form onSubmit={handleResetSubmit(onResetPassword)} className="space-y-5">
+        <PasswordField
+          label="New Password"
+          name="newPassword"
+          register={resetRegister}
+          error={resetErrors.newPassword?.message}
+          placeholder="Minimum 8 characters"
+        />
+        <PasswordField
+          label="Confirm New Password"
+          name="confirmPassword"
+          register={resetRegister}
+          error={resetErrors.confirmPassword?.message}
+          placeholder="Confirm new password"
+        />
+        <button type="submit" disabled={isResetting} className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
+          {isResetting ? 'Resetting...' : 'Reset password'}
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={onSendOtp} className="space-y-5" noValidate>
+      <div>
+        <label htmlFor="reset-email" className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
+        <input
+          id="reset-email"
+          type="email"
+          value={email}
+          onChange={(event) => { setEmail(event.target.value); setEmailError(''); }}
+          placeholder="you@example.com"
+          autoComplete="email"
+          className="w-full kicks-field text-white outline-none transition focus:border-white/25"
+        />
+        {emailError && <p className="mt-2 text-sm text-red-300">{emailError}</p>}
+      </div>
+      <button type="submit" disabled={sending} className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">
+        {sending ? 'Sending...' : 'Send OTP'}
+      </button>
+    </form>
+  );
+}
+
+function ForgotPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const prefill = searchParams.get('email') || '';
   return (
     <div className="mx-auto max-w-[520px] px-4 py-6 sm:py-12 lg:px-8">
       <PageMeta title="Forgot password | AJ SPORTS" description="Recover your AJ SPORTS account" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 sm:p-8 md:p-10">
         <p className="kicks-eyebrow">Account</p>
         <h1 className="mt-4 kicks-section-title">Forgot password</h1>
-        {submitted ? (
-          <p className="mt-6 text-[#d0d0d0]">If the email exists, a reset link has been sent.</p>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-            <div>
-              <label className="mb-2 block text-sm text-[#d5d5d5]">Email</label>
-              <input {...register('email')} className="w-full kicks-field text-white outline-none transition focus:border-white/25" />
-              {errors.email && <p className="mt-2 text-sm text-red-300">{errors.email.message}</p>}
-            </div>
-            <button type="submit" disabled={isSubmitting} className="w-full kicks-btn kicks-btn-primary transition hover:bg-[#e4e4e4] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
-          </form>
-        )}
+        <div className="mt-8">
+          <PasswordResetFlow key={prefill} initialEmail={prefill} />
+        </div>
       </div>
     </div>
   );

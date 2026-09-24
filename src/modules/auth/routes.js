@@ -12,6 +12,10 @@ import {
   refreshSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  passwordResetRequestSchema,
+  passwordResetVerifySchema,
+  passwordResetResendSchema,
+  passwordResetConfirmSchema,
   changePasswordSchema,
   verificationSchema,
 } from './validation.js';
@@ -31,5 +35,9 @@ router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(authC
 router.post('/change-password', protect, validate(changePasswordSchema), asyncHandler(authController.changePassword));
 router.post('/verify-email', validate(verificationSchema), asyncHandler(authController.verifyEmail));
 router.post('/resend-verification', protect, asyncHandler(authController.resendVerification));
+router.post('/password-reset/request', authRateLimiter, validate(passwordResetRequestSchema), asyncHandler(authController.requestPasswordReset));
+router.post('/password-reset/verify', authRateLimiter, validate(passwordResetVerifySchema), asyncHandler(authController.verifyPasswordResetOtp));
+router.post('/password-reset/resend', authRateLimiter, validate(passwordResetResendSchema), asyncHandler(authController.resendPasswordResetOtp));
+router.post('/password-reset/confirm', authRateLimiter, validate(passwordResetConfirmSchema), asyncHandler(authController.confirmPasswordReset));
 
 export default router;
