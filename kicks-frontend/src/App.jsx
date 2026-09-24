@@ -18,6 +18,7 @@ import {
   FileText,
   Heart,
   Info,
+  IndianRupee,
   KeyRound,
   LayoutDashboard,
   Loader2,
@@ -31,7 +32,6 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
-  TrendingUp,
   Truck,
   RefreshCw,
   Users,
@@ -4454,16 +4454,16 @@ function AdminPageHeader({ eyebrow, title, meta, actions }) {
 
 function AdminKpi({ icon: Icon, label, value, sub }) {
   return (
-    <div className="rounded-[14px] border border-white/[0.08] bg-[#0d0d0d] p-4 transition hover:border-white/[0.16]">
+    <div className="rounded-[18px] border border-white/[0.08] bg-[#0d0d0d] p-5 transition hover:border-white/[0.16]">
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">{label}</p>
+        <p className="truncate text-[11px] font-medium tracking-[0.04em] text-[#a0a0a0]">{label}</p>
         {Icon && (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[#FFC800]/25 bg-[#FFC800]/[0.08] text-[#FFC800]" aria-hidden="true">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.04] text-[#FFC800]" aria-hidden="true">
             <Icon size={14} />
           </span>
         )}
       </div>
-      <p className="mt-2.5 truncate text-[26px] font-black leading-none tracking-[-0.03em] text-white">{value}</p>
+      <p className="mt-2.5 truncate text-[28px] font-black leading-none tracking-[-0.03em] text-white">{value}</p>
       {sub && <p className="mt-1.5 truncate text-xs text-[#8d8d8d]">{sub}</p>}
     </div>
   );
@@ -4634,7 +4634,7 @@ function AdminPage({ initialSection }) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <AdminKpi icon={TrendingUp} label="Revenue" value={metrics.totalRevenue ? formatMoney(metrics.totalRevenue) : '—'} sub="Gross sales" />
+          <AdminKpi icon={IndianRupee} label="Revenue" value={metrics.totalRevenue ? formatMoney(metrics.totalRevenue) : '—'} sub="Gross sales" />
           <AdminKpi icon={Package} label="Orders" value={metrics.totalOrders ?? '—'} sub={`${metrics.pendingOrders || 0} pending`} />
           <AdminKpi icon={Users} label="Customers" value={metrics.totalUsers ?? '—'} sub="Accounts" />
           <AdminKpi icon={ShoppingBag} label="Products" value={metrics.totalProducts ?? '—'} sub="Catalog" />
@@ -4644,22 +4644,22 @@ function AdminPage({ initialSection }) {
           eyebrow="Sales overview"
           title="Online vs offline"
           action={(
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Sales time range">
+            <div className="flex flex-wrap gap-1 rounded-[12px] border border-white/10 bg-white/[0.03] p-1" role="group" aria-label="Sales time range">
               {[
                 { value: 'today', label: 'Today' },
-                { value: '7d', label: '7 Days' },
-                { value: '30d', label: '30 Days' },
-                { value: 'all', label: 'All Time' },
+                { value: '7d', label: '7 days' },
+                { value: '30d', label: '30 days' },
+                { value: 'all', label: 'All time' },
               ].map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setSalesRange(option.value)}
                   aria-pressed={salesRange === option.value}
-                  className={`inline-flex h-8 items-center rounded-[8px] border px-3 text-[11px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
+                  className={`inline-flex h-8 items-center rounded-[8px] px-3.5 text-[12px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#FFC800]/60 ${
                     salesRange === option.value
-                      ? 'border-[#FFC800]/50 bg-[#FFC800]/10 text-[#FFC800]'
-                      : 'border-white/10 text-[#a8a8a8] hover:border-white/30 hover:text-white'
+                      ? 'bg-[#FFC800] text-black'
+                      : 'text-[#a8a8a8] hover:text-white'
                   }`}
                 >
                   {option.label}
@@ -4677,51 +4677,51 @@ function AdminPage({ initialSection }) {
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Online sales</p>
-                  <p className="mt-2 truncate text-2xl font-black tracking-[-0.03em] text-white">{formatMoney(sales.online.revenue)}</p>
+                <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-5">
+                  <p className="text-[13px] font-medium text-[#d5d5d5]">Online sales</p>
+                  <p className="mt-2 truncate text-[26px] font-black tracking-[-0.03em] text-white">{formatMoney(sales.online.revenue)}</p>
                   <p className="mt-1 truncate text-xs text-[#8d8d8d]">{sales.online.orders} order{sales.online.orders === 1 ? '' : 's'} • {sales.online.items} item{sales.online.items === 1 ? '' : 's'}</p>
                 </div>
-                <div className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Offline sales</p>
-                  <p className="mt-2 truncate text-2xl font-black tracking-[-0.03em] text-white">{sales.offline.items} item{sales.offline.items === 1 ? '' : 's'}</p>
-                  <p className="mt-1 truncate text-xs text-[#8d8d8d]">revenue not tracked</p>
+                <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-5">
+                  <p className="text-[13px] font-medium text-[#d5d5d5]">Offline sales</p>
+                  <p className="mt-2 truncate text-[26px] font-black tracking-[-0.03em] text-white">{sales.offline.items} item{sales.offline.items === 1 ? '' : 's'}</p>
+                  <p className="mt-1 truncate text-xs text-[#8d8d8d]">Revenue not tracked</p>
                 </div>
-                <div className="rounded-[12px] border border-[#FFC800]/25 bg-[#FFC800]/[0.05] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8d8d8d]">Total sales</p>
-                  <p className="mt-2 truncate text-2xl font-black tracking-[-0.03em] text-white">{formatMoney(sales.total.revenue)}</p>
+                <div className="rounded-[16px] border border-[#FFC800]/25 bg-[#FFC800]/[0.07] p-5">
+                  <p className="text-[13px] font-medium text-[#d5d5d5]">Total sales</p>
+                  <p className="mt-2 truncate text-[26px] font-black tracking-[-0.03em] text-[#FFC800]">{formatMoney(sales.total.revenue)}</p>
                   <p className="mt-1 truncate text-xs text-[#8d8d8d]">{sales.total.orders} order{sales.total.orders === 1 ? '' : 's'} • {sales.total.items} item{sales.total.items === 1 ? '' : 's'}</p>
                 </div>
               </div>
 
-              <div className="mt-4 overflow-x-auto rounded-[12px] border border-white/[0.08]">
+              <div className="mt-4 overflow-x-auto rounded-[16px] border border-white/[0.08] bg-white/[0.01] px-2">
                 <table className="w-full min-w-[420px] text-left text-[13px]">
                   <thead>
-                    <tr>
-                      <th scope="col" className="px-3 py-2.5 font-semibold"><span className="sr-only">Metric</span></th>
-                      <th scope="col" className="px-3 py-2.5 font-semibold">Online</th>
-                      <th scope="col" className="px-3 py-2.5 font-semibold">Offline</th>
-                      <th scope="col" className="px-3 py-2.5 font-semibold">Total</th>
+                    <tr className="border-b border-white/[0.08] text-xs text-[#8d8d8d]">
+                      <th scope="col" className="px-3 py-3 font-medium"><span className="sr-only">Metric</span></th>
+                      <th scope="col" className="px-3 py-3 font-medium">Online</th>
+                      <th scope="col" className="px-3 py-3 font-medium">Offline</th>
+                      <th scope="col" className="px-3 py-3 text-right font-medium">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td className="px-3 py-2 text-[#a0a0a0]">Orders</td>
-                      <td className="px-3 py-2 font-semibold text-white">{sales.online.orders}</td>
-                      <td className="px-3 py-2 text-[#767676]">—</td>
-                      <td className="px-3 py-2 font-semibold text-white">{sales.total.orders}</td>
+                    <tr className="border-b border-white/[0.06]">
+                      <td className="px-3 py-3 text-[#d5d5d5]">Orders</td>
+                      <td className="px-3 py-3 font-semibold text-white">{sales.online.orders}</td>
+                      <td className="px-3 py-3 text-[#767676]">—</td>
+                      <td className="px-3 py-3 text-right font-semibold text-white">{sales.total.orders}</td>
+                    </tr>
+                    <tr className="border-b border-white/[0.06]">
+                      <td className="px-3 py-3 text-[#d5d5d5]">Items</td>
+                      <td className="px-3 py-3 font-semibold text-white">{sales.online.items}</td>
+                      <td className="px-3 py-3 font-semibold text-white">{sales.offline.items}</td>
+                      <td className="px-3 py-3 text-right font-semibold text-white">{sales.total.items}</td>
                     </tr>
                     <tr>
-                      <td className="px-3 py-2 text-[#a0a0a0]">Items</td>
-                      <td className="px-3 py-2 font-semibold text-white">{sales.online.items}</td>
-                      <td className="px-3 py-2 font-semibold text-white">{sales.offline.items}</td>
-                      <td className="px-3 py-2 font-semibold text-white">{sales.total.items}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-2 text-[#a0a0a0]">Revenue</td>
-                      <td className="px-3 py-2 font-semibold text-white">{formatMoney(sales.online.revenue)}</td>
-                      <td className="px-3 py-2 text-[#767676]">—</td>
-                      <td className="px-3 py-2 font-semibold text-white">{formatMoney(sales.total.revenue)}</td>
+                      <td className="px-3 py-3 text-[#d5d5d5]">Revenue</td>
+                      <td className="px-3 py-3 font-semibold text-white">{formatMoney(sales.online.revenue)}</td>
+                      <td className="px-3 py-3 text-[#767676]">—</td>
+                      <td className="px-3 py-3 text-right font-semibold text-white">{formatMoney(sales.total.revenue)}</td>
                     </tr>
                   </tbody>
                 </table>
