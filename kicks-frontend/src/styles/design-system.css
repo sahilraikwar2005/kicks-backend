@@ -459,6 +459,218 @@ textarea.kicks-field {
   color: #0a0a0a;
 }
 
+/* Light-mode mobile menu: dark text on the light drawer, inverted active pill.
+   Scoped to .mobile-nav-menu so desktop and admin are untouched. */
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link {
+  color: #2a2a2a;
+  background-color: transparent;
+}
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link:hover {
+  color: #111111;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link:active {
+  color: #111111;
+  background-color: rgba(0, 0, 0, 0.09);
+}
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link:focus-visible {
+  color: #111111;
+  outline: 2px solid rgba(20, 18, 12, 0.55);
+  outline-offset: 2px;
+}
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link[aria-current='page'] {
+  background-color: #161616;
+  border-color: #161616;
+  color: #ffffff;
+}
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link[aria-current='page']:hover {
+  background-color: #161616;
+  color: #ffffff;
+}
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link[aria-current='page']:active,
+html[data-theme='light'] .mobile-nav-menu .mobile-nav-link[aria-current='page']:focus-visible {
+  background-color: #2b2b2b;
+  border-color: #2b2b2b;
+  color: #ffffff;
+}
+
+/* ---------- Storefront trial theme (dark default + light mode) ---------- */
+/* Light-mode overrides apply ONLY inside .storefront-root, so the admin
+   panel always stays dark. Dark mode needs no overrides (base styles). */
+html[data-theme='light'] body {
+  background:
+    radial-gradient(circle at top left, rgba(20, 20, 20, 0.05), transparent 32%),
+    #f3f0e9;
+  color: #161616;
+}
+html[data-theme='light'] .storefront-root {
+  color-scheme: light;
+}
+
+/* Surfaces */
+html[data-theme='light'] .storefront-root .bg-\[\#090909\],
+html[data-theme='light'] .storefront-root .bg-\[\#0a0a0a\],
+html[data-theme='light'] .storefront-root .bg-\[\#0b0b0b\] {
+  background-color: #faf8f2;
+}
+html[data-theme='light'] .storefront-root .bg-\[\#111111\],
+html[data-theme='light'] .storefront-root .bg-\[\#121212\],
+html[data-theme='light'] .storefront-root .bg-\[\#0d0d0d\] {
+  background-color: #ffffff;
+}
+html[data-theme='light'] .storefront-root .bg-\[\#141414\] {
+  background-color: #f6f3ec;
+}
+html[data-theme='light'] .storefront-root .bg-\[\#151515\] {
+  background-color: #ece8dd;
+}
+html[data-theme='light'] .storefront-root .bg-\[\#161616\],
+html[data-theme='light'] .storefront-root .bg-\[\#171717\],
+html[data-theme='light'] .storefront-root .bg-\[\#181818\] {
+  background-color: #efede6;
+}
+html[data-theme='light'] .storefront-root .bg-black\/55 {
+  background-color: rgba(250, 248, 242, 0.85);
+}
+html[data-theme='light'] .storefront-root .bg-white\/5,
+html[data-theme='light'] .storefront-root .bg-white\/\[0\.02\],
+html[data-theme='light'] .storefront-root .bg-white\/\[0\.03\] {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+html[data-theme='light'] .storefront-root .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Borders */
+html[data-theme='light'] .storefront-root .border-white\/5 { border-color: rgba(20, 18, 12, 0.06); }
+html[data-theme='light'] .storefront-root .border-white\/10 { border-color: rgba(20, 18, 12, 0.1); }
+html[data-theme='light'] .storefront-root .border-white\/15 { border-color: rgba(20, 18, 12, 0.16); }
+html[data-theme='light'] .storefront-root .border-white\/20 { border-color: rgba(20, 18, 12, 0.22); }
+html[data-theme='light'] .storefront-root .border-white\/25 { border-color: rgba(20, 18, 12, 0.3); }
+html[data-theme='light'] .storefront-root .border-white\/30 { border-color: rgba(20, 18, 12, 0.35); }
+html[data-theme='light'] .storefront-root .border-white\/35 { border-color: rgba(20, 18, 12, 0.4); }
+html[data-theme='light'] .storefront-root .border-white\/40 { border-color: rgba(20, 18, 12, 0.45); }
+
+/* Text */
+html[data-theme='light'] .storefront-root .text-white { color: #161616; }
+html[data-theme='light'] .storefront-root .text-\[\#e2e2e2\] { color: #2a2a2a; }
+html[data-theme='light'] .storefront-root .text-\[\#d5d5d5\],
+html[data-theme='light'] .storefront-root .text-\[\#d4d4d4\],
+html[data-theme='light'] .storefront-root .text-\[\#d3d3d3\],
+html[data-theme='light'] .storefront-root .text-\[\#d2d2d2\] { color: #444444; }
+html[data-theme='light'] .storefront-root .text-\[\#d0d0d0\] { color: #4f4f4f; }
+html[data-theme='light'] .storefront-root .text-\[\#c4c4c4\],
+html[data-theme='light'] .storefront-root .text-\[\#c0c0c0\] { color: #585858; }
+html[data-theme='light'] .storefront-root .text-\[\#b8b8b8\],
+html[data-theme='light'] .storefront-root .text-\[\#b5b5b5\] { color: #616161; }
+html[data-theme='light'] .storefront-root .text-\[\#a8a8a8\],
+html[data-theme='light'] .storefront-root .text-\[\#a3a3a3\],
+html[data-theme='light'] .storefront-root .text-\[\#a0a0a0\],
+html[data-theme='light'] .storefront-root .text-\[\#a1a1a1\] { color: #6f6f6f; }
+html[data-theme='light'] .storefront-root .text-\[\#9a9a9a\],
+html[data-theme='light'] .storefront-root .text-\[\#9d9d9d\],
+html[data-theme='light'] .storefront-root .text-\[\#8d8d8d\],
+html[data-theme='light'] .storefront-root .text-\[\#8f8f8f\] { color: #767676; }
+html[data-theme='light'] .storefront-root .text-\[\#FFC800\] { color: #8a6d00; }
+html[data-theme='light'] .storefront-root .text-red-300,
+html[data-theme='light'] .storefront-root .text-red-200 { color: #b91c1c; }
+html[data-theme='light'] .storefront-root .text-\[\#9feec8\] { color: #047857; }
+
+/* Hover states that assumed a dark canvas */
+html[data-theme='light'] .storefront-root .hover\:text-white:hover { color: #111111; }
+html[data-theme='light'] .storefront-root .hover\:bg-white\/10:hover { background-color: rgba(0, 0, 0, 0.06); }
+html[data-theme='light'] .storefront-root .hover\:bg-white\/5:hover { background-color: rgba(0, 0, 0, 0.03); }
+html[data-theme='light'] .storefront-root .hover\:border-white\/35:hover { border-color: rgba(20, 18, 12, 0.4); }
+html[data-theme='light'] .storefront-root .hover\:border-white\/30:hover { border-color: rgba(20, 18, 12, 0.35); }
+html[data-theme='light'] .storefront-root .hover\:border-white\/40:hover { border-color: rgba(20, 18, 12, 0.45); }
+html[data-theme='light'] .storefront-root .hover\:border-white\/25:hover { border-color: rgba(20, 18, 12, 0.3); }
+html[data-theme='light'] .storefront-root .group:hover .group-hover\:bg-white\/10 { background-color: rgba(0, 0, 0, 0.06); }
+html[data-theme='light'] .storefront-root .group:hover .group-hover\:border-white\/60 { border-color: rgba(20, 18, 12, 0.5); }
+html[data-theme='light'] .storefront-root .group:hover .group-hover\:border-white\/25 { border-color: rgba(20, 18, 12, 0.3); }
+
+/* Visible focus in light mode (white rings would vanish) */
+html[data-theme='light'] .storefront-root :focus-visible {
+  outline: 2px solid rgba(20, 18, 12, 0.55);
+  outline-offset: 2px;
+}
+
+/* Shared component tokens in light mode */
+html[data-theme='light'] .storefront-root .kicks-page-title,
+html[data-theme='light'] .storefront-root .kicks-section-title,
+html[data-theme='light'] .storefront-root .kicks-price { color: #141414; }
+html[data-theme='light'] .storefront-root .kicks-eyebrow { color: #717171; }
+html[data-theme='light'] .storefront-root .kicks-body { color: #4a4a4a; }
+html[data-theme='light'] .storefront-root .kicks-meta { color: #717171; }
+html[data-theme='light'] .storefront-root .kicks-card {
+  background: #ffffff;
+  border-color: rgba(20, 18, 12, 0.1);
+}
+html[data-theme='light'] .storefront-root .kicks-btn-primary {
+  background: #141414;
+  color: #ffffff;
+  border-color: #141414;
+}
+html[data-theme='light'] .storefront-root .kicks-btn-primary:hover {
+  background: #2b2b2b;
+  border-color: #2b2b2b;
+}
+html[data-theme='light'] .storefront-root .kicks-btn-secondary {
+  color: #161616;
+  border-color: rgba(20, 18, 12, 0.22);
+}
+html[data-theme='light'] .storefront-root .kicks-btn-secondary:hover {
+  border-color: rgba(20, 18, 12, 0.45);
+  background: rgba(0, 0, 0, 0.05);
+}
+html[data-theme='light'] .storefront-root .kicks-icon-btn {
+  border-color: rgba(20, 18, 12, 0.16);
+  background: rgba(255, 255, 255, 0.65);
+  color: #161616;
+}
+html[data-theme='light'] .storefront-root .kicks-icon-btn:hover {
+  border-color: rgba(20, 18, 12, 0.4);
+}
+html[data-theme='light'] .storefront-root .kicks-field {
+  background: #ffffff;
+  border-color: rgba(20, 18, 12, 0.16);
+  color: #161616;
+}
+html[data-theme='light'] .storefront-root .kicks-field::placeholder { color: #9a9a9a; }
+html[data-theme='light'] .storefront-root .kicks-field:focus { border-color: rgba(20, 18, 12, 0.45); }
+html[data-theme='light'] .storefront-root .kicks-pill {
+  border-color: rgba(20, 18, 12, 0.16);
+  color: #555555;
+}
+html[data-theme='light'] .storefront-root .kicks-pill[aria-pressed='true'],
+html[data-theme='light'] .storefront-root .kicks-pill-active {
+  background: #161616;
+  border-color: #161616;
+  color: #ffffff;
+}
+html[data-theme='light'] .storefront-root .kicks-tab { color: #555555; }
+html[data-theme='light'] .storefront-root .kicks-tab[aria-current='page'],
+html[data-theme='light'] .storefront-root .kicks-tab-active {
+  background: #161616;
+  border-color: #161616;
+  color: #ffffff;
+}
+html[data-theme='light'] .storefront-root .kicks-quickadd {
+  border-color: rgba(20, 18, 12, 0.2);
+  color: #161616;
+}
+html[data-theme='light'] .storefront-root .kicks-quickadd:hover {
+  border-color: rgba(20, 18, 12, 0.45);
+  background: rgba(0, 0, 0, 0.05);
+}
+html[data-theme='light'] .storefront-root .kicks-btn-danger {
+  color: #a83232;
+  border-color: rgba(168, 50, 50, 0.35);
+}
+html[data-theme='light'] .storefront-root .kicks-product-media {
+  background: #eceae2;
+  border-color: rgba(20, 18, 12, 0.08);
+}
+
 /* ---------- Press / tap feedback (interaction states only) ---------- */
 /* The browser's default tap highlight flashes light over dark controls while
    glyphs stay white. These intentional press states keep every tap readable. */

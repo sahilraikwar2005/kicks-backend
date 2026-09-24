@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, ChevronDown, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User } from 'lucide-react';
+import { Bell, ChevronDown, Heart, LogOut, Menu, Moon, Search, ShieldCheck, ShoppingBag, Sun, User } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { notificationsApi } from '../../api/notifications.api';
 import { cartApi } from '../../api/cart.api';
 import { useAuth } from '../../context/useAuth';
+import useTheme from '../../hooks/useTheme';
 import { ESSENTIALS_TYPES, FOOTWEAR_TYPES, SPORTSWEAR_TYPES, typeLabel } from '../../data/productTypes';
 
 const navItems = [
@@ -36,6 +37,7 @@ const mobileMenuSections = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { pathname } = useLocation();
 
   // Scroll-aware admin top navbar (Header 1 only): visible at the top, slides
@@ -222,6 +224,15 @@ export default function Navbar() {
             </div>
           ) : (
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:justify-self-end">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              className="kicks-icon-btn"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
             <span className="hidden shrink-0 sm:inline-flex">
               <Link to="/shop" aria-label="Search products" title="Search products" className="kicks-icon-btn">
                 <Search size={15} />
@@ -309,6 +320,20 @@ export default function Navbar() {
                 </>
               ) : (
                 <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    className="mobile-nav-link flex w-full items-center justify-between rounded-[10px] px-4 py-2.5 text-xs uppercase tracking-[0.18em] transition"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    </span>
+                    <span aria-hidden="true" className={`relative h-5 w-9 rounded-full transition ${theme === 'dark' ? 'bg-white/15' : 'bg-black/20'}`}>
+                      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${theme === 'dark' ? 'left-0.5' : 'left-[18px]'}`} />
+                    </span>
+                  </button>
                   {mobileMenuSections.map((section, sectionIndex) => (
                     <div key={section.heading || `top-${sectionIndex}`}>
                       {section.heading && (
