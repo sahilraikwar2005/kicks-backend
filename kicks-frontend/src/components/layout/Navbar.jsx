@@ -5,6 +5,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { notificationsApi } from '../../api/notifications.api';
 import { cartApi } from '../../api/cart.api';
 import { useAuth } from '../../context/useAuth';
+import { adminAppUrl } from '../../utils/adminApp';
 import { ESSENTIALS_TYPES, FOOTWEAR_TYPES, SPORTSWEAR_TYPES, typeLabel } from '../../data/productTypes';
 
 const navItems = [
@@ -198,14 +199,16 @@ export default function Navbar() {
 
           {isAdmin ? (
             <div className="flex shrink-0 items-center gap-2 lg:justify-self-end">
-              <Link
-                to="/admin"
-                aria-label="Open Admin Control Center"
-                title="Admin Control Center"
-                className="kicks-btn kicks-btn-dark kicks-btn-sm"
-              >
-                <ShieldCheck size={13} /> <span className="hidden sm:inline">Control Center</span><span className="sm:hidden">Admin</span>
-              </Link>
+              {adminAppUrl('/admin') && (
+                <a
+                  href={adminAppUrl('/admin')}
+                  aria-label="Open Admin Control Center"
+                  title="Admin Control Center"
+                  className="kicks-btn kicks-btn-dark kicks-btn-sm"
+                >
+                  <ShieldCheck size={13} /> <span className="hidden sm:inline">Control Center</span><span className="sm:hidden">Admin</span>
+                </a>
+              )}
               <button
                 type="button"
                 onClick={logout}
@@ -278,13 +281,14 @@ export default function Navbar() {
             <div className="mobile-nav-menu flex flex-col gap-1.5">
               {isAdmin ? (
                 <>
-                  <Link
-                    to="/admin"
-                    onClick={() => setMobileOpen(false)}
-                    className="kicks-btn kicks-btn-primary kicks-btn-sm w-full"
-                  >
-                    Admin Panel
-                  </Link>
+                  {adminAppUrl('/admin') && (
+                    <a
+                      href={adminAppUrl('/admin')}
+                      className="kicks-btn kicks-btn-primary kicks-btn-sm w-full"
+                    >
+                      Admin Panel
+                    </a>
+                  )}
                   <Link
                     to="/"
                     onClick={() => setMobileOpen(false)}

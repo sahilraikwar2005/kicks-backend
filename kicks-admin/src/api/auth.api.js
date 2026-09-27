@@ -1,0 +1,21 @@
+import { apiClient } from './client';
+
+export const authApi = {
+  register: (payload) => apiClient.post('/auth/register', payload).then((response) => response.data),
+  verifyRegistrationOtp: (payload) => apiClient.post('/auth/register/verify-otp', payload).then((response) => response.data),
+  resendRegistrationOtp: (payload) => apiClient.post('/auth/register/resend-otp', payload).then((response) => response.data),
+  login: (payload) => apiClient.post('/auth/login', payload).then((response) => response.data),
+  logout: () => apiClient.post('/auth/logout').then((response) => response.data),
+  logoutAll: () => apiClient.post('/auth/logout-all').then((response) => response.data),
+  refresh: (refreshToken) => apiClient.post('/auth/refresh', { refreshToken }).then((response) => response.data),
+  me: () => apiClient.get('/auth/me').then((response) => response.data),
+  forgotPassword: (payload) => apiClient.post('/auth/forgot-password', payload).then((response) => response.data),
+  resetPassword: (payload) => apiClient.post('/auth/reset-password', payload).then((response) => response.data),
+  changePassword: (payload) => apiClient.post('/auth/change-password', payload).then((response) => response.data),
+  requestPasswordReset: (payload) => apiClient.post('/auth/password-reset/request', payload).then((response) => response.data),
+  verifyPasswordResetOtp: (payload) => apiClient.post('/auth/password-reset/verify', payload).then((response) => response.data),
+  resendPasswordResetOtp: (payload) => apiClient.post('/auth/password-reset/resend', payload).then((response) => response.data),
+  confirmPasswordReset: (payload) => apiClient.post('/auth/password-reset/confirm', payload).then((response) => response.data),
+  verifyEmail: (payload) => apiClient.post('/auth/verify-email', payload).then((response) => response.data),
+  resendVerification: () => apiClient.post('/auth/resend-verification').then((response) => response.data),
+};

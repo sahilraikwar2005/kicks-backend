@@ -12,6 +12,7 @@ import { recentlyViewedApi } from '../api/recentlyViewed.api';
 import { reviewsApi } from '../api/reviews.api';
 import { wishlistApi } from '../api/wishlist.api';
 import { useAuth } from '../context/useAuth';
+import { adminAppUrl } from '../utils/adminApp';
 import { useToast } from '../context/useToast';
 import ProductCard from '../components/ui/ProductCard';
 import { colorKey } from '../utils/variantMatrix';
@@ -514,9 +515,11 @@ export default function ProductDetailPage() {
             {isAdmin ? (
               <div className="mt-6 flex flex-col gap-3 rounded-[20px] border border-white/10 bg-[#141414] p-4 text-sm text-[#c4c4c4] sm:mt-8 sm:flex-row sm:items-center sm:justify-between">
                 <span>You are signed in with an admin account. Shopping actions are disabled.</span>
-                <Link to="/admin" className="kicks-btn kicks-btn-dark kicks-btn-sm w-fit shrink-0">
-                  Admin Panel
-                </Link>
+                {adminAppUrl('/admin') && (
+                  <a href={adminAppUrl('/admin')} className="kicks-btn kicks-btn-dark kicks-btn-sm w-fit shrink-0">
+                    Admin Panel
+                  </a>
+                )}
               </div>
             ) : (
             <>

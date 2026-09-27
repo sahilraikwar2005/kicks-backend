@@ -9,3 +9,4 @@ logs
 *.log
 uploads/*
 !uploads/.gitkeep
+dist
