@@ -4,12 +4,15 @@ import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 
 import { env } from './config/env.js';
+import { initSentry } from './utils/sentry.js';
 import { securityMiddleware } from './middleware/security.middleware.js';
 import { apiRateLimiter } from './middleware/rateLimit.middleware.js';
 import { notFoundMiddleware } from './middleware/notFound.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import routes from './routes/index.js';
 import { requestContext, csrfOriginGuard } from './middleware/request.middleware.js';
+
+initSentry();
 
 const app = express();
 

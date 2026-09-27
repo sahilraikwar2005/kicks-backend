@@ -70,6 +70,7 @@ export const env = {
   shippingBreadthCm: Number(process.env.SHIPPING_BREADTH_CM) || 10,
   shippingHeightCm: Number(process.env.SHIPPING_HEIGHT_CM) || 10,
   sessionSecret: process.env.SESSION_SECRET || (isProduction ? '' : 'development-session-secret'),
+  sentryDsn: process.env.SENTRY_DSN || '',
   logLevel: process.env.LOG_LEVEL || 'info',
   uploadLimitMb: Number(process.env.UPLOAD_LIMIT_MB) || 5,
   maxRequestBodySize: process.env.MAX_REQUEST_BODY_SIZE || '10mb',

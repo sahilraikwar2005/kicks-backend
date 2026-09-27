@@ -1,5 +1,13 @@
+import { reportError } from '../utils/sentry.js';
+
 export const errorMiddleware = (err, req, res, _next) => {
   const statusCode = err.statusCode || 500;
+
+  // 5xx (and unexpected errors) go to Sentry with request context; the
+  // client-facing payload below stays generic and secret-free.
+  if (statusCode >= 500) {
+    reportError(err, { requestId: req.requestId, route: `${req.method} ${req.path}` });
+  }
 
   const payload = {
     success: false,
