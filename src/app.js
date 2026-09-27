@@ -16,6 +16,11 @@ initSentry();
 
 const app = express();
 
+// Single trusted proxy hop (Render router → app) so req.ip — and therefore
+// every rate limiter — sees the real client IP instead of the proxy's.
+// Must stay a count, never `true`: trusting all hops would allow IP spoofing.
+app.set('trust proxy', 1);
+
 app.use(requestContext);
 app.use(securityMiddleware.helmet);
 app.use(securityMiddleware.cors);
