@@ -13,7 +13,6 @@ import {
   EyeOff,
   ExternalLink,
   FileText,
-  Info,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -57,11 +56,20 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+// Absolute URL of the customer storefront (separate app). Returns null when
+// unconfigured so admin UI never links into a dead route.
+const storefrontUrl = (path = '') => {
+  const base = String(import.meta.env.VITE_STOREFRONT_URL || '').replace(/\/+$/, '');
+  if (!base) return null;
+  const suffix = String(path || '');
+  return `${base}${suffix.startsWith('/') ? suffix : `/${suffix}`}`;
+};
+
 function AdminRoute() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
 
   if (loading) return <div className="p-8 text-center text-white">Checking access...</div>;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to={`/login?next=${encodeURIComponent(window.location.pathname)}`} replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
   return <Outlet />;
 }
@@ -295,6 +303,7 @@ function PasswordField({ label, name, register, error, placeholder = 'Enter pass
 function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -306,7 +315,8 @@ function LoginPage() {
     try {
       await login(values);
       showToast('Welcome back. You are signed in.', 'success');
-      navigate('/admin', { replace: true });
+      const next = searchParams.get('next');
+      navigate(next && next.startsWith('/admin') ? next : '/admin', { replace: true });
     } catch (error) {
       showToast(error?.message || 'Login failed. Please check your credentials.', 'error');
     }
@@ -340,10 +350,7 @@ function LoginPage() {
             {isSubmitting ? 'Signing in...' : 'Login'}
           </button>
 
-          <div className="flex items-center justify-between text-sm text-[#c4c4c4]">
-            <Link to="/register">Create account</Link>
-            <Link to="/forgot-password">Forgot password?</Link>
-          </div>
+          <p className="text-center text-sm text-[#8d8d8d]">Restricted to store administrators.</p>
         </form>
       </div>
     </div>
@@ -4000,24 +4007,16 @@ function AdminPage({ initialSection }) {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <span className="hidden shrink-0 sm:inline-flex">
-                <Link
-                  to="/faq"
-                  aria-label="Help and FAQs"
-                  title="Help and FAQs"
-                  className="kicks-icon-btn"
+              {storefrontUrl('/') && (
+                <a
+                  href={storefrontUrl('/')}
+                  aria-label="Open storefront"
+                  title="Storefront"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/10 text-white transition hover:border-white/30 sm:h-8 sm:w-auto sm:px-3 sm:text-[11px] sm:font-semibold"
                 >
-                  <Info size={15} />
-                </Link>
-              </span>
-              <Link
-                to="/"
-                aria-label="Open storefront"
-                title="Storefront"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/10 text-white transition hover:border-white/30 sm:h-8 sm:w-auto sm:px-3 sm:text-[11px] sm:font-semibold"
-              >
-                <ExternalLink size={12} /> <span className="hidden sm:inline">Storefront</span>
-              </Link>
+                  <ExternalLink size={12} /> <span className="hidden sm:inline">Storefront</span>
+                </a>
+              )}
               <div className="relative hidden shrink-0 sm:block">
                 <button
                   type="button"

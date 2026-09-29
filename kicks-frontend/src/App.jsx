@@ -107,7 +107,16 @@ function CustomerRoute() {
 
   if (loading) return <div className="p-8 text-center text-white">Checking session...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (isAdmin && !adminTarget) return <Navigate to="/admin" replace />;
+  if (isAdmin && !adminTarget) {
+    return (
+      <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
+        <p className="kicks-eyebrow">Admin account</p>
+        <h1 className="mt-4 kicks-section-title">Console not linked</h1>
+        <p className="mt-4 text-sm text-[#a8a8a8]">The admin console address is not configured for this storefront. Please open the admin app directly.</p>
+        <Link to="/" className="kicks-btn kicks-btn-secondary mt-6">Back to storefront</Link>
+      </div>
+    );
+  }
   if (isAdmin) return null;
   return <Outlet />;
 }
@@ -2858,8 +2867,10 @@ function LoginPage() {
           window.location.assign(target);
           return;
         }
+        showToast('Signed in as admin, but the admin console address is not configured. Please open the admin app directly.', 'error');
+        return;
       }
-      navigate(isAdminRole(signedInUser?.role) ? '/admin' : '/account', { replace: true });
+      navigate('/account', { replace: true });
     } catch (error) {
       showToast(error?.message || 'Login failed. Please check your credentials.', 'error');
     }
@@ -2872,8 +2883,16 @@ function LoginPage() {
         window.location.assign(target);
         return null;
       }
+      return (
+        <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
+          <p className="kicks-eyebrow">Admin account</p>
+          <h1 className="mt-4 kicks-section-title">Console not linked</h1>
+          <p className="mt-4 text-sm text-[#a8a8a8]">The admin console address is not configured for this storefront. Please open the admin app directly.</p>
+          <Link to="/" className="kicks-btn kicks-btn-secondary mt-6">Back to storefront</Link>
+        </div>
+      );
     }
-    return <Navigate to={isAdmin ? '/admin' : '/account'} replace />;
+    return <Navigate to="/account" replace />;
   }
 
   return (
@@ -3067,7 +3086,24 @@ function RegisterPage() {
     setOtpError('');
   };
 
-  if (isAuthenticated) return <Navigate to={isAdmin ? '/admin' : '/account'} replace />;
+  if (isAuthenticated) {
+    if (isAdmin) {
+      const target = adminAppUrl('/admin');
+      if (target) {
+        window.location.assign(target);
+        return null;
+      }
+      return (
+        <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
+          <p className="kicks-eyebrow">Admin account</p>
+          <h1 className="mt-4 kicks-section-title">Console not linked</h1>
+          <p className="mt-4 text-sm text-[#a8a8a8]">The admin console address is not configured for this storefront. Please open the admin app directly.</p>
+          <Link to="/" className="kicks-btn kicks-btn-secondary mt-6">Back to storefront</Link>
+        </div>
+      );
+    }
+    return <Navigate to="/account" replace />;
+  }
 
   return (
     <div className="mx-auto max-w-[600px] px-4 py-6 sm:py-12 lg:px-8">
