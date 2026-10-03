@@ -1285,7 +1285,7 @@ function OrderSuccessPage() {
       <PageMeta title="Order placed | AJ SPORTS" description="Your order was successful" />
       <div className="rounded-[28px] border border-white/10 bg-[#111111] p-6 md:p-12">
         <div className="flex flex-col items-center text-center">
-          <div aria-hidden="true" className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black">✓</div>
+          <div aria-hidden="true" className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-2xl font-black text-white ring-4 ring-emerald-500/20">✓</div>
           <p className="kicks-eyebrow">Order status</p>
           <h1 className="mt-4 kicks-section-title">Order placed successfully</h1>
         </div>
@@ -1321,13 +1321,20 @@ function OrderSuccessPage() {
           </div>
           {Array.isArray(order.items) && order.items.length > 0 && (
             <div className="mt-5 space-y-3">
-              {order.items.slice(0, 3).map((item) => (
-                <div key={item._id || item.variantId || item.productId} className="flex items-center justify-between gap-4 rounded-[14px] border border-white/10 bg-[#111111] p-3">
-                  <div>
-                    <div className="text-sm font-medium text-white">{item.productName || item.name || 'AJ SPORTS product'}</div>
+              {order.items.map((item) => (
+                <div key={item._id || item.variantId || item.productId} className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-[#111111] p-3 sm:gap-4">
+                  <img
+                    src={item.image || cartLineImage(item, NEUTRAL_PRODUCT_IMAGE)}
+                    alt={item.productName || item.name || 'Ordered product'}
+                    loading="lazy"
+                    className="h-14 w-14 shrink-0 rounded-[14px] border border-white/10 object-cover sm:h-16 sm:w-16"
+                    onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = NEUTRAL_PRODUCT_IMAGE; }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-white">{item.productName || item.name || 'AJ SPORTS product'}</div>
                     <div className="mt-1 text-xs text-[#b4b4b4]">Qty {item.quantity || 1}</div>
                   </div>
-                  <div className="text-sm font-medium text-white">{formatMoney(Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1))}</div>
+                  <div className="shrink-0 text-sm font-medium text-white">{formatMoney(Number(item.unitPrice || item.finalPrice || 0) * Number(item.quantity || 1))}</div>
                 </div>
               ))}
             </div>
